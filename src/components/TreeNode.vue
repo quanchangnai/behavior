@@ -1,38 +1,55 @@
 <template>
     <draggable :x="node.x"
                :y="node.y"
-               :init-dragging="temp"
-               :style="{'pointer-events':temp?'none':'auto'}"
+               :init-dragging="creating"
+               :style="{'pointer-events':creating?'none':'auto'}"
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
                @contextmenu.native.stop="onContextMenu">
         <template>
-            <div v-if="temp" class="content" ref="content">
-                tid:{{ node.tid }},id:{{ node.id }}
+            <div v-if="creating" ref="content" class="creating-content content">
+                {{ node.template.name }} - {{ node.id }}
             </div>
-            <div v-else class="content" ref="content">
+            <div v-else ref="content" class="content">
                 <div>
-                    <span>节点:{{ node.tid }}-{{ node.id }}</span>
+                    {{ node.template.name }}<span v-if="node.name"> : {{ node.name }}</span> - {{ node.id }}
                 </div>
-                <template v-if="node.detailed">
-                    <div>
-                        参数1:aaaaaaaaa{{ node.id }}
-                    </div>
-                    <div>
-                        参数2:bbbbbbbbb{{ node.id }}
-                    </div>
-                    <div>
-                        参数3:cccccccc{{ node.id }}
-                    </div>
-                </template>
+                <div v-if="node.detailed">
+                    <el-form ref="form"
+                             size="mini"
+                             label-width="70px"
+                             label-position="left">
+                        <el-form-item label="活动名称">
+                            <el-input></el-input>
+                        </el-form-item>
+                        <el-form-item label="活动区域">
+                            <el-select placeholder="请选择活动区域">
+                                <el-option label="区域一" value="shanghai"></el-option>
+                                <el-option label="区域二" value="beijing"></el-option>
+                                <el-option label="区域三" value="beijing"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="特殊资源">
+                            <el-radio-group>
+                                <el-radio label="是"></el-radio>
+                                <el-radio label="否 "></el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary">提交</el-button>
+                            <el-button type="info">重置</el-button>
+                        </el-form-item>
+                    </el-form>
+                </div>
             </div>
-            <div @mousedown.stop
+            <div v-if="!creating"
+                 @mousedown.stop
                  @click="onDetail"
                  class="detail-icon"
                  :class="node.detailed?'el-icon-arrow-up':'el-icon-arrow-down'"
                  :title="this.node.detailed ? '收起节点' : '展开节点'"/>
-            <div v-if="node.children&&node.children.length"
+            <div v-if="node.children.length"
                  @mousedown.stop
                  @click="onCollapse"
                  class="collapse-icon"
@@ -52,7 +69,7 @@ export default {
     components: {Draggable, ContextMenu},
     props: {
         node: Object,
-        temp: {
+        creating: {
             type: Boolean,
             default: false
         }
@@ -64,6 +81,9 @@ export default {
         menuItems() {
             let items = [];
             items.push({title: this.node.detailed ? '收起节点' : '展开节点', handler: this.onDetail});
+            if (this.node.tree && this.node === this.node.tree.root) {
+                items.push({title: this.node.tree.detailed ? '收起全部节点' : '展开全部节点', handler: this.onDetailAll});
+            }
             if (this.node.children && this.node.children.length) {
                 items.push({title: this.node.collapsed ? '展开子树' : '收起子树', handler: this.onCollapse});
             }
@@ -104,11 +124,24 @@ export default {
             this.$emit("drag-end", this.node);
         },
         onDetail() {
-            this.$set(this.node, "detailed", !this.node.detailed);
+            this.node.detailed = !this.node.detailed;
+            this.$emit("detail");
+        },
+        onDetailAll() {
+            this.node.tree.detailed = !this.node.tree.detailed;
+            let detail = node => {
+                node.detailed = this.node.tree.detailed;
+                if (node.children) {
+                    for (let child of node.children) {
+                        detail(child);
+                    }
+                }
+            };
+            detail(this.node);
             this.$emit("detail");
         },
         onCollapse() {
-            this.$set(this.node, "collapsed", !this.node.collapsed);
+            this.node.collapsed = !this.node.collapsed;
             this.$emit("collapse");
         },
         onDelete() {
@@ -130,13 +163,18 @@ export default {
     border: 1px solid #98a5e9;
     border-radius: 5px;
     z-index: 10;
+    font-size: 14px;
+}
+
+.creating-content {
+    padding: 0 12px 0 12px;
 }
 
 .content div {
     padding: 0 12px 0 23px;
 }
 
-.content div:nth-child(2) {
+.content > div:nth-child(2) {
     border-top: solid cadetblue 1px;
 }
 
@@ -162,4 +200,20 @@ export default {
     left: calc(100% - 1px);
     cursor: pointer;
 }
+
+.el-form {
+    padding: 5px 10px 10px 0;
+}
+
+.el-form-item {
+    padding: 3px 0 !important;
+    margin-bottom: 0;
+    /*border: solid red 1px;*/
+}
+
+.el-input, .el-select, .el-radio-group {
+    padding: 0 !important;
+    width: 160px;
+}
+
 </style>
