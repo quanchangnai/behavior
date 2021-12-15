@@ -23,12 +23,14 @@
             </draggable>
         </div>
         <div id="right">
-            <template-list @template-select="onTemplateSelect"/>
+            <template-list v-if="config"
+                           :templates="config.templates"
+                           @template-select="onTemplateSelect"/>
         </div>
-        <tree-node v-if="newNode!=null"
-                   :ref="'node'+newNode.id"
-                   :node="newNode"
-                   :temp="true"
+        <tree-node v-if="creatingNode!=null"
+                   :ref="'node'+creatingNode.id"
+                   :node="creatingNode"
+                   :creating="true"
                    @dragging="onNodeDragging"
                    @drag-end="onNodeDragEnd"/>
     </div>
@@ -49,7 +51,8 @@ const boardEdgeSpace = 100;//画板边缘空间
 export default {
     name: "TreeEditor",
     components: {Draggable, TreeNode, TreeList, TemplateList},
-    async mounted() {
+    async created() {
+        this.config = await ipcRenderer.invoke("load-config");
         window.addEventListener("resize", this.drawTree);
     },
     destroyed() {
@@ -57,10 +60,9 @@ export default {
     },
     data() {
         return {
-            trees: null,
-            tree: null,
-            maxNodeId: 0,
-            newNode: null,
+            config: null,//编辑器配置
+            tree: null,//当前编辑的行为树
+            creatingNode: null,//正在新建的节点
             boardX: 0,
             boardY: 0,
         }
@@ -73,19 +75,8 @@ export default {
             }
 
             let build = node => {
-                if (node == null) {
-                    return;
-                }
-                if (node.x === undefined) {
-                    this.$set(node, "x", 0);
-                }
-                if (node.y === undefined) {
-                    this.$set(node, "y", 0);
-                }
                 result.push(node);
-                this.maxNodeId = Math.max(this.maxNodeId, node.id);
-
-                if (node.children && !node.collapsed) {
+                if (!node.collapsed) {
                     for (let child of node.children) {
                         child.parent = node;
                         build(child);
@@ -101,7 +92,6 @@ export default {
     methods: {
         onTreeSelect(tree) {
             this.tree = tree;
-            this.maxNodeId = 0;
             this.drawTree();
         },
         async drawTree() {
@@ -132,7 +122,7 @@ export default {
 
             //坑，v-for中的ref是个数组
             let nodeContent;
-            if (node === this.newNode) {
+            if (node === this.creatingNode) {
                 // noinspection JSUnresolvedFunction
                 nodeContent = this.$refs["node" + node.id].content();
             } else {
@@ -143,7 +133,7 @@ export default {
             node.selfWidth = nodeContent.offsetWidth + nodeSpaceX;
             node.selfHeight = nodeContent.offsetHeight + nodeSpaceY;
 
-            if (!node.children || !node.children.length || node.collapsed) {
+            if (!node.children.length || node.collapsed) {
                 node.treeWidth = node.selfWidth;
                 node.treeHeight = node.selfHeight;
                 return;
@@ -174,7 +164,7 @@ export default {
                 node.x = boardEdgeSpace;
             }
 
-            if (!node.children || !node.children.length || node.collapsed) {
+            if (!node.children.length || node.collapsed) {
                 node.y = lastY;
                 return;
             }
@@ -219,7 +209,7 @@ export default {
             const nodeCollapseIconWidth = 14;//节点收起子树图标宽度
 
             const lineToChildren = node => {
-                if (!node || !node.children || node.collapsed) {
+                if (!node || node.collapsed) {
                     return;
                 }
 
@@ -241,16 +231,16 @@ export default {
 
             lineToChildren(this.tree.root);
 
-            if (this.newNode && this.newNode.parent) {
+            if (this.creatingNode && this.creatingNode.parent) {
                 context.strokeStyle = "red";
-                let newNodeParent = this.newNode.parent;
-                let x1 = newNodeParent.x + newNodeParent.selfWidth - nodeSpaceX;
-                if (newNodeParent.children && newNodeParent.children.length) {
+                let creatingNodeParent = this.creatingNode.parent;
+                let x1 = creatingNodeParent.x + creatingNodeParent.selfWidth - nodeSpaceX;
+                if (creatingNodeParent.children && creatingNodeParent.children.length) {
                     x1 += nodeCollapseIconWidth;
                 }
-                let y1 = newNodeParent.y + (newNodeParent.selfHeight - nodeSpaceY) / 2;
-                let x2 = this.newNode.x - document.querySelector("#left").offsetWidth - this.boardX;
-                let y2 = this.newNode.y + (this.newNode.selfHeight - nodeSpaceY) / 2 - this.boardY;
+                let y1 = creatingNodeParent.y + (creatingNodeParent.selfHeight - nodeSpaceY) / 2;
+                let x2 = this.creatingNode.x - document.querySelector("#left").offsetWidth - this.boardX;
+                let y2 = this.creatingNode.y + (this.creatingNode.selfHeight - nodeSpaceY) / 2 - this.boardY;
                 drawLine(x1, y1, x2, y2);
             }
         },
@@ -275,7 +265,7 @@ export default {
                 return;
             }
 
-            if (node === this.newNode) {
+            if (node === this.creatingNode) {
                 node.parent = parentNode;
                 return;
             }
@@ -288,9 +278,6 @@ export default {
                 }
             }
             node.parent = parentNode;
-            if (!parentNode.children) {
-                this.$set(parentNode, "children", []);
-            }
             parentNode.children.push(node);
 
             //按y轴排序兄弟节点
@@ -299,7 +286,7 @@ export default {
         findParentNode(node) {
             let deltaX = 0;
             let deltaY = 0;
-            if (node === this.newNode) {
+            if (node === this.creatingNode) {
                 deltaX = document.querySelector("#left").offsetWidth + this.boardX;
                 deltaY = this.boardY;
             }
@@ -315,18 +302,31 @@ export default {
                 if (!targetNode || targetNode === node || targetNode.collapsed) {
                     return;
                 }
-                let x2 = deltaX + targetNode.x + targetNode.selfWidth - nodeSpaceX;
-                let y2 = deltaY + targetNode.y + (targetNode.selfHeight - nodeSpaceY) / 2;
 
-                let distance = (x1 - x2) ** 2 + (y1 - y2) ** 2;
-                if (minDistance < 0 || distance < minDistance) {
-                    minDistance = distance;
-                    parentNode = targetNode;
+                let canLink = true;
+                let targetNodeType = targetNode.template.type;
+                if (targetNodeType.childrenTypes.indexOf(node.template.type.id) < 0) {
+                    //目标节点限制子节点类型
+                    canLink = false;
                 }
-                if (targetNode.children) {
-                    for (let child of targetNode.children) {
-                        find(child);
+                if (targetNodeType.childrenNum >= 0 && targetNode.children.length >= targetNodeType.childrenNum) {
+                    //目标节点限制子节点数量
+                    canLink = false;
+                }
+
+                if (canLink) {
+                    let x2 = deltaX + targetNode.x + targetNode.selfWidth - nodeSpaceX;
+                    let y2 = deltaY + targetNode.y + (targetNode.selfHeight - nodeSpaceY) / 2;
+
+                    let distance = (x1 - x2) ** 2 + (y1 - y2) ** 2;
+                    if (minDistance < 0 || distance < minDistance) {
+                        minDistance = distance;
+                        parentNode = targetNode;
                     }
+                }
+
+                for (let child of targetNode.children) {
+                    find(child);
                 }
             };
 
@@ -336,8 +336,8 @@ export default {
         },
         saveTree() {
             let build = node => {
-                let result = {id: node.id, name: node.name, tid: node.tid};
-                if (node.children) {
+                let result = {id: node.id, name: node.name, tid: node.tid, collapsed: node.collapsed};
+                if (node.children.length) {
                     result.children = [];
                     for (let child of node.children) {
                         result.children.push(build(child))
@@ -373,14 +373,14 @@ export default {
             console.log("onBoardContextMenu:" + event.currentTarget.id)
         },
         async onBoardMouseUp() {
-            if (this.newNode == null) {
+            if (this.creatingNode == null) {
                 return;
             }
 
-            let newNode = this.newNode;
-            this.newNode = null;
-            newNode.dragging = false;
-            this.linkParentNode(newNode, newNode.parent);
+            let creatingNode = this.creatingNode;
+            this.creatingNode = null;
+            creatingNode.dragging = false;
+            this.linkParentNode(creatingNode, creatingNode.parent);
 
             await this.drawTree();
             this.saveTree();
@@ -389,22 +389,29 @@ export default {
             let container = document.querySelector("#container");
             let x = event.x - utils.getClientX(container);
             let y = event.y - utils.getClientY(container);
-            let tid = event.template.id;
 
-            this.newNode = {id: ++this.maxNodeId, tid, x, y, collapsed: false};
+            this.creatingNode = {
+                id: ++this.tree.maxNodeId,
+                tid: event.template.id,
+                template: event.template,
+                x,
+                y,
+                collapsed: false,
+                children: []
+            };
 
             await this.$nextTick();
 
             // noinspection JSUnresolvedFunction
-            let newNodeContent = this.$refs["node" + this.newNode.id].content();
-            this.newNode.x -= newNodeContent.offsetWidth / 2;
-            this.newNode.y -= newNodeContent.offsetHeight / 2;
-            this.calcNodeBounds(this.newNode);
-            this.linkParentNode(this.newNode);
+            let creatingNodeContent = this.$refs["node" + this.creatingNode.id].content();
+            this.creatingNode.x -= creatingNodeContent.offsetWidth / 2;
+            this.creatingNode.y -= creatingNodeContent.offsetHeight / 2;
+            this.calcNodeBounds(this.creatingNode);
+            this.linkParentNode(this.creatingNode);
             this.drawLinkLines();
 
             window.addEventListener("mouseup", () => {
-                this.newNode = null;
+                this.creatingNode = null;
                 this.drawLinkLines();
             }, {once: true});
         }

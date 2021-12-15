@@ -10,16 +10,48 @@ ipcMain.handle("dev-tools", event => {
     }
 });
 
-ipcMain.handle("load-templates", async () => {
-    return [
-        {id: 1, name: "根节点", type: 1, children: [2]},
-        {id: 2, name: "状态节点", type: 2, children: [3, 4]},
-        {id: 3, name: "顺序节点", type: 3, children: [3, 4]},
-        {id: 4, name: "选择节点", type: 3, children: [3, 4]},
-        {id: 5, name: "动作节点1", type: 4},
-        {id: 6, name: "动作节点2", type: 4},
-        {id: 7, name: "动作节点3", type: 4},
+
+ipcMain.handle("load-config", async () => {
+    let templateTypes = [
+        {id: 1, name: "根节点", childrenTypes: [2], childrenNum: -1},
+        {id: 2, name: "状态节点", childrenTypes: [3, 4, 5], childrenNum: -1},
+        {id: 3, name: "组合节点", childrenTypes: [3, 4, 5], childrenNum: -1},
+        {id: 4, name: "装饰节点", childrenTypes: [3, 4, 5], childrenNum: 1},
+        {id: 5, name: "叶子节点", childrenTypes: [], childrenNum: 0},
     ];
+
+    let templates = [
+        {id: 1, name: "根节点", type: 1},
+        {id: 2, name: "状态节点", type: 2},
+        {id: 3, name: "顺序节点", type: 3},
+        {id: 4, name: "选择节点", type: 3},
+        {id: 5, name: "装饰节点1", type: 4},
+        {id: 6, name: "装饰节点2", type: 4},
+        {id: 7, name: "装饰节点1", type: 5},
+        {id: 8, name: "动作节点2", type: 5},
+        {id: 9, name: "动作节点3", type: 5},
+    ];
+
+    //新建行为树时自动创建的样例
+    let example = {
+        id: 1,
+        name: "新建行为树",
+        root: {
+            id: 1, name: "",
+            tid: 1,
+            children: [
+                {id: 2, name: "", tid: 2}
+            ]
+        }
+    };
+
+    let config = {templateTypes, templates, example};
+
+    for (let template of config.templates) {
+        template.type = templateTypes.find(t => t.id === template.type);
+    }
+
+    return config;
 });
 
 ipcMain.handle("load-trees", async () => {

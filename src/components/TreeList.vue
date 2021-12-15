@@ -34,7 +34,7 @@ export default {
             keyword: ""
         }
     },
-    async mounted() {
+    async created() {
         this.allTrees = await ipcRenderer.invoke("load-trees");
         this.visibleTrees = this.allTrees;
         this.$refs.table.setCurrentRow(this.visibleTrees[0]);
@@ -50,7 +50,32 @@ export default {
     methods: {
         onTreeSelect(tree) {
             this.selectedTree = tree;
+            if (!tree.root.tree) {
+                //第一次选中
+                this.initTree(tree)
+            }
             this.$emit("tree-select", tree);
+        },
+        initTree(tree) {
+            tree.root.tree = tree;
+            tree.maxNodeId = 0;
+
+            let init = node => {
+                tree.maxNodeId = Math.max(tree.maxNodeId, node.id);
+                this.$set(node, "x", 0);
+                this.$set(node, "y", 0);
+                this.$set(node, "detailed", false);
+                if (!node.children) {
+                    this.$set(node, "children", []);
+                }
+                for (let child of node.children) {
+                    init(child);
+                }
+            };
+
+            init(tree.root);
+
+            this.$events.$emit("init-tree", tree);
         }
     }
 }

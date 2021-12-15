@@ -6,8 +6,8 @@ import App from './App.vue'
 Vue.use(ElementUI);
 
 Vue.config.productionTip = false;
+Vue.prototype.$events = new Vue();
 
 new Vue({
     render: h => h(App),
-    "$events": new Vue()
 }).$mount('#app');
