@@ -1,0 +1,46 @@
+{
+  "name": "behavior",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "run": "vue-cli-service electron:serve --inspect",
+    "build": "vue-cli-service electron:build"
+  },
+  "main": "background.js",
+  "dependencies": {
+    "core-js": "^3.6.5",
+    "element-ui": "^2.13.2",
+    "vue": "^2.6.11"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "~4.5.0",
+    "@vue/cli-plugin-eslint": "~4.5.0",
+    "@vue/cli-service": "~4.5.0",
+    "babel-eslint": "^10.1.0",
+    "electron": "^13.0.0",
+    "electron-devtools-installer": "^3.1.0",
+    "eslint": "^6.7.2",
+    "eslint-plugin-vue": "^6.2.2",
+    "vue-cli-plugin-electron-builder": "~2.1.1",
+    "vue-template-compiler": "^2.6.11"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/essential",
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "parser": "babel-eslint"
+    },
+    "rules": {}
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}
