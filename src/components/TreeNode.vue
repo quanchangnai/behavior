@@ -1,18 +1,15 @@
 <template>
     <draggable :x="node.x"
                :y="node.y"
-               :init-dragging="creating"
+               :ready="creating"
                :style="style"
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
-               @dblclick.native="onDetail"
+               @dblclick.native="detail"
                @contextmenu.native.stop="onContextMenu">
         <template>
-            <div v-if="creating" ref="content" class="creating-content content">
-                {{ node.template.name }} - {{ node.id }}
-            </div>
-            <div v-else ref="content" class="content">
+            <div ref="content" class="content" :class="{'creating-content':creating}">
                 <div>
                     {{ node.template.name }}<span v-if="!node.detailed && node.name"> : {{ node.name }}</span>
                 </div>
@@ -47,17 +44,17 @@
             </div>
             <div v-if="!creating"
                  @mousedown.stop
-                 @click="onDetail"
+                 @click="detail"
                  class="detail-icon"
                  :class="node.detailed?'el-icon-arrow-up':'el-icon-arrow-down'"
                  :title="this.node.detailed ? '收起节点' : '展开节点'"/>
             <div v-if="node.children.length"
                  @mousedown.stop
-                 @click="onCollapse"
+                 @click="collapse"
                  class="collapse-icon"
                  :class="node.collapsed?'el-icon-circle-plus-outline':'el-icon-remove-outline'"
                  :title="this.node.collapsed ? '展开子树' : '收起子树'"/>
-            <context-menu ref="menu" :items="menuItems"/>
+            <context-menu ref="menu" :items="menuItems" @hide="onContextMenuHide"/>
         </template>
     </draggable>
 </template>
@@ -82,12 +79,9 @@ export default {
     computed: {
         menuItems() {
             let items = [];
-            items.push({title: this.node.detailed ? '收起节点' : '展开节点', handler: this.onDetail});
-            if (this.node.tree && this.node === this.node.tree.root) {
-                items.push({title: this.node.tree.detailed ? '收起全部节点' : '展开全部节点', handler: this.onDetailAll});
-            }
+            items.push({title: this.node.detailed ? '收起节点' : '展开节点', handler: this.detail});
             if (this.node.children && this.node.children.length) {
-                items.push({title: this.node.collapsed ? '展开子树' : '收起子树', handler: this.onCollapse});
+                items.push({title: this.node.collapsed ? '展开子树' : '收起子树', handler: this.collapse});
             }
             if (this.node.parent) {
                 items.push({title: '删除节点', handler: this.onDelete});
@@ -135,24 +129,11 @@ export default {
 
             this.$emit("drag-end", this.node);
         },
-        onDetail() {
+        detail() {
             this.node.detailed = !this.node.detailed;
             this.$emit("detail");
         },
-        onDetailAll() {
-            this.node.tree.detailed = !this.node.tree.detailed;
-
-            let detail = node => {
-                node.detailed = this.node.tree.detailed;
-                for (let child of node.children) {
-                    detail(child);
-                }
-            };
-            detail(this.node);
-
-            this.$emit("detail");
-        },
-        onCollapse() {
+        collapse() {
             this.node.collapsed = !this.node.collapsed;
             this.$emit("collapse");
         },
@@ -160,7 +141,11 @@ export default {
             this.$emit("delete", this.node);
         },
         onContextMenu(event) {
+            this.node.z = 10;
             this.$refs.menu.show(event.clientX, event.clientY);
+        },
+        onContextMenuHide() {
+            this.node.z = 1;
         }
     }
 
@@ -177,16 +162,16 @@ export default {
     font-size: 14px;
 }
 
-.creating-content {
-    padding: 0 12px 0 12px;
-}
-
-.content div {
+.content > div {
     padding: 0 12px 0 23px;
 }
 
 .content > div:nth-child(2) {
     border-top: solid cadetblue 1px;
+}
+
+.creating-content > div {
+    padding: 0 12px 0 12px !important;
 }
 
 

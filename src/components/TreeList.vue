@@ -1,44 +1,63 @@
 <template>
-    <el-table border
-              ref="table"
-              size="medium"
-              :height="'100%'"
-              :data="visibleTrees"
-              highlight-current-row
-              @current-change="onTreeSelect">
-        <el-table-column>
-            <template #header>
-                <el-input v-model="keyword"
-                          clearable
-                          size="medium"
-                          placeholder="输入关键字搜索"
-                          prefix-icon="el-icon-search"/>
-            </template>
-            <template #default="{row:tree}">
-                <div> {{ tree.name }}</div>
-            </template>
-        </el-table-column>
-    </el-table>
+    <div style="height: 100%;width: 100%" @contextmenu="onContextMenu">
+        <el-table border
+                  ref="table"
+                  size="medium"
+                  :height="'100%'"
+                  :data="visibleTrees"
+                  highlight-current-row
+                  @current-change="selectTree"
+                  @row-contextmenu="(r,c,e)=>onContextMenu(e,r)">
+            <el-table-column>
+                <template #header>
+                    <el-input v-model="keyword"
+                              clearable
+                              size="medium"
+                              placeholder="输入关键字搜索"
+                              prefix-icon="el-icon-search"/>
+                </template>
+                <template #default="{row:tree}">
+                    <div> {{ tree.name }}</div>
+                </template>
+            </el-table-column>
+        </el-table>
+        <context-menu ref="menu" :items="menuItems"/>
+    </div>
 </template>
 
 <script>
 import {ipcRenderer} from 'electron'
+import ContextMenu from './ContextMenu'
 
 export default {
     name: "TreeList",
+    components: {ContextMenu},
+    props: {
+        newTree: Object
+    },
     data() {
         return {
             allTrees: null,
             visibleTrees: null,
             selectedTree: null,
-            keyword: ""
+            maxTreeId: 0,
+            keyword: "",
+            menuItems: [{title: '创建行为树', handler: this.createTree}]
         }
     },
     async created() {
         this.allTrees = await ipcRenderer.invoke("load-trees");
+        for (const tree of this.allTrees) {
+            this.maxTreeId = Math.max(this.maxTreeId, tree.id);
+        }
+
         this.visibleTrees = this.allTrees;
-        this.$refs.table.setCurrentRow(this.visibleTrees[0]);
-        this.onTreeSelect(this.visibleTrees[0]);
+        if (this.visibleTrees.length) {
+            this.$refs.table.setCurrentRow(this.visibleTrees[0]);
+        }
+
+        this.$events.$on("delete-tree", this.deleteTree);
+
     },
     watch: {
         keyword(value) {
@@ -48,13 +67,13 @@ export default {
         }
     },
     methods: {
-        onTreeSelect(tree) {
+        selectTree(tree) {
             this.selectedTree = tree;
-            if (!tree.root.tree) {
+            if (tree && !tree.root.tree) {
                 //第一次选中
                 this.initTree(tree)
             }
-            this.$emit("tree-select", tree);
+            this.$emit("select-tree", tree);
         },
         initTree(tree) {
             tree.root.tree = tree;
@@ -80,6 +99,26 @@ export default {
             init(tree.root);
 
             this.$events.$emit("init-tree", tree);
+        },
+        onContextMenu(event, tree) {
+            console.log("tree:" + tree);
+            event.stopPropagation();
+            this.$refs.menu.show(event.clientX, event.clientY);
+        },
+        createTree() {
+            let tree = JSON.parse(JSON.stringify(this.newTree));
+            tree.id = ++this.maxTreeId;
+            tree.name = tree.name + this.maxTreeId;
+
+            this.allTrees.push(tree);
+            this.$refs.table.setCurrentRow(tree);
+        },
+        deleteTree(tree) {
+            let index = this.allTrees.indexOf(tree);
+            this.allTrees.splice(index, 1);
+            if (this.visibleTrees.length) {
+                this.$refs.table.setCurrentRow(this.visibleTrees[0]);
+            }
         }
     }
 }

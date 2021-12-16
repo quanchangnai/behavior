@@ -18,7 +18,7 @@ export default {
             type: Number,
             default: 0
         },
-        initDragging: {
+        ready: {
             type: Boolean,
             default: false
         },
@@ -28,7 +28,7 @@ export default {
         return {
             left: this.x,
             top: this.y,
-            dragging: false
+            state: -1//-1:没有被拖拽,0:鼠标按下准备拖拽,1:正在被拖拽
         }
     },
     watch: {
@@ -40,34 +40,43 @@ export default {
         }
     },
     mounted() {
-        if (this.initDragging) {
+        if (this.ready) {
             this.onMouseDown();
         }
     },
     methods: {
         onMouseDown() {
-            this.dragging = true;
+            this.state = 0;
             window.addEventListener("mousemove", this.onMouseMove);
             window.addEventListener("mouseup", this.onMouseUp, {once: true});
-            this.$emit("drag-start", {x: this.left, y: this.top, payload: this.payload});
         },
         onMouseMove(event) {
-            if (!this.dragging) {
-                return
+            if (this.state < 0) {
+                return;
             }
+            if (this.state === 0) {
+                this.state = 1;
+                this.$emit("drag-start", {x: this.left, y: this.top, payload: this.payload});
+            }
+
             //devicePixelRatio:屏幕缩放比例
             this.left = this.left + event.movementX / devicePixelRatio;
             this.top = this.top + event.movementY / devicePixelRatio;
             this.$emit("dragging", {x: this.left, y: this.top, payload: this.payload});
         },
         onMouseUp() {
-            if (!this.dragging) {
-                return
+            if (this.state < 0) {
+                return;
             }
 
-            this.dragging = false;
-            window.removeEventListener("mousemove", this.onMouseMove);
-            this.$emit("drag-end", {x: this.left, y: this.top, payload: this.payload});
+            try {
+                window.removeEventListener("mousemove", this.onMouseMove);
+                if (this.state > 0) {
+                    this.$emit("drag-end", {x: this.left, y: this.top, payload: this.payload});
+                }
+            } finally {
+                this.state = -1;
+            }
         }
     }
 }

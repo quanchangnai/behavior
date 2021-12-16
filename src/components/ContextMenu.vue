@@ -37,6 +37,9 @@ export default {
     },
     methods: {
         show(x, y) {
+            if (!this.items.length) {
+                return;
+            }
             this.visible = true;
             this.x = x;
             this.y = y;
@@ -54,6 +57,7 @@ export default {
             window.removeEventListener("mousedown", this.tryHide);
             window.removeEventListener("resize", this.hide);
             window.removeEventListener("scroll", this.hide);
+            this.$emit("hide");
         },
         onItemClick(item) {
             this.hide();
@@ -74,7 +78,8 @@ export default {
     line-height: 25px;
     user-select: none;
     cursor: pointer;
-    background-color: #bcdaf8;
+    border: solid #e9e9eb 1px;
+    background-color: #f4f4f5;
 }
 
 .context-menu-item {
@@ -82,6 +87,6 @@ export default {
 }
 
 .context-menu-item:hover {
-    background-color: #72b3f5;
+    background-color: #e9e9eb;
 }
 </style>

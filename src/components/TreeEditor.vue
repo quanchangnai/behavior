@@ -1,7 +1,9 @@
 <template>
-    <div id="container">
+    <div id="container" v-loading.fullscreen="config===null">
         <div id="left">
-            <tree-list @tree-select="onTreeSelect"/>
+            <tree-list v-if="config"
+                       :newTree="config.newTree"
+                       @select-tree="onSelectTree"/>
         </div>
         <div id="center">
             <draggable id="board"
@@ -33,6 +35,7 @@
                    :creating="true"
                    @dragging="onNodeDragging"
                    @drag-end="onNodeDragEnd"/>
+        <context-menu ref="menu" :items="menuItems"/>
     </div>
 </template>
 
@@ -41,6 +44,8 @@ import Draggable from "./Draggable";
 import TreeList from "./TreeList";
 import TreeNode from "./TreeNode";
 import TemplateList from "./TemplateList";
+import ContextMenu from "./ContextMenu";
+
 import utils from "../utils";
 import {ipcRenderer} from 'electron'
 
@@ -50,7 +55,16 @@ const boardEdgeSpace = 100;//画板边缘空间
 
 export default {
     name: "TreeEditor",
-    components: {Draggable, TreeNode, TreeList, TemplateList},
+    components: {Draggable, TreeNode, TreeList, TemplateList, ContextMenu},
+    data() {
+        return {
+            config: null,//编辑器配置
+            tree: null,//当前编辑的行为树
+            creatingNode: null,//正在新建的节点
+            boardX: 0,
+            boardY: 0
+        }
+    },
     async created() {
         let config = await ipcRenderer.invoke("load-config");
         for (let template of config.templates) {
@@ -63,16 +77,22 @@ export default {
     destroyed() {
         window.removeEventListener("resize", this.drawTree);
     },
-    data() {
-        return {
-            config: null,//编辑器配置
-            tree: null,//当前编辑的行为树
-            creatingNode: null,//正在新建的节点
-            boardX: 0,
-            boardY: 0,
-        }
-    },
     computed: {
+        menuItems() {
+            let items = [];
+            if (!this.tree) {
+                return items;
+            }
+            items.push({title: this.tree.detailed ? '收起全部节点' : '展开全部节点', handler: this.detailTree});
+            items.push({title: '展开全部子树', handler: this.collapseTree});
+            items.push({title: '保存行为树', handler: this.saveTree});
+            items.push({
+                title: '删除行为树', handler: () => {
+                    this.$events.$emit("delete-tree", this.tree);
+                }
+            });
+            return items;
+        },
         nodes() {
             let result = [];
             if (!this.tree) {
@@ -95,7 +115,7 @@ export default {
         }
     },
     methods: {
-        onTreeSelect(tree) {
+        onSelectTree(tree) {
             this.tree = tree;
             this.drawTree();
         },
@@ -104,6 +124,11 @@ export default {
             await this.$nextTick();
 
             const draw = () => {
+                if (!this.tree) {
+                    this.drawLinkLines();
+                    return;
+                }
+
                 this.calcNodeBounds(this.tree.root);
 
                 const board = document.querySelector("#board");
@@ -380,9 +405,6 @@ export default {
                 this.boardY = 0;
             }
         },
-        onBoardContextMenu(event) {
-            console.log("onBoardContextMenu:" + event.currentTarget.id)
-        },
         async onBoardMouseUp() {
             if (this.creatingNode == null) {
                 return;
@@ -432,6 +454,34 @@ export default {
                 this.creatingNode = null;
                 this.drawLinkLines();
             }, {once: true});
+        },
+        onBoardContextMenu(event) {
+            console.log("onBoardContextMenu:" + event.currentTarget.id);
+            this.$refs.menu.show(event.clientX, event.clientY);
+        },
+        detailTree() {
+            this.$set(this.tree, "detailed", !this.tree.detailed);
+
+            let detail = node => {
+                node.detailed = this.tree.detailed;
+                for (let child of node.children) {
+                    detail(child);
+                }
+            };
+
+            detail(this.tree.root);
+            this.drawTree();
+        },
+        collapseTree() {
+            let collapse = node => {
+                node.collapsed = false;
+                for (let child of node.children) {
+                    collapse(child);
+                }
+            };
+
+            collapse(this.tree.root);
+            this.drawTree();
         }
     }
 }

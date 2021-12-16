@@ -6,6 +6,7 @@ import App from './App.vue'
 Vue.use(ElementUI);
 
 Vue.config.productionTip = false;
+// noinspection JSUnusedGlobalSymbols
 Vue.prototype.$events = new Vue();
 
 new Vue({

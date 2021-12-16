@@ -13,7 +13,7 @@
                           prefix-icon="el-icon-search"/>
             </template>
             <template #default="{row:template}">
-                <div class="template" @mousedown="event=>onTemplateSelect(event,template)"> {{ template.name }}</div>
+                <div class="template" @mousedown.left="event=>onTemplateSelect(event,template)"> {{ template.name }}</div>
             </template>
         </el-table-column>
     </el-table>
