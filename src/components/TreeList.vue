@@ -64,7 +64,11 @@ export default {
                 tree.maxNodeId = Math.max(tree.maxNodeId, node.id);
                 this.$set(node, "x", 0);
                 this.$set(node, "y", 0);
+                this.$set(node, "z", 1);
                 this.$set(node, "detailed", false);
+                if (!node.params) {
+                    this.$set(node, "params", []);
+                }
                 if (!node.children) {
                     this.$set(node, "children", []);
                 }

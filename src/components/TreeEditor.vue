@@ -52,7 +52,12 @@ export default {
     name: "TreeEditor",
     components: {Draggable, TreeNode, TreeList, TemplateList},
     async created() {
-        this.config = await ipcRenderer.invoke("load-config");
+        let config = await ipcRenderer.invoke("load-config");
+        for (let template of config.templates) {
+            template.type = config.templateTypes.find(t => t.id === template.type);
+        }
+        this.config = config;
+
         window.addEventListener("resize", this.drawTree);
     },
     destroyed() {
@@ -337,6 +342,12 @@ export default {
         saveTree() {
             let build = node => {
                 let result = {id: node.id, name: node.name, tid: node.tid, collapsed: node.collapsed};
+                if (node.params.length) {
+                    result.params = [];
+                    for (let param of node.params) {
+                        result.params.push({name: param.name, value: param.value});
+                    }
+                }
                 if (node.children.length) {
                     result.children = [];
                     for (let child of node.children) {
@@ -386,19 +397,26 @@ export default {
             this.saveTree();
         },
         async onTemplateSelect(event) {
-            let container = document.querySelector("#container");
-            let x = event.x - utils.getClientX(container);
-            let y = event.y - utils.getClientY(container);
+            let template = event.template;
 
             this.creatingNode = {
                 id: ++this.tree.maxNodeId,
-                tid: event.template.id,
-                template: event.template,
-                x,
-                y,
+                tid: template.id,
+                template: template,
+                x: event.x - utils.getClientX("#container"),
+                y: event.y - utils.getClientY("#container"),
+                z: 1,
                 collapsed: false,
+                detailed: false,
+                params: [],
                 children: []
             };
+
+            if (template.params) {
+                for (let param of template.params) {
+                    this.creatingNode.params.push({name: param.name, value: param.value});
+                }
+            }
 
             await this.$nextTick();
 

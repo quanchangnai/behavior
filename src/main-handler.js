@@ -27,13 +27,24 @@ ipcMain.handle("load-config", async () => {
         {id: 4, name: "选择节点", type: 3},
         {id: 5, name: "装饰节点1", type: 4},
         {id: 6, name: "装饰节点2", type: 4},
-        {id: 7, name: "装饰节点1", type: 5},
+        {id: 7, name: "动作节点1", type: 5},
         {id: 8, name: "动作节点2", type: 5},
         {id: 9, name: "动作节点3", type: 5},
     ];
 
+    templates[6].params = [
+        {name: 'p1', label: '参数1', value: 1},
+        {name: 'p2', label: '参数2', value: ''},
+        {name: 'p3', label: '参数3', value: true},
+    ];
+
+    templates[7].params = [
+        {name: 'p1', label: '参数1', value: 1, options: [{label: '选项1', value: 1}, {label: '选项2', value: 2}]},
+        {name: 'p2', label: '参数2', value: 'aaa', options: [{label: '选项1', value: 'aaa'}, {label: '选项2', value: 'bbb'}]}
+    ];
+
     //新建行为树时自动创建的样例
-    let example = {
+    let newTree = {
         id: 1,
         name: "新建行为树",
         root: {
@@ -45,13 +56,7 @@ ipcMain.handle("load-config", async () => {
         }
     };
 
-    let config = {templateTypes, templates, example};
-
-    for (let template of config.templates) {
-        template.type = templateTypes.find(t => t.id === template.type);
-    }
-
-    return config;
+    return {templateTypes, templates, newTree};
 });
 
 ipcMain.handle("load-trees", async () => {
@@ -64,7 +69,7 @@ ipcMain.handle("load-trees", async () => {
                 children: [
                     {id: 2, name: "状态1", tid: 2, collapsed: false},
                     {
-                        id: 3, tid: 3, collapsed: false,
+                        id: 3, tid: 2, collapsed: false,
                         children: [
                             {
                                 id: 5, name: "", tid: 4, collapsed: false,

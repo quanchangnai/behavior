@@ -2,10 +2,11 @@
     <draggable :x="node.x"
                :y="node.y"
                :init-dragging="creating"
-               :style="{'pointer-events':creating?'none':'auto'}"
+               :style="style"
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
+               @dblclick.native="onDetail"
                @contextmenu.native.stop="onContextMenu">
         <template>
             <div v-if="creating" ref="content" class="creating-content content">
@@ -13,32 +14,33 @@
             </div>
             <div v-else ref="content" class="content">
                 <div>
-                    {{ node.template.name }}<span v-if="node.name"> : {{ node.name }}</span> - {{ node.id }}
+                    {{ node.template.name }}<span v-if="!node.detailed && node.name"> : {{ node.name }}</span>
                 </div>
                 <div v-if="node.detailed">
-                    <el-form ref="form"
-                             size="mini"
-                             label-width="70px"
-                             label-position="left">
-                        <el-form-item label="活动名称">
-                            <el-input></el-input>
+                    <el-form size="mini"
+                             label-width="auto"
+                             label-position="left"
+                             @mousedown.native.stop
+                             @dblclick.native.stop>
+                        <el-form-item label="节点名称">
+                            <el-input v-model="node.name"/>
                         </el-form-item>
-                        <el-form-item label="活动区域">
-                            <el-select placeholder="请选择活动区域">
-                                <el-option label="区域一" value="shanghai"></el-option>
-                                <el-option label="区域二" value="beijing"></el-option>
-                                <el-option label="区域三" value="beijing"></el-option>
-                            </el-select>
-                        </el-form-item>
-                        <el-form-item label="特殊资源">
-                            <el-radio-group>
-                                <el-radio label="是"></el-radio>
-                                <el-radio label="否 "></el-radio>
+                        <el-form-item v-for="(templateParam,i) in  node.template.params"
+                                      :label="templateParam.label?templateParam.label:templateParam.name"
+                                      :key="'param'+i">
+                            <el-radio-group v-if="typeof templateParam.value==='boolean'"
+                                            v-model="node.params[i].value">
+                                <el-radio :label="true">是</el-radio>
+                                <el-radio :label="false">否</el-radio>
                             </el-radio-group>
-                        </el-form-item>
-                        <el-form-item>
-                            <el-button type="primary">提交</el-button>
-                            <el-button type="info">重置</el-button>
+                            <el-select v-else-if="templateParam.options&&templateParam.options.length"
+                                       v-model="node.params[i].value">
+                                <el-option v-for="(option,j) in templateParam.options"
+                                           :key="'param'+i+'-'+j"
+                                           :label="option.label"
+                                           :value="option.value"/>
+                            </el-select>
+                            <el-input v-else v-model="node.params[i].value"/>
                         </el-form-item>
                     </el-form>
                 </div>
@@ -91,6 +93,9 @@ export default {
                 items.push({title: '删除节点', handler: this.onDelete});
             }
             return items;
+        },
+        style() {
+            return {'pointer-events': this.creating ? 'none' : 'auto', 'z-index': this.node.z};
         }
     },
     methods: {
@@ -108,19 +113,26 @@ export default {
             const move = node => {
                 node.x += deltaX;
                 node.y += deltaY;
-                if (node.children) {
-                    for (let child of node.children) {
-                        move(child);
-                    }
+                node.z = 100;
+                for (let child of node.children) {
+                    move(child);
                 }
             };
-
             move(this.node);
 
             this.$emit("dragging", this.node);
         },
         onDragEnd() {
             this.node.dragging = false;
+
+            const reset = node => {
+                node.z = 1;
+                for (let child of node.children) {
+                    reset(child);
+                }
+            };
+            reset(this.node);
+
             this.$emit("drag-end", this.node);
         },
         onDetail() {
@@ -129,15 +141,15 @@ export default {
         },
         onDetailAll() {
             this.node.tree.detailed = !this.node.tree.detailed;
+
             let detail = node => {
                 node.detailed = this.node.tree.detailed;
-                if (node.children) {
-                    for (let child of node.children) {
-                        detail(child);
-                    }
+                for (let child of node.children) {
+                    detail(child);
                 }
             };
             detail(this.node);
+
             this.$emit("detail");
         },
         onCollapse() {
@@ -162,7 +174,6 @@ export default {
     line-height: 30px;
     border: 1px solid #98a5e9;
     border-radius: 5px;
-    z-index: 10;
     font-size: 14px;
 }
 
@@ -201,19 +212,26 @@ export default {
     cursor: pointer;
 }
 
+/*noinspection CssUnusedSymbol*/
 .el-form {
-    padding: 5px 10px 10px 0;
+    cursor: default;
+    margin: 5px 10px 7px 0;
 }
 
+/*noinspection CssUnusedSymbol*/
 .el-form-item {
-    padding: 3px 0 !important;
+    padding: 0 !important;
     margin-bottom: 0;
-    /*border: solid red 1px;*/
 }
 
+/*noinspection CssUnusedSymbol*/
 .el-input, .el-select, .el-radio-group {
     padding: 0 !important;
-    width: 160px;
+    width: 120px;
+}
+
+.el-input >>> input {
+    height: 24px;
 }
 
 </style>
