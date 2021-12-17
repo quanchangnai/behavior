@@ -82,8 +82,9 @@ export default {
             tree.root.tree = tree;
             tree.maxNodeId = 0;
 
-            utils.visitNodes(tree.root, node => {
+            utils.visitNodes(tree.root, (node, parent) => {
                 tree.maxNodeId = Math.max(tree.maxNodeId, node.id);
+                node.parent = parent;
                 this.$set(node, "x", 0);
                 this.$set(node, "y", 0);
                 this.$set(node, "z", 1);

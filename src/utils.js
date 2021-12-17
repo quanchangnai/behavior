@@ -39,16 +39,16 @@ export default {
     },
 
     /**
-     * 深度优先遍历行为树
-     * @param node {Object} 根节点
+     * 深度优先遍历行为树,访问当前节点和所有子孙节点
+     * @param node {Object} 当前节点
      * @param visit {function} 访问函数
      */
-    visitNodes(node, visit) {
-        if (visit(node) === false) {
+    visitNodes(node, visit, parent = null) {
+        if (visit(node, parent) === false) {
             return;
         }
         for (let child of node.children) {
-            this.visitNodes(child, visit);
+            this.visitNodes(child, visit, node);
         }
     },
 

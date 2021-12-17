@@ -99,17 +99,12 @@ export default {
                 return result;
             }
 
-            let build = node => {
+            utils.visitNodes(this.tree.root, node => {
                 result.push(node);
-                if (!node.collapsed) {
-                    for (let child of node.children) {
-                        child.parent = node;
-                        build(child);
-                    }
+                if (node.collapsed) {
+                    return false;
                 }
-            };
-
-            build(this.tree.root);
+            });
 
             return result;
         }
