@@ -1,4 +1,5 @@
 import {ipcMain} from 'electron'
+import defaultConfig from "@/config";
 import fs from 'fs'
 import path from 'path'
 
@@ -10,115 +11,80 @@ ipcMain.handle("dev-tools", event => {
     }
 });
 
+/**
+ * 基础配置文件，里面包含有行为树模板配置文件名和工作空间目录等
+ */
+let baseConfig;
+
+/**
+ * 工作空间路径
+ */
+let workPath;
+
+
+/**
+ *读取基础配置文件
+ */
+async function readBaseConfig() {
+    let baseConfigJson;
+    let baseConfigFile = path.resolve(".", "behavior.json");
+
+    if (!fs.existsSync(baseConfigFile)) {
+        baseConfig = {configFile: "_config.json", workPath: "_tree"};
+        baseConfigJson = JSON.stringify(baseConfig, null, 4);
+        await fs.promises.writeFile(baseConfigFile, baseConfigJson);
+    } else {
+        baseConfigJson = (await fs.promises.readFile(baseConfigFile)).toString();
+        baseConfig = JSON.parse(baseConfigJson);
+    }
+
+    workPath = path.resolve(".", baseConfig.workPath);
+    if (!fs.existsSync(workPath)) {
+        await fs.promises.mkdir(workPath);
+    }
+}
 
 ipcMain.handle("load-config", async () => {
-    let templateTypes = [
-        {id: 1, name: "根节点", childrenTypes: [2], childrenNum: -1},
-        {id: 2, name: "状态节点", childrenTypes: [3, 4, 5], childrenNum: -1},
-        {id: 3, name: "组合节点", childrenTypes: [3, 4, 5], childrenNum: -1},
-        {id: 4, name: "装饰节点", childrenTypes: [3, 4, 5], childrenNum: 1},
-        {id: 5, name: "叶子节点", childrenTypes: [], childrenNum: 0},
-    ];
+    await readBaseConfig();
 
-    let templates = [
-        {id: 1, name: "根节点", type: 1},
-        {id: 2, name: "状态节点", type: 2},
-        {id: 3, name: "顺序节点", type: 3},
-        {id: 4, name: "选择节点", type: 3},
-        {id: 5, name: "装饰节点1", type: 4},
-        {id: 6, name: "装饰节点2", type: 4},
-        {id: 7, name: "动作节点1", type: 5},
-        {id: 8, name: "动作节点2", type: 5},
-        {id: 9, name: "动作节点3", type: 5},
-    ];
+    let configFile = path.resolve(".", "_config.json");
+    if (!fs.existsSync(configFile)) {
+        await fs.promises.writeFile(configFile, JSON.stringify(defaultConfig, null, 4));
+    }
 
-    templates[6].params = [
-        {name: 'p1', label: '参数1', value: 1},
-        {name: 'p2', label: '参数2', value: ''},
-        {name: 'p3', label: '参数3', value: true},
-    ];
-
-    templates[7].params = [
-        {name: 'p1', label: '参数1', value: 1, options: [{label: '选项1', value: 1}, {label: '选项2', value: 2}]},
-        {name: 'p2', label: '参数2', value: 'aaa', options: [{label: '选项1', value: 'aaa'}, {label: '选项2', value: 'bbb'}]}
-    ];
-
-    //新建行为树时自动创建的样例
-    let newTree = {
-        id: 1,
-        name: "新建行为树",
-        root: {
-            id: 1, name: "",
-            tid: 1,
-            children: [
-                {id: 2, name: "", tid: 2}
-            ]
-        }
-    };
-
-    return {templateTypes, templates, newTree};
+    configFile = path.resolve(".", baseConfig.configFile);
+    let configJson = (await fs.promises.readFile(configFile)).toString();
+    return JSON.parse(configJson);
 });
 
 ipcMain.handle("load-trees", async () => {
-    return [
-        {
-            id: 1,
-            name: "测试1",
-            root: {
-                id: 1, name: "", tid: 1, collapsed: false,
-                children: [
-                    {id: 2, name: "状态1", tid: 2, collapsed: false},
-                    {
-                        id: 3, tid: 2, collapsed: false,
-                        children: [
-                            {
-                                id: 5, name: "", tid: 4, collapsed: false,
-                                children: [
-                                    {
-                                        id: 6, tid: 3, collapsed: false,
-                                        children: [
-                                            {
-                                                id: 7, tid: 4, collapsed: false,
-                                                children: [
-                                                    {
-                                                        id: 8, tid: 3, collapsed: false,
-                                                        children: [
-                                                            {id: 9, tid: 5, collapsed: false},
-                                                            {id: 10, tid: 6, collapsed: false},
-                                                        ]
-                                                    },
-                                                ]
-                                            },
-                                        ]
-                                    },
-                                ]
-                            },
-                        ]
-                    },
-                    {id: 4, name: "状态2", tid: 2, collapsed: false},
-                ]
-            }
-        },
-        {
-            id: 2,
-            name: "测试2",
-            root: {
-                id: 1, name: "", tid: 1, collapsed: false,
-                children: [
-                    {id: 2, name: "", tid: 2, collapsed: false},
-                ]
-            }
+    let files = await fs.promises.readdir(workPath);
+    let trees = [];
+
+    for (let file of files) {
+        let fileName = path.resolve(workPath, file);
+        if (!fileName.endsWith(".json")) {
+            continue;
         }
-    ];
+        let fileStats = await fs.promises.stat(fileName);
+        if (!fileStats.isFile()) {
+            continue;
+        }
+        let fileJson = (await fs.promises.readFile(fileName)).toString();
+        trees.push(JSON.parse(fileJson));
+    }
+
+    return trees;
 });
 
 
 ipcMain.handle("save-tree", async (event, tree) => {
-    console.log("save-tree:" + fs.constants.F_OK);
-    console.log(JSON.stringify(tree, null, 4));
-    let workPath = path.resolve("./");
+    let treeJson = JSON.stringify(tree, null, 4);
+    let treeFile = path.resolve(workPath, tree.id + ".json");
+    await fs.promises.writeFile(treeFile, treeJson, {encoding: "utf-8"});
+});
 
-    let result = {__dirname, __filename, workPath};
-    console.log(JSON.stringify(result));
-    return result
+ipcMain.handle("delete-tree", async (event, treeId) => {
+    let treeFile = path.resolve(workPath, treeId + ".json");
+    await fs.promises.unlink(treeFile);
 });

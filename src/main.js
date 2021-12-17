@@ -25,7 +25,6 @@ async function createWindow() {
             contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION,
         }
     });
-
     win.maximize();
     win.show();
     if (process.env.WEBPACK_DEV_SERVER_URL) {

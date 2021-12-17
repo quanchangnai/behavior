@@ -13,13 +13,15 @@
                           prefix-icon="el-icon-search"/>
             </template>
             <template #default="{row:template}">
-                <div class="template" @mousedown.left="event=>onTemplateSelect(event,template)"> {{ template.name }}</div>
+                <div class="template" @mousedown.left="event=>selectTemplate(event,template)"> {{ template.name }}</div>
             </template>
         </el-table-column>
     </el-table>
 </template>
 
 <script>
+
+import utils from "@/utils";
 
 export default {
     name: "TemplateList",
@@ -43,6 +45,9 @@ export default {
 
         this.$events.$on("init-tree", this.onInitTree);
     },
+    destroyed() {
+        this.$events.$off("init-tree", this.onInitTree);
+    },
     watch: {
         keyword(value) {
             this.visibleTemplates = this.allTemplates.filter(template => {
@@ -51,18 +56,13 @@ export default {
         }
     },
     methods: {
-        onTemplateSelect(event, template) {
-            this.$emit("template-select", {x: event.clientX, y: event.clientY, template});
+        selectTemplate(event, template) {
+            this.$emit("select-template", {x: event.clientX, y: event.clientY, template});
         },
         onInitTree(tree) {
-            let init = node => {
+            utils.visitNodes(tree.root, node => {
                 this.$set(node, "template", this.mappedTemplates.get(node.tid));
-                for (let child of node.children) {
-                    init(child);
-                }
-            };
-
-            init(tree.root);
+            });
         }
     }
 }

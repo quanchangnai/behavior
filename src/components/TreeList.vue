@@ -28,12 +28,13 @@
 <script>
 import {ipcRenderer} from 'electron'
 import ContextMenu from './ContextMenu'
+import utils from "@/utils";
 
 export default {
     name: "TreeList",
     components: {ContextMenu},
     props: {
-        newTree: Object
+        defaultTree: Object
     },
     data() {
         return {
@@ -42,7 +43,7 @@ export default {
             selectedTree: null,
             maxTreeId: 0,
             keyword: "",
-            menuItems: [{title: '创建行为树', handler: this.createTree}]
+            menuItems: []
         }
     },
     async created() {
@@ -57,7 +58,9 @@ export default {
         }
 
         this.$events.$on("delete-tree", this.deleteTree);
-
+    },
+    destroyed() {
+        this.$events.$off("delete-tree", this.deleteTree);
     },
     watch: {
         keyword(value) {
@@ -79,7 +82,7 @@ export default {
             tree.root.tree = tree;
             tree.maxNodeId = 0;
 
-            let init = node => {
+            utils.visitNodes(tree.root, node => {
                 tree.maxNodeId = Math.max(tree.maxNodeId, node.id);
                 this.$set(node, "x", 0);
                 this.$set(node, "y", 0);
@@ -91,34 +94,39 @@ export default {
                 if (!node.children) {
                     this.$set(node, "children", []);
                 }
-                for (let child of node.children) {
-                    init(child);
-                }
-            };
-
-            init(tree.root);
+            });
 
             this.$events.$emit("init-tree", tree);
         },
         onContextMenu(event, tree) {
-            console.log("tree:" + tree);
             event.stopPropagation();
+
+            this.menuItems.splice(0, this.menuItems.length);
+            this.menuItems.push({title: '创建行为树', handler: this.createTree});
+            if (tree != null) {
+                this.menuItems.push({title: '删除行为树', handler: () => this.deleteTree(tree)});
+            }
+
             this.$refs.menu.show(event.clientX, event.clientY);
         },
         createTree() {
-            let tree = JSON.parse(JSON.stringify(this.newTree));
+            let tree = JSON.parse(JSON.stringify(this.defaultTree));
             tree.id = ++this.maxTreeId;
             tree.name = tree.name + this.maxTreeId;
 
             this.allTrees.push(tree);
             this.$refs.table.setCurrentRow(tree);
+
+            utils.saveTree(tree);
         },
         deleteTree(tree) {
             let index = this.allTrees.indexOf(tree);
             this.allTrees.splice(index, 1);
-            if (this.visibleTrees.length) {
+            if (this.selectedTree === tree && this.visibleTrees.length) {
                 this.$refs.table.setCurrentRow(this.visibleTrees[0]);
             }
+
+            ipcRenderer.invoke("delete-tree", tree.id);
         }
     }
 }

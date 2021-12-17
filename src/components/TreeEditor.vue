@@ -2,7 +2,7 @@
     <div id="container" v-loading.fullscreen="config===null">
         <div id="left">
             <tree-list v-if="config"
-                       :newTree="config.newTree"
+                       :defaultTree="config.defaultTree"
                        @select-tree="onSelectTree"/>
         </div>
         <div id="center">
@@ -27,7 +27,7 @@
         <div id="right">
             <template-list v-if="config"
                            :templates="config.templates"
-                           @template-select="onTemplateSelect"/>
+                           @select-template="onSelectTemplate"/>
         </div>
         <tree-node v-if="creatingNode!=null"
                    :ref="'node'+creatingNode.id"
@@ -85,7 +85,7 @@ export default {
             }
             items.push({title: this.tree.detailed ? '收起全部节点' : '展开全部节点', handler: this.detailTree});
             items.push({title: '展开全部子树', handler: this.collapseTree});
-            items.push({title: '保存行为树', handler: this.saveTree});
+            items.push({title: '保存行为树', handler: utils.saveTree(this.tree)});
             items.push({
                 title: '删除行为树', handler: () => {
                     this.$events.$emit("delete-tree", this.tree);
@@ -125,7 +125,7 @@ export default {
 
             const draw = () => {
                 if (!this.tree) {
-                    this.drawLinkLines();
+                    this.initCanvas();
                     return;
                 }
 
@@ -220,12 +220,16 @@ export default {
                 }
             }
         },
-        drawLinkLines() {
-            const canvas = document.querySelector("#canvas");
+        initCanvas() {
+            let canvas = document.querySelector("#canvas");
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
-            const context = canvas.getContext("2d");
+            let context = canvas.getContext("2d");
             context.clearRect(0, 0, canvas.width, canvas.height);
+            return context;
+        },
+        drawLinkLines() {
+            let context = this.initCanvas();
 
             const drawLine = (x1, y1, x2, y2) => {
                 let cpx1 = x1 + (x2 - x1) / 2;
@@ -280,10 +284,11 @@ export default {
         },
         async onNodeDragEnd() {
             await this.drawTree();
-            this.saveTree();
+            await utils.saveTree(this.tree)
         },
         onNodeDelete(node) {
-            node.parent.children.splice(node.parent.children.indexOf(node), 1);
+            let index = node.parent.children.indexOf(node);
+            node.parent.children.splice(index, 1);
             this.drawTree();
         },
         linkParentNode(node, parentNode) {
@@ -326,21 +331,24 @@ export default {
 
             //寻找最近的的节点作为父节点
             let parentNode = null;
-            let minDistance = -1;
+            let minDistance2 = -1;
 
-            const find = targetNode => {
+            utils.visitNodes(this.tree.root, targetNode => {
                 if (!targetNode || targetNode === node || targetNode.collapsed) {
-                    return;
+                    return false;
                 }
 
                 let canLink = true;
+
+                //目标节点限制子节点类型
                 let targetNodeType = targetNode.template.type;
                 if (targetNodeType.childrenTypes.indexOf(node.template.type.id) < 0) {
-                    //目标节点限制子节点类型
                     canLink = false;
                 }
-                if (targetNodeType.childrenNum >= 0 && targetNode.children.length >= targetNodeType.childrenNum) {
-                    //目标节点限制子节点数量
+                //目标节点限制子节点数量
+                if (targetNodeType.childrenNum >= 0
+                        && targetNode.children.length >= targetNodeType.childrenNum
+                        && targetNode.children.indexOf(node) < 0) {
                     canLink = false;
                 }
 
@@ -348,19 +356,13 @@ export default {
                     let x2 = deltaX + targetNode.x + targetNode.selfWidth - nodeSpaceX;
                     let y2 = deltaY + targetNode.y + (targetNode.selfHeight - nodeSpaceY) / 2;
 
-                    let distance = (x1 - x2) ** 2 + (y1 - y2) ** 2;
-                    if (minDistance < 0 || distance < minDistance) {
-                        minDistance = distance;
+                    let distance2 = (x1 - x2) ** 2 + (y1 - y2) ** 2;
+                    if (minDistance2 < 0 || distance2 < minDistance2) {
+                        minDistance2 = distance2;
                         parentNode = targetNode;
                     }
                 }
-
-                for (let child of targetNode.children) {
-                    find(child);
-                }
-            };
-
-            find(this.tree.root);
+            });
 
             return parentNode;
         },
@@ -416,9 +418,9 @@ export default {
             this.linkParentNode(creatingNode, creatingNode.parent);
 
             await this.drawTree();
-            this.saveTree();
+            await utils.saveTree(this.tree)
         },
-        async onTemplateSelect(event) {
+        async onSelectTemplate(event) {
             let template = event.template;
 
             this.creatingNode = {
@@ -456,31 +458,15 @@ export default {
             }, {once: true});
         },
         onBoardContextMenu(event) {
-            console.log("onBoardContextMenu:" + event.currentTarget.id);
             this.$refs.menu.show(event.clientX, event.clientY);
         },
         detailTree() {
             this.$set(this.tree, "detailed", !this.tree.detailed);
-
-            let detail = node => {
-                node.detailed = this.tree.detailed;
-                for (let child of node.children) {
-                    detail(child);
-                }
-            };
-
-            detail(this.tree.root);
+            utils.visitNodes(this.tree.root, node => node.detailed = this.tree.detailed);
             this.drawTree();
         },
         collapseTree() {
-            let collapse = node => {
-                node.collapsed = false;
-                for (let child of node.children) {
-                    collapse(child);
-                }
-            };
-
-            collapse(this.tree.root);
+            utils.visitNodes(this.tree.root, node => node.collapsed = false);
             this.drawTree();
         }
     }
@@ -490,13 +476,13 @@ export default {
 <style scoped>
 #left {
     position: absolute;
-    width: 250px;
+    width: 220px;
     height: 100%;
 }
 
 #right {
     position: absolute;
-    width: 250px;
+    width: 220px;
     height: 100%;
     right: 0;
     user-select: none;
@@ -504,8 +490,8 @@ export default {
 
 #center {
     position: absolute;
-    left: 250px;
-    right: 250px;
+    left: 220px;
+    right: 220px;
     height: 100%;
     box-sizing: border-box;
     overflow: hidden;

@@ -62,6 +62,7 @@
 <script>
 import Draggable from './Draggable'
 import ContextMenu from './ContextMenu'
+import utils from "@/utils";
 
 export default {
     name: "TreeNode",
@@ -104,29 +105,17 @@ export default {
             const deltaX = event.x - this.node.x;
             const deltaY = event.y - this.node.y;
 
-            const move = node => {
+            utils.visitNodes(this.node, node => {
                 node.x += deltaX;
                 node.y += deltaY;
                 node.z = 100;
-                for (let child of node.children) {
-                    move(child);
-                }
-            };
-            move(this.node);
+            });
 
             this.$emit("dragging", this.node);
         },
         onDragEnd() {
             this.node.dragging = false;
-
-            const reset = node => {
-                node.z = 1;
-                for (let child of node.children) {
-                    reset(child);
-                }
-            };
-            reset(this.node);
-
+            utils.visitNodes(this.node, node => node.z = 1);
             this.$emit("drag-end", this.node);
         },
         detail() {

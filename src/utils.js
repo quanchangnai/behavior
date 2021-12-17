@@ -1,3 +1,5 @@
+import {ipcRenderer} from "electron";
+
 export default {
     /**
      *获取元素ClientX
@@ -35,4 +37,46 @@ export default {
             return element.offsetTop;
         }
     },
+
+    /**
+     * 深度优先遍历行为树
+     * @param node {Object} 根节点
+     * @param visit {function} 访问函数
+     */
+    visitNodes(node, visit) {
+        if (visit(node) === false) {
+            return;
+        }
+        for (let child of node.children) {
+            this.visitNodes(child, visit);
+        }
+    },
+
+    /**
+     * 保存行为树
+     * @param tree
+     * @returns {Promise<void>}
+     */
+    async saveTree(tree) {
+        let build = node => {
+            let result = {id: node.id, name: node.name, tid: node.tid, collapsed: node.collapsed};
+            if (node.params.length) {
+                result.params = [];
+                for (let param of node.params) {
+                    result.params.push({name: param.name, value: param.value});
+                }
+            }
+            if (node.children.length) {
+                result.children = [];
+                for (let child of node.children) {
+                    result.children.push(build(child))
+                }
+            }
+            return result;
+        };
+
+        let builtTree = {id: tree.id, name: tree.name, root: build(tree.root)};
+
+        await ipcRenderer.invoke("save-tree", builtTree);
+    }
 }
