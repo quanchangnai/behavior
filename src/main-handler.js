@@ -1,5 +1,5 @@
-import {ipcMain} from 'electron'
-import defaultConfig from "@/config";
+import {ipcMain, shell} from 'electron'
+import defaultConfig from "./config";
 import fs from 'fs'
 import path from 'path'
 
@@ -11,48 +11,45 @@ ipcMain.handle("dev-tools", event => {
     }
 });
 
-/**
- * 基础配置文件，里面包含有行为树模板配置文件名和工作空间目录等
- */
-let baseConfig;
 
+/**
+ * 行为树模板配置文件名
+ */
+let configFile;
 /**
  * 工作空间路径
  */
 let workPath;
 
 
-/**
- *读取基础配置文件
- */
-async function readBaseConfig() {
-    let baseConfigJson;
-    let baseConfigFile = path.resolve(".", "behavior.json");
+async function loadBehaviorJson() {
+    let params;
+    let file = path.resolve(".", "behavior.json");
 
-    if (!fs.existsSync(baseConfigFile)) {
-        baseConfig = {configFile: "_config.json", workPath: "_tree"};
-        baseConfigJson = JSON.stringify(baseConfig, null, 4);
-        await fs.promises.writeFile(baseConfigFile, baseConfigJson);
+    if (!fs.existsSync(file)) {
+        params = {configFile: "behavior.config.json", workPath: "behavior_trees"};
+        let json = JSON.stringify(params, null, 4);
+        await fs.promises.writeFile(file, json);
     } else {
-        baseConfigJson = (await fs.promises.readFile(baseConfigFile)).toString();
-        baseConfig = JSON.parse(baseConfigJson);
+        let json = (await fs.promises.readFile(file)).toString();
+        params = JSON.parse(json);
     }
 
-    workPath = path.resolve(".", baseConfig.workPath);
+    configFile = path.resolve(".", params.configFile);
+    workPath = path.resolve(".", params.workPath);
+
     if (!fs.existsSync(workPath)) {
         await fs.promises.mkdir(workPath);
     }
 }
 
 ipcMain.handle("load-config", async () => {
-    await readBaseConfig();
+    await loadBehaviorJson();
 
-    let configFile = path.resolve(".", "_config.json");
     if (!fs.existsSync(configFile)) {
         await fs.promises.writeFile(configFile, JSON.stringify(defaultConfig, null, 4));
     }
 
-    configFile = path.resolve(".", baseConfig.configFile);
     let configJson = (await fs.promises.readFile(configFile)).toString();
     return JSON.parse(configJson);
 });
@@ -88,3 +85,9 @@ ipcMain.handle("delete-tree", async (event, treeId) => {
     let treeFile = path.resolve(workPath, treeId + ".json");
     await fs.promises.unlink(treeFile);
 });
+
+ipcMain.handle("open-work-path", async () => {
+    await shell.openPath(workPath);
+});
+
+

@@ -72,18 +72,19 @@ export default {
     methods: {
         selectTree(tree) {
             this.selectedTree = tree;
-            if (tree && !tree.root.tree) {
+            if (tree && !tree.maxNodeId !== undefined) {
                 //第一次选中
                 this.initTree(tree)
             }
             this.$emit("select-tree", tree);
         },
         initTree(tree) {
-            tree.root.tree = tree;
             tree.maxNodeId = 0;
+            this.$set(tree, "detailed", false);
 
             utils.visitNodes(tree.root, (node, parent) => {
                 tree.maxNodeId = Math.max(tree.maxNodeId, node.id);
+                this.$set(tree, "collapsed", tree.collapsed || node.collapsed);
                 node.parent = parent;
                 this.$set(node, "x", 0);
                 this.$set(node, "y", 0);
@@ -107,6 +108,7 @@ export default {
             if (tree != null) {
                 this.menuItems.push({title: '删除行为树', handler: () => this.deleteTree(tree)});
             }
+            this.menuItems.push({title: '打开工作目录', handler: () => ipcRenderer.invoke("open-work-path")});
 
             this.$refs.menu.show(event.clientX, event.clientY);
         },

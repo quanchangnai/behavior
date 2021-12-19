@@ -20,8 +20,8 @@ export default {
         }
     },
     /**
-     * 获取元素ClientY 元素或者选择器
-     * @param el {Element|String}
+     * 获取元素ClientY
+     * @param el {Element|String} 元素或者选择器
      * @returns {number}
      */
     getClientY(el) {
@@ -39,9 +39,10 @@ export default {
     },
 
     /**
-     * 深度优先遍历行为树,访问当前节点和所有子孙节点
+     * 访问节点及其所有子孙节点
      * @param node {Object} 当前节点
      * @param visit {function} 访问函数
+     * @param parent
      */
     visitNodes(node, visit, parent = null) {
         if (visit(node, parent) === false) {
@@ -75,8 +76,8 @@ export default {
             return result;
         };
 
-        let builtTree = {id: tree.id, name: tree.name, root: build(tree.root)};
+        let result = {id: tree.id, name: tree.name, root: build(tree.root)};
 
-        await ipcRenderer.invoke("save-tree", builtTree);
+        await ipcRenderer.invoke("save-tree", result);
     }
 }

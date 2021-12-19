@@ -30,18 +30,17 @@ export default {
     },
     data() {
         return {
-            allTemplates: null,
             visibleTemplates: null,
             mappedTemplates: new Map(),
-            keyword: ""
+            keyword: null
         }
     },
     async created() {
-        this.visibleTemplates = this.templates;
-
         for (const template of this.templates) {
             this.mappedTemplates.set(template.id, template);
         }
+
+        this.keyword = "";
 
         this.$events.$on("init-tree", this.onInitTree);
     },
@@ -50,8 +49,8 @@ export default {
     },
     watch: {
         keyword(value) {
-            this.visibleTemplates = this.allTemplates.filter(template => {
-                return template.name.includes(value);
+            this.visibleTemplates = this.templates.filter(template => {
+                return template.type.show && template.name.includes(value);
             });
         }
     },

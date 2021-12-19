@@ -1,4 +1,4 @@
-//行为树默认配置
+//行为树编辑器默认配置
 //行为树模板类型
 let templateTypes = [
     {id: 1, name: "根节点", childrenTypes: [2], childrenNum: -1},
@@ -11,14 +11,15 @@ let templateTypes = [
 //行为树模板
 let templates = [
     {id: 1, name: "根节点", type: 1},
-    {id: 2, name: "状态节点", type: 2},
-    {id: 3, name: "顺序节点", type: 3},
-    {id: 4, name: "选择节点", type: 3},
-    {id: 5, name: "装饰节点1", type: 4},
-    {id: 6, name: "装饰节点2", type: 4},
-    {id: 7, name: "动作节点1", type: 5},
-    {id: 8, name: "动作节点2", type: 5},
-    {id: 9, name: "动作节点3", type: 5},
+    {id: 2, name: "状态节点", type: 2, desc: "状态节点描述"},
+    {id: 3, name: "顺序节点", type: 3, desc: "顺序节点描述"},
+    {id: 4, name: "选择节点", type: 3, desc: "选择节点描述"},
+    {id: 5, name: "装饰节点1", type: 4, desc: "装饰节点1描述"},
+    {id: 6, name: "装饰节点2", type: 4, desc: "装饰节点2描述"},
+    {id: 7, name: "动作节点1", type: 5, desc: "动作节点1描述"},
+    {id: 8, name: "动作节点2", type: 5, desc: "动作节点2描述"},
+    {id: 9, name: "动作节点3", type: 5, desc: "动作节点3描述"},
+    {id: 10, name: "条件节点", type: 5, desc: "条件节点描述"},
 ];
 
 //行为树模板参数

@@ -24,6 +24,6 @@ pnpm-debug.log*
 
 #Electron-builder output
 /dist_electron
-/_tree/
-/_config.json
+/behavior.config.json
 /behavior.json
+/behavior_trees/

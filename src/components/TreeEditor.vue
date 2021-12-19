@@ -20,7 +20,7 @@
                            @dragging="onNodeDragging"
                            @drag-end="onNodeDragEnd"
                            @detail="drawTree"
-                           @collapse="drawTree"
+                           @collapse="onNodeCollapse"
                            @delete="onNodeDelete"/>
             </draggable>
         </div>
@@ -67,6 +67,13 @@ export default {
     },
     async created() {
         let config = await ipcRenderer.invoke("load-config");
+        for (let templateType of config.templateTypes) {
+            templateType.show = false;
+            //可以作为子节点的模板才显示在模板列表界面
+            if (config.templateTypes.find(t => t.childrenTypes.indexOf(templateType.id) >= 0)) {
+                templateType.show = true;
+            }
+        }
         for (let template of config.templates) {
             template.type = config.templateTypes.find(t => t.id === template.type);
         }
@@ -84,7 +91,10 @@ export default {
                 return items;
             }
             items.push({title: this.tree.detailed ? '收起全部节点' : '展开全部节点', handler: this.detailTree});
-            items.push({title: '展开全部子树', handler: this.collapseTree});
+            if (this.tree.collapsed) {
+                items.push({title: '展开全部子树', handler: this.collapseTree});
+            }
+
             items.push({title: '保存行为树', handler: utils.saveTree(this.tree)});
             items.push({
                 title: '删除行为树', handler: () => {
@@ -281,6 +291,10 @@ export default {
             await this.drawTree();
             await utils.saveTree(this.tree)
         },
+        onNodeCollapse(node) {
+            this.tree.collapsed = this.tree.collapsed || node.collapsed;
+            this.drawTree();
+        },
         onNodeDelete(node) {
             let index = node.parent.children.indexOf(node);
             node.parent.children.splice(index, 1);
@@ -342,8 +356,8 @@ export default {
                 }
                 //目标节点限制子节点数量
                 if (targetNodeType.childrenNum >= 0
-                        && targetNode.children.length >= targetNodeType.childrenNum
-                        && targetNode.children.indexOf(node) < 0) {
+                    && targetNode.children.length >= targetNodeType.childrenNum
+                    && targetNode.children.indexOf(node) < 0) {
                     canLink = false;
                 }
 
@@ -456,12 +470,17 @@ export default {
             this.$refs.menu.show(event.clientX, event.clientY);
         },
         detailTree() {
-            this.$set(this.tree, "detailed", !this.tree.detailed);
-            utils.visitNodes(this.tree.root, node => node.detailed = this.tree.detailed);
+            this.tree.detailed = !this.tree.detailed;
+            utils.visitNodes(this.tree.root, node => {
+                node.detailed = this.tree.detailed;
+            });
             this.drawTree();
         },
         collapseTree() {
-            utils.visitNodes(this.tree.root, node => node.collapsed = false);
+            this.tree.collapsed = false;
+            utils.visitNodes(this.tree.root, node => {
+                node.collapsed = false
+            });
             this.drawTree();
         }
     }

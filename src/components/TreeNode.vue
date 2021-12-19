@@ -10,8 +10,9 @@
                @contextmenu.native.stop="onContextMenu">
         <template>
             <div ref="content" class="content" :class="{'creating-content':creating}">
-                <div>
-                    {{ node.template.name }}<span v-if="!node.detailed && node.name"> : {{ node.name }}</span>
+                <div style="overflow:hidden;text-overflow: ellipsis;">
+                    {{ node.template.name }}
+                    <template v-if="!node.detailed && node.name"> : {{ node.name }}</template>
                 </div>
                 <div v-if="node.detailed">
                     <el-form size="mini"
@@ -124,7 +125,7 @@ export default {
         },
         collapse() {
             this.node.collapsed = !this.node.collapsed;
-            this.$emit("collapse");
+            this.$emit("collapse", this.node);
         },
         onDelete() {
             this.$emit("delete", this.node);
@@ -149,6 +150,9 @@ export default {
     border: 1px solid #98a5e9;
     border-radius: 5px;
     font-size: 14px;
+    white-space: nowrap;
+    max-width: 235px;
+
 }
 
 .content > div {
@@ -204,6 +208,7 @@ export default {
     width: 120px;
 }
 
+/*>>>:vue css深度选择器*/
 .el-input >>> input {
     height: 24px;
 }

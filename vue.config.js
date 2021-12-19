@@ -1,5 +1,4 @@
 module.exports = {
-    outputDir: "dist",
     filenameHashing: true,
     pluginOptions: {
         electronBuilder: {
@@ -7,7 +6,7 @@ module.exports = {
             mainProcessFile: 'src/main.js',
             rendererProcessFile: 'src/render.js',
             builderOptions: {
-                win: {target: "portable"}
+                win: {target: "dir"}
             }
         }
     }
