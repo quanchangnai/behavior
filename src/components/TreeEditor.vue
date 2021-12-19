@@ -95,7 +95,7 @@ export default {
                 items.push({title: '展开全部子树', handler: this.collapseTree});
             }
 
-            items.push({title: '保存行为树', handler: utils.saveTree(this.tree)});
+            items.push({title: '保存行为树', handler: () => utils.saveTree(this.tree)});
             items.push({
                 title: '删除行为树', handler: () => {
                     this.$events.$emit("delete-tree", this.tree);
@@ -109,11 +109,11 @@ export default {
                 return result;
             }
 
+            utils.saveTree(this.tree);
+
             utils.visitNodes(this.tree.root, node => {
                 result.push(node);
-                if (node.collapsed) {
-                    return false;
-                }
+                return !node.collapsed;
             });
 
             return result;
@@ -289,7 +289,6 @@ export default {
         },
         async onNodeDragEnd() {
             await this.drawTree();
-            await utils.saveTree(this.tree)
         },
         onNodeCollapse(node) {
             this.tree.collapsed = this.tree.collapsed || node.collapsed;
@@ -375,28 +374,6 @@ export default {
 
             return parentNode;
         },
-        saveTree() {
-            let build = node => {
-                let result = {id: node.id, name: node.name, tid: node.tid, collapsed: node.collapsed};
-                if (node.params.length) {
-                    result.params = [];
-                    for (let param of node.params) {
-                        result.params.push({name: param.name, value: param.value});
-                    }
-                }
-                if (node.children.length) {
-                    result.children = [];
-                    for (let child of node.children) {
-                        result.children.push(build(child))
-                    }
-                }
-                return result;
-            };
-
-            let tree = {id: this.tree.id, name: this.tree.name, root: build(this.tree.root)};
-
-            ipcRenderer.invoke("save-tree", tree);
-        },
         async onBoardDragEnd(event) {
             this.boardX = event.x;
             this.boardY = event.y;
@@ -427,7 +404,6 @@ export default {
             this.linkParentNode(creatingNode, creatingNode.parent);
 
             await this.drawTree();
-            await utils.saveTree(this.tree)
         },
         async onSelectTemplate(event) {
             let template = event.template;

@@ -59,6 +59,9 @@ export default {
      * @returns {Promise<void>}
      */
     async saveTree(tree) {
+        if (!tree) {
+            return;
+        }
         let build = node => {
             let result = {id: node.id, name: node.name, tid: node.tid, collapsed: node.collapsed};
             if (node.params.length) {
