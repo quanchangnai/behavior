@@ -6,15 +6,15 @@
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
-               @dblclick.native="detail"
+               @dblclick.native="fold"
                @contextmenu.native.stop="onContextMenu">
         <template>
             <div ref="content" class="content" :class="{'creating-content':creating}">
                 <div style="overflow:hidden;text-overflow: ellipsis;">
                     {{ node.template.name }}
-                    <template v-if="!node.detailed && node.name"> : {{ node.name }}</template>
+                    <template v-if="!node.folded && node.name"> : {{ node.name }}</template>
                 </div>
-                <div v-if="node.detailed">
+                <div v-if="!node.folded">
                     <el-form size="mini"
                              label-width="auto"
                              label-position="left"
@@ -45,16 +45,17 @@
             </div>
             <div v-if="!creating"
                  @mousedown.stop
-                 @click="detail"
-                 class="detail-icon"
-                 :class="node.detailed?'el-icon-arrow-up':'el-icon-arrow-down'"
-                 :title="this.node.detailed ? '收起节点' : '展开节点'"/>
+                 @click="fold"
+                 class="fold-icon"
+                 :class="node.folded?'el-icon-arrow-down':'el-icon-arrow-up'"
+                 :title="node.folded?'展开节点':'收起节点'"/>
             <div v-if="node.children.length"
                  @mousedown.stop
-                 @click="collapse"
-                 class="collapse-icon"
-                 :class="node.collapsed?'el-icon-circle-plus-outline':'el-icon-remove-outline'"
-                 :title="this.node.collapsed ? '展开子树' : '收起子树'"/>
+                 @dblclick.stop
+                 @click="foldChildren"
+                 class="fold-children-icon"
+                 :class="node.childrenFolded?'el-icon-circle-plus-outline':'el-icon-remove-outline'"
+                 :title="node.childrenFolded?'展开子树':'收起子树'"/>
             <context-menu ref="menu" :items="menuItems" @hide="onContextMenuHide"/>
         </template>
     </draggable>
@@ -81,12 +82,12 @@ export default {
     computed: {
         menuItems() {
             let items = [];
-            items.push({title: this.node.detailed ? '收起节点' : '展开节点', handler: this.detail});
-            if (this.node.children && this.node.children.length) {
-                items.push({title: this.node.collapsed ? '展开子树' : '收起子树', handler: this.collapse});
+            items.push({title: this.node.folded ? '展开节点' : '收起节点', handler: this.fold});
+            if (this.node.children.length) {
+                items.push({title: this.node.childrenFolded ? '展开子树' : '收起子树', handler: this.foldChildren});
             }
             if (this.node.parent) {
-                items.push({title: '删除节点', handler: this.onDelete});
+                items.push({title: '删除节点', handler: this.delete});
             }
             return items;
         },
@@ -119,15 +120,17 @@ export default {
             utils.visitNodes(this.node, node => node.z = 1);
             this.$emit("drag-end", this.node);
         },
-        detail() {
-            this.node.detailed = !this.node.detailed;
-            this.$emit("detail");
+        fold() {
+            this.node.folded = !this.node.folded;
+            this.$emit("fold");
         },
-        collapse() {
-            this.node.collapsed = !this.node.collapsed;
-            this.$emit("collapse", this.node);
+        foldChildren() {
+            this.node.childrenFolded = !this.node.childrenFolded;
+            this.$emit("children-fold", this.node);
         },
-        onDelete() {
+        delete() {
+            let index = this.node.parent.children.indexOf(this.node);
+            this.node.parent.children.splice(index, 1);
             this.$emit("delete", this.node);
         },
         onContextMenu(event) {
@@ -152,7 +155,6 @@ export default {
     font-size: 14px;
     white-space: nowrap;
     max-width: 235px;
-
 }
 
 .content > div {
@@ -172,7 +174,7 @@ export default {
     cursor: grab;
 }
 
-.detail-icon {
+.fold-icon {
     position: absolute;
     top: 0;
     left: 0;
@@ -183,7 +185,7 @@ export default {
     cursor: pointer;
 }
 
-.collapse-icon {
+.fold-children-icon {
     position: absolute;
     top: calc(50% - 7px);
     left: calc(100% - 1px);

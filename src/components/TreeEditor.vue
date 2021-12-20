@@ -13,15 +13,15 @@
                        @contextmenu.native="onBoardContextMenu"
                        @mouseup.native="onBoardMouseUp">
                 <canvas id="canvas" @contextmenu.prevent/>
-                <tree-node v-for="node in nodes"
+                <tree-node v-for="node in visibleNodes"
                            :key="node.id"
                            :ref="'node'+node.id"
                            :node="node"
                            @dragging="onNodeDragging"
-                           @drag-end="onNodeDragEnd"
-                           @detail="drawTree"
-                           @collapse="onNodeCollapse"
-                           @delete="onNodeDelete"/>
+                           @drag-end="drawTree"
+                           @fold="onNodeFold"
+                           @children-fold="onNodeChildrenFold"
+                           @delete="drawTree"/>
             </draggable>
         </div>
         <div id="right">
@@ -34,7 +34,7 @@
                    :node="creatingNode"
                    :creating="true"
                    @dragging="onNodeDragging"
-                   @drag-end="onNodeDragEnd"/>
+                   @drag-end="drawTree"/>
         <context-menu ref="menu" :items="menuItems"/>
     </div>
 </template>
@@ -90,12 +90,15 @@ export default {
             if (!this.tree) {
                 return items;
             }
-            items.push({title: this.tree.detailed ? '收起全部节点' : '展开全部节点', handler: this.detailTree});
-            if (this.tree.collapsed) {
-                items.push({title: '展开全部子树', handler: this.collapseTree});
+            if ((this.tree.folded & 1) === 1) {//至少有一个节点时收起的
+                items.push({title: '展开全部节点', handler: () => this.foldAllNode(false)});
             }
-
-            items.push({title: '保存行为树', handler: () => utils.saveTree(this.tree)});
+            if ((this.tree.folded & 2) === 2) {//至少有一个节点时展开的
+                items.push({title: '收起全部节点', handler: () => this.foldAllNode(true)});
+            }
+            if (this.tree.childrenFolded) {
+                items.push({title: '展开全部子树', handler: this.unfoldAllNodeChildren});
+            }
             items.push({
                 title: '删除行为树', handler: () => {
                     this.$events.$emit("delete-tree", this.tree);
@@ -103,20 +106,21 @@ export default {
             });
             return items;
         },
-        nodes() {
-            let result = [];
+        visibleNodes() {
+            let nodes = [];
             if (!this.tree) {
-                return result;
+                return nodes;
             }
 
-            utils.saveTree(this.tree);
-
             utils.visitNodes(this.tree.root, node => {
-                result.push(node);
-                return !node.collapsed;
+                nodes.push(node);
+                return !node.childrenFolded;
             });
 
-            return result;
+            //数据变化时自动保存
+            utils.saveTree(this.tree);
+
+            return nodes;
         }
     },
     methods: {
@@ -168,7 +172,7 @@ export default {
             node.selfWidth = nodeContent.offsetWidth + nodeSpaceX;
             node.selfHeight = nodeContent.offsetHeight + nodeSpaceY;
 
-            if (!node.children.length || node.collapsed) {
+            if (!node.children.length || node.childrenFolded) {
                 node.treeWidth = node.selfWidth;
                 node.treeHeight = node.selfHeight;
                 return;
@@ -199,7 +203,7 @@ export default {
                 node.x = boardEdgeSpace;
             }
 
-            if (!node.children.length || node.collapsed) {
+            if (!node.children.length || node.childrenFolded) {
                 node.y = lastY;
                 return;
             }
@@ -245,14 +249,14 @@ export default {
                 context.stroke();
             };
 
-            const nodeCollapseIconWidth = 14;//节点收起子树图标宽度
+            const nodeFoldChildrenIconWidth = 14;//节点收起子树图标宽度
 
             const lineToChildren = node => {
-                if (!node || node.collapsed) {
+                if (!node || node.childrenFolded) {
                     return;
                 }
 
-                let x1 = node.x + node.selfWidth - nodeSpaceX + nodeCollapseIconWidth;
+                let x1 = node.x + node.selfWidth - nodeSpaceX + nodeFoldChildrenIconWidth;
                 let y1 = node.y + (node.selfHeight - nodeSpaceY) / 2;
 
                 for (let child of node.children) {
@@ -275,7 +279,7 @@ export default {
                 let creatingNodeParent = this.creatingNode.parent;
                 let x1 = creatingNodeParent.x + creatingNodeParent.selfWidth - nodeSpaceX;
                 if (creatingNodeParent.children && creatingNodeParent.children.length) {
-                    x1 += nodeCollapseIconWidth;
+                    x1 += nodeFoldChildrenIconWidth;
                 }
                 let y1 = creatingNodeParent.y + (creatingNodeParent.selfHeight - nodeSpaceY) / 2;
                 let x2 = this.creatingNode.x - document.querySelector("#left").offsetWidth - this.boardX;
@@ -287,16 +291,16 @@ export default {
             this.linkParentNode(node);
             this.drawLinkLines();
         },
-        async onNodeDragEnd() {
-            await this.drawTree();
-        },
-        onNodeCollapse(node) {
-            this.tree.collapsed = this.tree.collapsed || node.collapsed;
+        onNodeFold() {
+            this.tree.folded = 0;
+            utils.visitNodes(this.tree.root, node => {
+                this.tree.folded |= node.folded ? 1 : 2;
+                return !node.childrenFolded;
+            });
             this.drawTree();
         },
-        onNodeDelete(node) {
-            let index = node.parent.children.indexOf(node);
-            node.parent.children.splice(index, 1);
+        onNodeChildrenFold(node) {
+            this.tree.childrenFolded = this.tree.childrenFolded || node.childrenFolded;
             this.drawTree();
         },
         linkParentNode(node, parentNode) {
@@ -355,8 +359,8 @@ export default {
                 }
                 //目标节点限制子节点数量
                 if (targetNodeType.childrenNum >= 0
-                    && targetNode.children.length >= targetNodeType.childrenNum
-                    && targetNode.children.indexOf(node) < 0) {
+                        && targetNode.children.length >= targetNodeType.childrenNum
+                        && targetNode.children.indexOf(node) < 0) {
                     canLink = false;
                 }
 
@@ -415,10 +419,10 @@ export default {
                 x: event.x - utils.getClientX("#container"),
                 y: event.y - utils.getClientY("#container"),
                 z: 1,
-                collapsed: false,
-                detailed: false,
+                folded: true,
                 params: [],
-                children: []
+                children: [],
+                childrenFolded: false
             };
 
             if (template.params) {
@@ -445,17 +449,17 @@ export default {
         onBoardContextMenu(event) {
             this.$refs.menu.show(event.clientX, event.clientY);
         },
-        detailTree() {
-            this.tree.detailed = !this.tree.detailed;
+        foldAllNode(folded) {
+            this.tree.folded = folded ? 1 : 2;
             utils.visitNodes(this.tree.root, node => {
-                node.detailed = this.tree.detailed;
+                node.folded = folded;
             });
             this.drawTree();
         },
-        collapseTree() {
-            this.tree.collapsed = false;
+        unfoldAllNodeChildren() {
+            this.tree.childrenFolded = false;
             utils.visitNodes(this.tree.root, node => {
-                node.collapsed = false
+                node.childrenFolded = false
             });
             this.drawTree();
         }

@@ -62,8 +62,9 @@ export default {
         if (!tree) {
             return;
         }
+
         let build = node => {
-            let result = {id: node.id, name: node.name, tid: node.tid, collapsed: node.collapsed};
+            let result = {id: node.id, name: node.name, tid: node.tid};
             if (node.params.length) {
                 result.params = [];
                 for (let param of node.params) {
@@ -72,6 +73,7 @@ export default {
             }
             if (node.children.length) {
                 result.children = [];
+                result.childrenFolded = node.childrenFolded;
                 for (let child of node.children) {
                     result.children.push(build(child))
                 }

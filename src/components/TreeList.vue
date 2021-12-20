@@ -80,21 +80,22 @@ export default {
         },
         initTree(tree) {
             tree.maxNodeId = 0;
-            this.$set(tree, "detailed", false);
+            this.$set(tree, "folded", 1);
 
             utils.visitNodes(tree.root, (node, parent) => {
                 tree.maxNodeId = Math.max(tree.maxNodeId, node.id);
-                this.$set(tree, "collapsed", tree.collapsed || node.collapsed);
+                this.$set(tree, "childrenFolded", tree.childrenFolded || node.childrenFolded);
                 node.parent = parent;
                 this.$set(node, "x", 0);
                 this.$set(node, "y", 0);
                 this.$set(node, "z", 1);
-                this.$set(node, "detailed", false);
+                this.$set(node, "folded", true);
                 if (!node.params) {
                     this.$set(node, "params", []);
                 }
                 if (!node.children) {
                     this.$set(node, "children", []);
+                    this.$set(node, "childrenFolded", false);
                 }
             });
 
