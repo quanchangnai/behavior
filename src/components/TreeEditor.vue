@@ -15,7 +15,7 @@
                 <canvas id="canvas" @contextmenu.prevent/>
                 <tree-node v-for="node in visibleNodes"
                            :key="node.id"
-                           :ref="'node'+node.id"
+                           :ref="'node-'+node.id"
                            :node="node"
                            @dragging="onNodeDragging"
                            @drag-end="drawTree"
@@ -30,7 +30,7 @@
                            @select-template="onSelectTemplate"/>
         </div>
         <tree-node v-if="creatingNode!=null"
-                   :ref="'node'+creatingNode.id"
+                   :ref="'node-'+creatingNode.id"
                    :node="creatingNode"
                    :creating="true"
                    @dragging="onNodeDragging"
@@ -75,7 +75,7 @@ export default {
             }
         }
         for (let template of config.templates) {
-            template.type = config.templateTypes.find(t => t.id === template.type);
+            template.type = config.templateTypes.find(type => type.id === template.type);
         }
         this.config = config;
 
@@ -163,9 +163,9 @@ export default {
             let nodeContent;
             if (node === this.creatingNode) {
                 // noinspection JSUnresolvedFunction
-                nodeContent = this.$refs["node" + node.id].content();
+                nodeContent = this.$refs["node-" + node.id].content();
             } else {
-                nodeContent = this.$refs["node" + node.id][0].content();
+                nodeContent = this.$refs["node-" + node.id][0].content();
             }
 
             //界面渲染完成之后才能取到元素大小
@@ -420,21 +420,21 @@ export default {
                 y: event.y - utils.getClientY("#container"),
                 z: 1,
                 folded: true,
-                params: [],
+                params: {},
                 children: [],
                 childrenFolded: false
             };
 
             if (template.params) {
-                for (let param of template.params) {
-                    this.creatingNode.params.push({name: param.name, value: param.value});
+                for (let paramName of Object.keys(template.params)) {
+                    this.creatingNode.params[paramName] = template.params[paramName].value;
                 }
             }
 
             await this.$nextTick();
 
             // noinspection JSUnresolvedFunction
-            let creatingNodeContent = this.$refs["node" + this.creatingNode.id].content();
+            let creatingNodeContent = this.$refs["node-" + this.creatingNode.id].content();
             this.creatingNode.x -= creatingNodeContent.offsetWidth / 2;
             this.creatingNode.y -= creatingNodeContent.offsetHeight / 2;
             this.calcNodeBounds(this.creatingNode);

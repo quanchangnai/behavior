@@ -12,7 +12,7 @@
             <div ref="content" class="content" :class="{'creating-content':creating}">
                 <div style="overflow:hidden;text-overflow: ellipsis;">
                     {{ node.template.name }}
-                    <template v-if="!node.folded && node.name"> : {{ node.name }}</template>
+                    <template v-if="node.folded && node.name"> : {{ node.name }}</template>
                 </div>
                 <div v-if="!node.folded">
                     <el-form size="mini"
@@ -23,22 +23,22 @@
                         <el-form-item label="节点名称">
                             <el-input v-model="node.name"/>
                         </el-form-item>
-                        <el-form-item v-for="(templateParam,i) in  node.template.params"
-                                      :label="templateParam.label?templateParam.label:templateParam.name"
-                                      :key="'param'+i">
-                            <el-radio-group v-if="typeof templateParam.value==='boolean'"
-                                            v-model="node.params[i].value">
+                        <el-form-item v-for="(param,paramName) in node.template.params"
+                                      :label="param.label?param.label:paramName"
+                                      :key="paramName">
+                            <el-radio-group v-if="typeof param.value==='boolean'"
+                                            v-model="node.params[paramName]">
                                 <el-radio :label="true">是</el-radio>
                                 <el-radio :label="false">否</el-radio>
                             </el-radio-group>
-                            <el-select v-else-if="templateParam.options&&templateParam.options.length"
-                                       v-model="node.params[i].value">
-                                <el-option v-for="(option,j) in templateParam.options"
-                                           :key="'param'+i+'-'+j"
+                            <el-select v-else-if="param.options&&param.options.length"
+                                       v-model="node.params[paramName]">
+                                <el-option v-for="(option,i) in param.options"
+                                           :key="paramName+'-option-'+i"
                                            :label="option.label"
                                            :value="option.value"/>
                             </el-select>
-                            <el-input v-else v-model="node.params[i].value"/>
+                            <el-input v-else v-model="node.params[paramName]"/>
                         </el-form-item>
                     </el-form>
                 </div>

@@ -23,16 +23,16 @@ let templates = [
 ];
 
 //行为树模板参数
-templates[6].params = [
-    {name: 'p1', label: '参数1', value: 1},
-    {name: 'p2', label: '参数2', value: ''},
-    {name: 'p3', label: '参数3', value: true},
-];
+templates[6].params = {
+    p1: {label: '参数1', value: 1},
+    p2: {label: '参数2', value: ''},
+    p3: {label: '参数3', value: true},
+};
 
-templates[7].params = [
-    {name: 'p1', label: '参数1', value: 1, options: [{label: '选项1', value: 1}, {label: '选项2', value: 2}]},
-    {name: 'p2', label: '参数2', value: 'aaa', options: [{label: '选项1', value: 'aaa'}, {label: '选项2', value: 'bbb'}]}
-];
+templates[7].params = {
+    p1: {label: '参数1', value: 1, options: [{label: '选项1', value: 1}, {label: '选项2', value: 2}]},
+    p2: {label: '参数2', value: 'aaa', options: [{label: '选项1', value: 'aaa'}, {label: '选项2', value: 'bbb'}]}
+};
 
 //默认行为树，新建时自动创建，不能为空
 let defaultTree = {

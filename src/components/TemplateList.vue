@@ -30,7 +30,7 @@ export default {
     },
     data() {
         return {
-            visibleTemplates: null,
+            visibleTemplates: [],
             mappedTemplates: new Map(),
             keyword: null
         }

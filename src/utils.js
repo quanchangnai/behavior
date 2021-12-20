@@ -65,12 +65,15 @@ export default {
 
         let build = node => {
             let result = {id: node.id, name: node.name, tid: node.tid};
-            if (node.params.length) {
-                result.params = [];
-                for (let param of node.params) {
-                    result.params.push({name: param.name, value: param.value});
+
+            let params = Object.keys(node.params);
+            if (params.length) {
+                result.params = {};
+                for (let paramName of params) {
+                    result.params[paramName] = node.params[paramName];
                 }
             }
+
             if (node.children.length) {
                 result.children = [];
                 result.childrenFolded = node.childrenFolded;
@@ -78,6 +81,7 @@ export default {
                     result.children.push(build(child))
                 }
             }
+
             return result;
         };
 

@@ -7,7 +7,7 @@
          @mouseout="mouseover=false"
          @mousedown.stop>
         <div v-for="(item,index) in items"
-             :key="'item'+index"
+             :key="'item-'+index"
              class="context-menu-item"
              @click="()=>onItemClick(item)">
             {{ item.title }}
