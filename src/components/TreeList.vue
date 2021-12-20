@@ -7,17 +7,29 @@
                   :data="visibleTrees"
                   highlight-current-row
                   @current-change="selectTree"
+                  @row-dblclick="showEditTreeNameInput"
                   @row-contextmenu="(r,c,e)=>onContextMenu(e,r)">
             <el-table-column>
                 <template #header>
                     <el-input v-model="keyword"
                               clearable
-                              size="medium"
+                              size="small"
                               placeholder="输入关键字搜索"
                               prefix-icon="el-icon-search"/>
                 </template>
                 <template #default="{row:tree}">
-                    <div> {{ tree.name }}</div>
+                    <div>
+                        <span :ref="'treeIdTag-'+tree.id">
+                            <el-tag size="small" style="margin-right: 10px;">{{ tree.id }}</el-tag>
+                        </span>
+                        <el-input v-if="editTreeName&&tree===selectedTree"
+                                  ref="editTreeNameInput"
+                                  size="mini"
+                                  v-model="tree.name"
+                                  @focusout.native="editTreeName=false"
+                                  :style="editTreeNameInputStyle(tree.id)"/>
+                        <span v-else>{{ tree.name }}</span>
+                    </div>
                 </template>
             </el-table-column>
         </el-table>
@@ -41,6 +53,7 @@ export default {
             allTrees: null,
             visibleTrees: null,
             selectedTree: null,
+            editTreeName: false,
             maxTreeId: 0,
             keyword: "",
             menuItems: []
@@ -65,7 +78,7 @@ export default {
     watch: {
         keyword(value) {
             this.visibleTrees = this.allTrees.filter(tree => {
-                return tree === this.selectedTree || tree.name.includes(value);
+                return tree === this.selectedTree || tree.name.includes(value) || tree.id.toString().includes(value);
             });
         }
     },
@@ -131,6 +144,16 @@ export default {
             }
 
             ipcRenderer.invoke("delete-tree", tree.id);
+        },
+        editTreeNameInputStyle(treeId) {
+            // noinspection JSUnresolvedVariable
+            let treeIdTagWidth = this.$refs['treeIdTag-' + treeId].offsetWidth;
+            return {width: "calc(100% - " + (treeIdTagWidth + 1) + "px)"}
+        },
+        async showEditTreeNameInput() {
+            this.editTreeName = true;
+            await this.$nextTick();
+            this.$refs.editTreeNameInput.focus();
         }
     }
 }

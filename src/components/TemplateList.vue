@@ -8,12 +8,20 @@
             <template #header>
                 <el-input v-model="keyword"
                           clearable
-                          size="medium"
+                          size="small"
                           placeholder="输入关键字搜索"
                           prefix-icon="el-icon-search"/>
             </template>
             <template #default="{row:template}">
-                <div class="template" @mousedown.left="event=>selectTemplate(event,template)"> {{ template.name }}</div>
+                <div class="template" @mousedown.left="event=>selectTemplate(event,template)">
+                    <el-tooltip effect="light"
+                                :disabled="!template.desc"
+                                placement="bottom-start"
+                                :content="template.desc">
+                        <el-tag size="small" style="cursor: pointer;" @mousedown.native.stop>{{ template.id }}</el-tag>
+                    </el-tooltip>
+                    {{ template.name }}
+                </div>
             </template>
         </el-table-column>
     </el-table>
@@ -50,7 +58,7 @@ export default {
     watch: {
         keyword(value) {
             this.visibleTemplates = this.templates.filter(template => {
-                return template.type.show && template.name.includes(value);
+                return template.type.visible && (template.name.includes(value) || template.id.toString().includes(value));
             });
         }
     },

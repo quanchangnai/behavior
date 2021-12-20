@@ -68,10 +68,10 @@ export default {
     async created() {
         let config = await ipcRenderer.invoke("load-config");
         for (let templateType of config.templateTypes) {
-            templateType.show = false;
+            templateType.visible = false;
             //可以作为子节点的模板才显示在模板列表界面
             if (config.templateTypes.find(t => t.childrenTypes.indexOf(templateType.id) >= 0)) {
-                templateType.show = true;
+                templateType.visible = true;
             }
         }
         for (let template of config.templates) {
@@ -503,8 +503,7 @@ export default {
     width: 100%;
     height: 100%;
     background-color: aliceblue;
-    /* background-image: linear-gradient(0deg, transparent 49%, #e8e9ec 50%, transparent 51%), linear-gradient(90deg, transparent 49%, #e8e9ec 50%, transparent 51%);
-     background-size: 15px 15px;*/
+
 }
 
 </style>
