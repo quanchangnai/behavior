@@ -23,15 +23,19 @@ let templates = [
 ];
 
 //行为树模板参数
+//动作节点1参数
 templates[6].params = {
-    p1: {label: '参数1', value: 1},
-    p2: {label: '参数2', value: ''},
-    p3: {label: '参数3', value: true},
+    p1: {label: '参数1', value: 1},//整数
+    p2: {label: '参数2', value: ''},//字符串
+    p3: {label: '参数3', value: true},//boolean
+    p4: {label: '参数4', value: 2, precision: 0, min: 0, max: 100},//可选的精度和取值范围
 };
 
+//动作节点2参数
 templates[7].params = {
-    p1: {label: '参数1', value: 1, options: [{label: '选项1', value: 1}, {label: '选项2', value: 2}]},
-    p2: {label: '参数2', value: 'aaa', options: [{label: '选项1', value: 'aaa'}, {label: '选项2', value: 'bbb'}]}
+    p1: {label: '参数1', value: 1, options: [{label: '选项1-1', value: 1}, {label: '选项1-2', value: 2}]},
+    p2: {label: '参数2', value: 'aaa', options: [{label: '选项2-1', value: 'aaa'}, {label: '选项2-2', value: 'bbb'}]},//单选
+    p3: {label: '参数3', value: ['aaa'], options: [{label: '选项3-1', value: 'aaa'}, {label: '选项3-2', value: 'bbb'}]},//多选
 };
 
 //默认行为树，新建时自动创建，不能为空

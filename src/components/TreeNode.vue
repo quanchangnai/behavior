@@ -24,23 +24,29 @@
                             <el-input v-model="node.name"/>
                         </el-form-item>
                         <el-form-item v-for="(param,paramName) in node.template.params"
-                                      :label="param.label?param.label:paramName"
-                                      :key="paramName">
+                                      :key="paramName"
+                                      :label="param.label?param.label:paramName">
                             <el-radio-group v-if="typeof param.value==='boolean'"
                                             v-model="node.params[paramName]">
                                 <el-radio :label="true">是</el-radio>
                                 <el-radio :label="false">否</el-radio>
                             </el-radio-group>
-                            <el-select v-else-if="param.options&&param.options.length"
+                            <!--suppress JSUnresolvedVariable -->
+                            <el-select v-else-if="Array.isArray(param.options)"
                                        v-model="node.params[paramName]"
+                                       :multiple="Array.isArray(param.value)"
                                        :popper-append-to-body="false">
                                 <el-option v-for="(option,i) in param.options"
                                            :key="paramName+'-option-'+i"
                                            :label="option.label"
                                            :value="option.value"/>
                             </el-select>
+                            <!--suppress JSUnresolvedVariable -->
                             <el-input-number v-else-if="typeof param.value==='number'"
-                                             v-model="node.params[paramName]"/>
+                                             v-model="node.params[paramName]"
+                                             :precision="typeof param.precision==='number'?param.precision:2"
+                                             :min="typeof param.min==='number'?param.min:-Infinity"
+                                             :max="typeof param.max==='number'?param.max:Infinity"/>
                             <el-input v-else v-model="node.params[paramName]"/>
                         </el-form-item>
                     </el-form>
@@ -221,7 +227,7 @@ export default {
 
 /*noinspection CssUnusedSymbol*/
 >>> .el-select-dropdown {
-    top: 20px !important;
+    top: calc(100% - 8px) !important;
     left: 0 !important;
 }
 
