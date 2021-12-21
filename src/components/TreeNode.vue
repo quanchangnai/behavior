@@ -32,12 +32,15 @@
                                 <el-radio :label="false">否</el-radio>
                             </el-radio-group>
                             <el-select v-else-if="param.options&&param.options.length"
-                                       v-model="node.params[paramName]">
+                                       v-model="node.params[paramName]"
+                                       :popper-append-to-body="false">
                                 <el-option v-for="(option,i) in param.options"
                                            :key="paramName+'-option-'+i"
                                            :label="option.label"
                                            :value="option.value"/>
                             </el-select>
+                            <el-input-number v-else-if="typeof param.value==='number'"
+                                             v-model="node.params[paramName]"/>
                             <el-input v-else v-model="node.params[paramName]"/>
                         </el-form-item>
                     </el-form>
@@ -56,7 +59,7 @@
                  class="fold-children-icon"
                  :class="node.childrenFolded?'el-icon-circle-plus-outline':'el-icon-remove-outline'"
                  :title="node.childrenFolded?'展开子树':'收起子树'"/>
-            <context-menu ref="menu" :items="menuItems" @hide="onContextMenuHide"/>
+            <context-menu ref="menu" :items="menuItems" @hide="node.z = 1"/>
         </template>
     </draggable>
 </template>
@@ -136,9 +139,6 @@ export default {
         onContextMenu(event) {
             this.node.z = 10;
             this.$refs.menu.show(event.clientX, event.clientY);
-        },
-        onContextMenuHide() {
-            this.node.z = 1;
         }
     }
 
@@ -205,14 +205,30 @@ export default {
 }
 
 /*noinspection CssUnusedSymbol*/
-.el-input, .el-select, .el-radio-group {
-    padding: 0 !important;
+.el-input, .el-input-number, .el-select, .el-radio-group {
     width: 120px;
 }
 
 /*>>>:vue css深度选择器*/
-.el-input >>> input {
+.el-input >>> input, .el-input-number >>> input, .el-select >>> input {
     height: 24px;
+}
+
+.el-input-number >>> span {
+    margin-top: 2px;
+    height: 22px;
+}
+
+/*noinspection CssUnusedSymbol*/
+>>> .el-select-dropdown {
+    top: 20px !important;
+    left: 0 !important;
+}
+
+/*noinspection CssUnusedSymbol*/
+>>> .el-select-dropdown__item {
+    height: 24px;
+    line-height: 24px;
 }
 
 </style>

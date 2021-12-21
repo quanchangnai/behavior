@@ -18,7 +18,7 @@
                                 :disabled="!template.desc"
                                 placement="bottom-start"
                                 :content="template.desc">
-                        <el-tag size="small" style="cursor: pointer;" @mousedown.native.stop>{{ template.id }}</el-tag>
+                        <el-tag size="small" style="cursor: default;" @mousedown.native.stop>{{ template.id }}</el-tag>
                     </el-tooltip>
                     {{ template.name }}
                 </div>
