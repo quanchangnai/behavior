@@ -1,5 +1,5 @@
 <template>
-    <div id="container" v-loading.fullscreen="config===null">
+    <div ref="body" v-loading.fullscreen="config===null">
         <div id="left">
             <tree-list v-if="config"
                        :defaultTree="config.defaultTree"
@@ -410,14 +410,18 @@ export default {
             await this.drawTree();
         },
         async onSelectTemplate(event) {
+            if (!this.tree) {
+                return;
+            }
+
             let template = event.template;
 
             this.creatingNode = {
                 id: ++this.tree.maxNodeId,
                 tid: template.id,
                 template: template,
-                x: event.x - utils.getClientX("#container"),
-                y: event.y - utils.getClientY("#container"),
+                x: event.x - utils.getClientX(this.$refs.body),
+                y: event.y - utils.getClientY(this.$refs.body),
                 z: 1,
                 folded: true,
                 params: {},
@@ -447,7 +451,14 @@ export default {
             }, {once: true});
         },
         onBoardContextMenu(event) {
-            this.$refs.menu.show(event.clientX, event.clientY);
+            let center = document.querySelector("#center");
+            let limits = {
+                x: utils.getClientX(center),
+                y: utils.getClientY(center),
+                width: center.offsetWidth,
+                height: center.offsetHeight,
+            };
+            this.$refs.menu.show(event.clientX, event.clientY, limits);
         },
         foldAllNode(folded) {
             this.tree.folded = folded ? 1 : 2;

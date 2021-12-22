@@ -1,5 +1,7 @@
 <template>
-    <div style="height: 100%;width: 100%" @contextmenu="onContextMenu">
+    <div ref="body"
+         style="height: 100%;width: 100%"
+         @contextmenu="onContextMenu">
         <el-table border
                   ref="table"
                   size="medium"
@@ -9,6 +11,9 @@
                   @current-change="selectTree"
                   @row-dblclick="showEditTreeNameInput"
                   @row-contextmenu="(r,c,e)=>onContextMenu(e,r)">
+            <template #empty>
+                <el-button type="text" @click="createTree">创建行为树&nbsp;&nbsp;&nbsp;&nbsp;</el-button>
+            </template>
             <el-table-column>
                 <template #header>
                     <el-input v-model="keyword"
@@ -124,7 +129,14 @@ export default {
             }
             this.menuItems.push({title: '打开工作目录', handler: () => ipcRenderer.invoke("open-work-path")});
 
-            this.$refs.menu.show(event.clientX, event.clientY);
+            let body = this.$refs.body;
+            let limits = {
+                x: utils.getClientX(body),
+                y: utils.getClientY(body),
+                width: body.offsetWidth,
+                height: body.offsetHeight,
+            };
+            this.$refs.menu.show(event.clientX, event.clientY, limits);
         },
         createTree() {
             let tree = JSON.parse(JSON.stringify(this.defaultTree));

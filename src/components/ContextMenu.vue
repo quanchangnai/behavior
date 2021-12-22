@@ -1,7 +1,7 @@
 <template>
     <div v-if="visible"
          class="context-menu"
-         ref="contextMenu"
+         ref="menu"
          :style="{left:x+'px',top:y+'px'}"
          @mouseover="mouseover=true"
          @mouseout="mouseover=false"
@@ -36,16 +36,33 @@ export default {
         }
     },
     methods: {
-        show(x, y) {
+        show(x, y, limits) {
             if (!this.items.length) {
                 return;
             }
+
             this.visible = true;
             this.x = x;
             this.y = y;
+
             window.addEventListener("mousedown", this.tryHide, {capture: true});
             window.addEventListener("resize", this.hide);
             window.addEventListener("scroll", this.hide);
+
+            if (!limits) {
+                return;
+            }
+
+            this.$nextTick(() => {
+                let width = this.$refs.menu.offsetWidth;
+                let height = this.$refs.menu.offsetHeight;
+                if (x + width * 1.1 > limits.x + limits.width && limits.width > width) {
+                    this.x = Math.max(x - width, limits.x + width * 0.1);
+                }
+                if (y + height * 1.1 > limits.y + limits.height && limits.height > height) {
+                    this.y = Math.max(y - height, limits.y + height * 0.1);
+                }
+            });
         },
         tryHide() {
             if (!this.mouseover) {
