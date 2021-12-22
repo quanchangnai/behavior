@@ -63,11 +63,15 @@ ipcMain.handle("load-trees", async () => {
         if (!fileName.endsWith(".json")) {
             continue;
         }
-
+        let basename = path.basename(fileName, ".json");
+        if (!Number.isInteger(Number(basename))) {
+            continue;
+        }
         let fileStats = await fs.promises.stat(fileName);
         if (!fileStats.isFile()) {
             continue;
         }
+
         let fileJson = (await fs.promises.readFile(fileName)).toString();
         trees.push(JSON.parse(fileJson));
     }
