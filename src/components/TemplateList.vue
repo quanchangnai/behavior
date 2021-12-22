@@ -14,10 +14,14 @@
             </template>
             <template #default="{row:template}">
                 <div class="template" @mousedown.left="event=>selectTemplate(event,template)">
-                    <el-tooltip effect="light"
-                                :disabled="!template.desc"
-                                placement="bottom-start"
-                                :content="template.desc">
+                    <el-tooltip effect="light" :disabled="!template.desc" placement="bottom-start">
+                        <template #content>
+                            <span v-for="(line,i) in template.desc.split('\n')"
+                                  :key="'line-'+i"
+                                  style="height: 20px;line-height: 20px">
+                                <br v-if="i>0"/>{{ line }}
+                            </span>
+                        </template>
                         <el-tag size="small" style="cursor: default;" @mousedown.native.stop>{{ template.id }}</el-tag>
                     </el-tooltip>
                     {{ template.name }}
