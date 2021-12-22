@@ -2,7 +2,7 @@
     <draggable :x="node.x"
                :y="node.y"
                :ready="creating"
-               :style="style"
+               :style="nodeStyle"
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
@@ -35,6 +35,8 @@
                             <el-select v-else-if="Array.isArray(param.options)"
                                        v-model="node.params[paramName]"
                                        :multiple="Array.isArray(param.value)"
+                                       :class="paramSelectClass(paramName)"
+                                       @visible-change="visible=>visible?node.z=200:node.z=1"
                                        :popper-append-to-body="false">
                                 <el-option v-for="(option,i) in param.options"
                                            :key="paramName+'-option-'+i"
@@ -75,6 +77,7 @@ import Draggable from './Draggable'
 import ContextMenu from './ContextMenu'
 import utils from "@/utils";
 
+// noinspection JSUnresolvedVariable
 export default {
     name: "TreeNode",
     components: {Draggable, ContextMenu},
@@ -100,7 +103,7 @@ export default {
             }
             return items;
         },
-        style() {
+        nodeStyle() {
             return {'pointer-events': this.creating ? 'none' : 'auto', 'z-index': this.node.z};
         }
     },
@@ -145,6 +148,12 @@ export default {
         onContextMenu(event) {
             this.node.z = 10;
             this.$refs.menu.show(event.clientX, event.clientY);
+        },
+        paramSelectClass(paramName) {
+            let param = this.node.params[paramName];
+            // noinspection JSUnresolvedVariable
+            let normal = !Array.isArray(param) || Array.isArray(param) && param.length === 0;
+            return {"el-select-normal": normal, "el-select-multiple": !normal}
         }
     }
 
@@ -206,7 +215,6 @@ export default {
 
 /*noinspection CssUnusedSymbol*/
 .el-form-item {
-    padding: 0 !important;
     margin-bottom: 0;
 }
 
@@ -216,8 +224,15 @@ export default {
 }
 
 /*>>>:vue css深度选择器*/
-.el-input >>> input, .el-input-number >>> input, .el-select >>> input {
-    height: 24px;
+.el-input >>> input, .el-input-number >>> input, .el-select-normal >>> input {
+    height: 24px !important;
+    line-height: 24px;
+}
+
+.el-select-multiple >>> input {
+    padding-top: 2px;
+    min-height: 28px !important;
+    line-height: 28px;
 }
 
 .el-input-number >>> span {
