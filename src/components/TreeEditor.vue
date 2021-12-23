@@ -27,6 +27,7 @@
         <div id="right">
             <template-list v-if="config"
                            :templates="config.templates"
+                           :template-types="config.templateTypes"
                            @select-template="onSelectTemplate"/>
         </div>
         <tree-node v-if="creatingNode!=null"
@@ -70,18 +71,7 @@ export default {
             this.$message({message: msg, type: type ? type : "info", center: true, offset: 150});
         });
 
-        let config = await ipcRenderer.invoke("load-config");
-        for (let templateType of config.templateTypes) {
-            templateType.visible = false;
-            //可以作为子节点的模板才显示在模板列表界面
-            if (config.templateTypes.find(t => t.childrenTypes.indexOf(templateType.id) >= 0)) {
-                templateType.visible = true;
-            }
-        }
-        for (let template of config.templates) {
-            template.type = config.templateTypes.find(type => type.id === template.type);
-        }
-        this.config = config;
+        this.config = await ipcRenderer.invoke("load-config");
 
         window.addEventListener("resize", this.drawTree);
     },
@@ -491,7 +481,7 @@ export default {
 
 #right {
     position: absolute;
-    width: 220px;
+    width: 250px;
     height: 100%;
     right: 0;
     user-select: none;
@@ -500,7 +490,7 @@ export default {
 #center {
     position: absolute;
     left: 220px;
-    right: 220px;
+    right: 250px;
     height: 100%;
     box-sizing: border-box;
     overflow: hidden;

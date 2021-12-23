@@ -197,6 +197,7 @@ export default {
 }
 </script>
 
+<!--suppress CssUnusedSymbol -->
 <style scoped>
 .content {
     min-width: 60px;
@@ -244,18 +245,15 @@ export default {
     cursor: pointer;
 }
 
-/*noinspection CssUnusedSymbol*/
 .el-form {
     cursor: default;
     margin: 5px 10px 7px 0;
 }
 
-/*noinspection CssUnusedSymbol*/
 .el-form-item {
     margin-bottom: 0;
 }
 
-/*noinspection CssUnusedSymbol*/
 .el-input, .el-input-number, .el-select, .el-radio-group {
     width: 120px;
 }
@@ -277,20 +275,21 @@ export default {
     height: 22px;
 }
 
-/*noinspection CssUnusedSymbol*/
 >>> .el-select-dropdown {
     top: calc(100% - 8px) !important;
     left: 0 !important;
 }
 
-/*noinspection CssUnusedSymbol*/
 >>> .el-select-dropdown__item {
     height: 24px;
     line-height: 24px;
 }
+
+>>> .popper__arrow {
+    left: 10px !important;
+}
 </style>
 <style>
-/*noinspection CssUnusedSymbol*/
 .node-param-tooltip {
     transform: translateY(-8px);
     box-sizing: border-box;
