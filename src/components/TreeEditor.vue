@@ -66,6 +66,10 @@ export default {
         }
     },
     async created() {
+        ipcRenderer.on("msg", (event, msg, type) => {
+            this.$message({message: msg, type: type ? type : "info", center: true, offset: 150});
+        });
+
         let config = await ipcRenderer.invoke("load-config");
         for (let templateType of config.templateTypes) {
             templateType.visible = false;
@@ -514,7 +518,6 @@ export default {
     width: 100%;
     height: 100%;
     background-color: aliceblue;
-
 }
 
 </style>

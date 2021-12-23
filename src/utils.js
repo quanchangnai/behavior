@@ -37,7 +37,6 @@ export default {
             return element.offsetTop;
         }
     },
-
     /**
      * 访问节点及其所有子孙节点
      * @param node {Object} 当前节点

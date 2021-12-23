@@ -26,7 +26,7 @@ let templates = [
 //动作节点1参数
 templates[6].params = {
     p1: {label: '参数1', value: 1},//整数
-    p2: {label: '参数2', value: ''},//字符串
+    p2: {label: '参数2', value: '', pattern: '^[abc]*$'},//字符串,可选的正则格式
     p3: {label: '参数3', value: true},//boolean
     p4: {label: '参数4', value: 2, precision: 0, min: 0, max: 100},//可选的精度和取值范围
 };

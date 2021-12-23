@@ -65,16 +65,7 @@ export default {
         }
     },
     async created() {
-        this.allTrees = await ipcRenderer.invoke("load-trees");
-        for (const tree of this.allTrees) {
-            this.maxTreeId = Math.max(this.maxTreeId, tree.id);
-        }
-
-        this.visibleTrees = this.allTrees;
-        if (this.visibleTrees.length) {
-            this.$refs.table.setCurrentRow(this.visibleTrees[0]);
-        }
-
+        await this.loadTrees();
         this.$events.$on("delete-tree", this.deleteTree);
     },
     destroyed() {
@@ -88,6 +79,18 @@ export default {
         }
     },
     methods: {
+        async loadTrees() {
+            this.allTrees = await ipcRenderer.invoke("load-trees");
+
+            for (const tree of this.allTrees) {
+                this.maxTreeId = Math.max(this.maxTreeId, tree.id);
+            }
+
+            this.visibleTrees = this.allTrees;
+            if (this.visibleTrees.length) {
+                this.$refs.table.setCurrentRow(this.visibleTrees[0]);
+            }
+        },
         selectTree(tree) {
             this.selectedTree = tree;
             if (tree && !tree.maxNodeId !== undefined) {
@@ -127,7 +130,9 @@ export default {
             if (tree != null) {
                 this.menuItems.push({title: '删除行为树', handler: () => this.deleteTree(tree)});
             }
+
             this.menuItems.push({title: '打开工作目录', handler: () => ipcRenderer.invoke("open-work-path")});
+            this.menuItems.push({title: '重加载工作目录', handler: this.loadTrees});
 
             let body = this.$refs.body;
             let limits = {

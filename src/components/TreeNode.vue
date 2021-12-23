@@ -16,15 +16,21 @@
                 </div>
                 <div v-if="!node.folded">
                     <el-form size="mini"
+                             :model="node"
+                             ref="form"
                              label-width="auto"
                              label-position="left"
+                             @validate="onFormValidate"
                              @mousedown.native.stop
                              @dblclick.native.stop>
-                        <el-form-item label="节点名称">
+                        <el-form-item label="节点名称" prop="name">
                             <el-input v-model="node.name"/>
                         </el-form-item>
                         <el-form-item v-for="(param,paramName) in node.template.params"
                                       :key="paramName"
+                                      :rules="paramRules(param)"
+                                      :show-message="false"
+                                      :prop="'params.'+paramName"
                                       :label="param.label?param.label:paramName">
                             <el-radio-group v-if="typeof param.value==='boolean'"
                                             v-model="node.params[paramName]">
@@ -49,7 +55,17 @@
                                              :precision="typeof param.precision==='number'?param.precision:2"
                                              :min="typeof param.min==='number'?param.min:-Infinity"
                                              :max="typeof param.max==='number'?param.max:Infinity"/>
-                            <el-input v-else v-model="node.params[paramName]"/>
+                            <el-tooltip v-else-if="typeof param.value==='string'"
+                                        effect="light"
+                                        :disabled="typeof param.pattern!=='string'||param.pattern.length===0"
+                                        :content="'格式:'+param.pattern"
+                                        :arrowOffset="25"
+                                        popper-class="node-param-tooltip"
+                                        placement="bottom-start">
+                                <el-input v-model="node.params[paramName]"
+                                          @focusin.native="()=>onParamFocusIn(paramName)"
+                                          @focusout.native="onParamFocusOut(paramName)"/>
+                            </el-tooltip>
                         </el-form-item>
                     </el-form>
                 </div>
@@ -89,7 +105,10 @@ export default {
         }
     },
     data() {
-        return {};
+        return {
+            backupParams: {},
+            validations: {}
+        };
     },
     computed: {
         menuItems() {
@@ -154,6 +173,24 @@ export default {
             // noinspection JSUnresolvedVariable
             let normal = !Array.isArray(param) || Array.isArray(param) && param.length === 0;
             return {"el-select-normal": normal, "el-select-multiple": !normal}
+        },
+        paramRules(param) {
+            if (typeof param.value !== 'string' || param.options || !param.pattern) {
+                return null;
+            }
+            return {pattern: param.pattern};
+        },
+        onParamFocusIn(paramName) {
+            this.backupParams[paramName] = this.node.params[paramName];
+        },
+        onParamFocusOut(paramName) {
+            if (this.validations['params.' + paramName] === false) {
+                this.node.params[paramName] = this.backupParams[paramName];
+                this.validations['params.' + paramName] = true;
+            }
+        },
+        onFormValidate(prop, pass) {
+            this.validations[prop] = pass;
         }
     }
 
@@ -251,5 +288,13 @@ export default {
     height: 24px;
     line-height: 24px;
 }
-
+</style>
+<style>
+/*noinspection CssUnusedSymbol*/
+.node-param-tooltip {
+    transform: translateY(-8px);
+    box-sizing: border-box;
+    min-width: 120px;
+    padding: 5px 10px;
+}
 </style>

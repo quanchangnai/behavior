@@ -14,7 +14,10 @@
             </template>
             <template #default="{row:template}">
                 <div class="template" @mousedown.left="event=>selectTemplate(event,template)">
-                    <el-tooltip effect="light" :disabled="!template.desc" placement="bottom-start">
+                    <el-tooltip effect="light"
+                                :disabled="!template.desc"
+                                :popper-class="templateTooltipClass(template)"
+                                placement="bottom-start">
                         <template #content>
                             <span v-for="(line,i) in template.desc.split('\n')"
                                   :key="'line-'+i"
@@ -22,7 +25,11 @@
                                 <br v-if="i>0"/>{{ line }}
                             </span>
                         </template>
-                        <el-tag size="small" style="cursor: default;" @mousedown.native.stop>{{ template.id }}</el-tag>
+                        <el-tag size="small"
+                                style="cursor: default;"
+                                @mousedown.native.stop>
+                            {{ template.id }}
+                        </el-tag>
                     </el-tooltip>
                     {{ template.name }}
                 </div>
@@ -74,6 +81,16 @@ export default {
             utils.visitNodes(tree.root, node => {
                 this.$set(node, "template", this.mappedTemplates.get(node.tid));
             });
+        },
+        templateTooltipClass(template) {
+            let result = "template-tooltip";
+            if (template.desc.split('\n').length > 1) {
+                result += "-multi-line"
+            } else {
+                result += "-single-line"
+            }
+
+            return result;
         }
     }
 }
@@ -84,5 +101,18 @@ export default {
     padding: 10px 0;
     cursor: grab;
     user-select: none;
+}
+</style>
+<style>
+/*noinspection CssUnusedSymbol*/
+.template-tooltip-single-line {
+    transform: translateY(-7px);
+    padding: 2px 10px;
+}
+
+/*noinspection CssUnusedSymbol*/
+.template-tooltip-multi-line {
+    transform: translateY(-7px);
+    padding: 7px 13px;
 }
 </style>

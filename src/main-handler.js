@@ -54,32 +54,39 @@ ipcMain.handle("load-config", async () => {
     return JSON.parse(configJson);
 });
 
-ipcMain.handle("load-trees", async () => {
-    let files = await fs.promises.readdir(workPath);
-    let trees = [];
+ipcMain.handle("load-trees", async event => {
+        let files = await fs.promises.readdir(workPath);
+        let trees = [];
 
-    for (let file of files) {
-        let fileName = path.resolve(workPath, file);
-        if (!fileName.endsWith(".json")) {
-            continue;
-        }
-        let basename = path.basename(fileName, ".json");
-        if (!Number.isInteger(Number(basename))) {
-            continue;
-        }
-        let fileStats = await fs.promises.stat(fileName);
-        if (!fileStats.isFile()) {
-            continue;
+        for (let file of files) {
+            let fileName = path.resolve(workPath, file);
+            if (!fileName.endsWith(".json")) {
+                continue;
+            }
+            let basename = path.basename(fileName, ".json");
+            if (!Number.isInteger(Number(basename))) {
+                continue;
+            }
+            let fileStats = await fs.promises.stat(fileName);
+            if (!fileStats.isFile()) {
+                continue;
+            }
+
+            try {
+                let fileJson = (await fs.promises.readFile(fileName)).toString();
+                trees.push(JSON.parse(fileJson));
+            } catch (e) {
+                event.sender.send("msg", `加载行为树(${basename})失败.`, "error");
+                throw e;
+            }
         }
 
-        let fileJson = (await fs.promises.readFile(fileName)).toString();
-        trees.push(JSON.parse(fileJson));
+        trees.sort((t1, t2) => t1.id - t2.id);
+
+        return trees;
     }
-
-    trees.sort((t1, t2) => t1.id - t2.id);
-
-    return trees;
-});
+)
+;
 
 
 ipcMain.handle("save-tree", async (event, tree) => {
