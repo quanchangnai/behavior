@@ -1,65 +1,20 @@
 import {ipcMain, shell} from 'electron'
-import defaultConfig from "./config";
+import behavior from "@/behavior";
 import fs from 'fs'
 import path from 'path'
 
-ipcMain.handle("dev-tools", event => {
-    if (event.sender.isDevToolsOpened()) {
-        event.sender.closeDevTools();
-    } else {
-        event.sender.openDevTools();
-    }
-});
-
-
-/**
- * 行为树模板配置文件名
- */
-let configFile;
-/**
- * 工作空间路径
- */
-let workPath;
-
-
-async function loadBehaviorJson() {
-    let params;
-    let file = path.resolve(".", "behavior.json");
-
-    if (!fs.existsSync(file)) {
-        params = {configFile: "behavior.config.json", workPath: "behavior_trees"};
-        let json = JSON.stringify(params, null, 4);
-        await fs.promises.writeFile(file, json);
-    } else {
-        let json = (await fs.promises.readFile(file)).toString();
-        params = JSON.parse(json);
-    }
-
-    configFile = path.resolve(".", params.configFile);
-    workPath = path.resolve(".", params.workPath);
-
-    if (!fs.existsSync(workPath)) {
-        await fs.promises.mkdir(workPath);
-    }
-}
 
 ipcMain.handle("load-config", async () => {
-    await loadBehaviorJson();
-
-    if (!fs.existsSync(configFile)) {
-        await fs.promises.writeFile(configFile, JSON.stringify(defaultConfig, null, 4));
-    }
-
-    let configJson = (await fs.promises.readFile(configFile)).toString();
+    let configJson = (await fs.promises.readFile(behavior.configFile)).toString();
     return JSON.parse(configJson);
 });
 
 ipcMain.handle("load-trees", async event => {
-        let files = await fs.promises.readdir(workPath);
+        let files = await fs.promises.readdir(behavior.workPath);
         let trees = [];
 
         for (let file of files) {
-            let fileName = path.resolve(workPath, file);
+            let fileName = path.resolve(behavior.workPath, file);
             if (!fileName.endsWith(".json")) {
                 continue;
             }
@@ -85,23 +40,22 @@ ipcMain.handle("load-trees", async event => {
 
         return trees;
     }
-)
-;
+);
 
 
 ipcMain.handle("save-tree", async (event, tree) => {
     let treeJson = JSON.stringify(tree, null, 4);
-    let treeFile = path.resolve(workPath, tree.id + ".json");
+    let treeFile = path.resolve(behavior.workPath, tree.id + ".json");
     await fs.promises.writeFile(treeFile, treeJson, {encoding: "utf-8"});
 });
 
 ipcMain.handle("delete-tree", async (event, treeId) => {
-    let treeFile = path.resolve(workPath, treeId + ".json");
+    let treeFile = path.resolve(behavior.workPath, treeId + ".json");
     await fs.promises.unlink(treeFile);
 });
 
 ipcMain.handle("open-work-path", async () => {
-    await shell.openPath(workPath);
+    await shell.openPath(behavior.workPath);
 });
 
 

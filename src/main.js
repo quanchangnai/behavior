@@ -4,6 +4,7 @@ import {app, protocol, BrowserWindow} from 'electron'
 import {createProtocol} from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, {VUEJS_DEVTOOLS} from 'electron-devtools-installer'
 import './main-handler'
+import './menu'
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
@@ -25,6 +26,7 @@ async function createWindow() {
             contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION,
         }
     });
+
     win.maximize();
     win.show();
     if (process.env.WEBPACK_DEV_SERVER_URL) {
