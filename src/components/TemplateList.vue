@@ -10,8 +10,7 @@
                           clearable
                           size="small"
                           style="margin-top: 1px"
-                          placeholder="输入关键字搜索"
-                          suffix-icon="el-icon-search">
+                          placeholder="关键字搜索">
                     <el-select slot="prepend"
                                popper-class="template-select-dropdown"
                                v-model="selectedType">
@@ -79,14 +78,16 @@ export default {
             }
         }
         for (let template of this.templates) {
-            template.type = this.templateTypes.find(type => type.id === template.type);
+            if (typeof template.type === "number") {
+                template.type = this.templateTypes.find(type => type.id === template.type);
+            }
         }
         for (const template of this.templates) {
             this.mappedTemplates.set(template.id, template);
         }
 
         this.selectedType = "all";
-        this.keyword = "1";
+        this.keyword = "";
 
         this.$events.$on("init-tree", this.onInitTree);
     },
@@ -95,20 +96,10 @@ export default {
     },
     watch: {
         keyword() {
-            this.visibleTemplates = this.templates.filter(template => {
-                if (typeof this.selectedType === 'number' && template.type.id !== this.selectedType) {
-                    return false;
-                }
-                return template.type.visible && (template.name.includes(this.keyword) || template.id.toString().includes(this.keyword));
-            });
+            this.filterVisibleTemplates();
         },
         selectedType() {
-            this.visibleTemplates = this.templates.filter(template => {
-                if (typeof this.selectedType === 'number' && template.type.id !== this.selectedType) {
-                    return false;
-                }
-                return template.type.visible && (template.name.includes(this.keyword) || template.id.toString().includes(this.keyword));
-            });
+            this.filterVisibleTemplates();
         }
     },
     methods: {
@@ -153,7 +144,7 @@ export default {
 
 .el-input >>> .el-input-group__prepend {
     background-color: #fff;
-    width: 46px;
+    width: 55px;
 }
 
 </style>
@@ -170,7 +161,7 @@ export default {
 }
 
 .template-select-dropdown {
-    transform: translateY(-8px);
+    transform: translateY(-7px);
 }
 
 .template-select-dropdown .popper__arrow {

@@ -19,7 +19,7 @@
                     <el-input v-model="keyword"
                               clearable
                               size="small"
-                              placeholder="输入关键字搜索"
+                              placeholder="关键字搜索"
                               prefix-icon="el-icon-search"/>
                 </template>
                 <template #default="{row:tree}">

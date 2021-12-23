@@ -95,8 +95,9 @@ export default {
     line-height: 25px;
     user-select: none;
     cursor: pointer;
-    border: solid #e9e9eb 1px;
-    background-color: #f4f4f5;
+    border: solid #e4e7ed 1px;
+    border-radius: 3px;
+    background-color: #ffffff;
 }
 
 .context-menu-item {
@@ -104,6 +105,6 @@ export default {
 }
 
 .context-menu-item:hover {
-    background-color: #e9e9eb;
+    background-color: #f5f7fa;
 }
 </style>
