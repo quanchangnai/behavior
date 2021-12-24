@@ -7,6 +7,7 @@
         </div>
         <div id="center">
             <draggable id="board"
+                       :freeze="boardFreeze"
                        :x="boardX"
                        :y="boardY"
                        @drag-end="onBoardDragEnd"
@@ -17,8 +18,9 @@
                            :key="node.id"
                            :ref="'node-'+node.id"
                            :node="node"
+                           @drag-start="boardFreeze=true"
                            @dragging="onNodeDragging"
-                           @drag-end="drawTree"
+                           @drag-end="onNodeDragEnd"
                            @fold="onNodeFold"
                            @children-fold="onNodeChildrenFold"
                            @delete="drawTree"/>
@@ -35,7 +37,7 @@
                    :node="creatingNode"
                    :creating="true"
                    @dragging="onNodeDragging"
-                   @drag-end="drawTree"/>
+                   @drag-end="onNodeDragEnd"/>
         <context-menu ref="menu" :items="menuItems"/>
     </div>
 </template>
@@ -62,6 +64,7 @@ export default {
             config: null,//编辑器配置
             tree: null,//当前编辑的行为树
             creatingNode: null,//正在新建的节点
+            boardFreeze: false,
             boardX: 0,
             boardY: 0
         }
@@ -284,6 +287,10 @@ export default {
         onNodeDragging(node) {
             this.linkParentNode(node);
             this.drawLinkLines();
+        },
+        onNodeDragEnd() {
+            this.boardFreeze = false;
+            this.drawTree();
         },
         onNodeFold() {
             this.tree.folded = 0;
