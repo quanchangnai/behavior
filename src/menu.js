@@ -1,8 +1,5 @@
-import {app, Menu, shell} from "electron";
+import {Menu, shell} from "electron";
 import behavior from "@/behavior";
-
-let window = null;
-app.on("browser-window-created", (event, win) => window = win);
 
 const menu = Menu.buildFromTemplate([
     {
@@ -10,11 +7,13 @@ const menu = Menu.buildFromTemplate([
         submenu: [
             {
                 label: '打开工作目录',
+                accelerator: "Alt+E",
                 click: () => shell.openPath(behavior.workPath)
             },
             {
                 label: '重加载工作目录',
-                click: () => window.webContents.send("reload-trees")
+                accelerator: "Alt+R",
+                click: (item, window) => window.webContents.send("reload-trees")
             }
         ]
     },
