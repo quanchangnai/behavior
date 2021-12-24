@@ -12,13 +12,14 @@
                           style="margin-top: 1px"
                           placeholder="关键字搜索">
                     <el-select slot="prepend"
-                               popper-class="template-select-dropdown"
-                               v-model="selectedType">
+                               v-model="selectedGroup"
+                               v-if="selectGroups.length>0"
+                               popper-class="template-select-dropdown">
                         <el-option label="全部" value="all"></el-option>
-                        <el-option v-for="type in visibleTemplateTypes"
-                                   :key="type.id"
-                                   :label="type.name"
-                                   :value="type.id"/>
+                        <el-option v-for="group in selectGroups"
+                                   :key="group.id"
+                                   :label="group.name"
+                                   :value="group.id"/>
 
                     </el-select>
                 </el-input>
@@ -57,14 +58,15 @@ export default {
     name: "TemplateList",
     props: {
         templates: Array,
-        templateTypes: Array
+        templateTypes: Array,
+        templateGroups: Array
     },
     data() {
         return {
             visibleTemplates: [],
-            visibleTemplateTypes: [],
             mappedTemplates: new Map(),
-            selectedType: null,
+            selectGroups: [],
+            selectedGroup: null,
             keyword: null
         }
     },
@@ -74,32 +76,48 @@ export default {
             //可以作为子节点的模板才显示在模板列表界面
             if (this.templateTypes.find(t => t.childrenTypes.indexOf(templateType.id) >= 0)) {
                 templateType.visible = true;
-                this.visibleTemplateTypes.push(templateType);
             }
         }
+
+        let ungrouped = false;
         for (let template of this.templates) {
             if (typeof template.type === "number") {
                 template.type = this.templateTypes.find(type => type.id === template.type);
             }
+            if (template.type.visible && !template.group) {
+                ungrouped = true;
+            }
         }
+
+        if (this.templateGroups && this.templateGroups.length) {
+            this.selectedGroup = "all";
+            if (ungrouped) {
+                this.selectGroups.push({id: "ungrouped", name: "未分组"});
+            }
+            for (let templateGroup of this.templateGroups) {
+                this.selectGroups.push(templateGroup);
+            }
+        }
+
         for (const template of this.templates) {
             this.mappedTemplates.set(template.id, template);
         }
 
-        this.selectedType = "all";
         this.keyword = "";
 
         this.$events.$on("init-tree", this.onInitTree);
-    },
+    }
+    ,
     destroyed() {
         this.$events.$off("init-tree", this.onInitTree);
-    },
+    }
+    ,
     watch: {
         keyword() {
-            this.filterVisibleTemplates();
+            this.filterTemplates();
         },
-        selectedType() {
-            this.filterVisibleTemplates();
+        selectedGroup() {
+            this.filterTemplates();
         }
     },
     methods: {
@@ -111,12 +129,19 @@ export default {
                 this.$set(node, "template", this.mappedTemplates.get(node.tid));
             });
         },
-        filterVisibleTemplates() {
+        filterTemplates() {
+            console.log("selectedGroup:" + this.selectedGroup);
             this.visibleTemplates = this.templates.filter(template => {
-                if (typeof this.selectedType === 'number' && template.type.id !== this.selectedType) {
+                if (!template.type.visible) {
                     return false;
                 }
-                return template.type.visible && (template.name.includes(this.keyword) || template.id.toString().includes(this.keyword));
+                if (typeof this.selectedGroup === 'number' && template.group !== this.selectedGroup) {
+                    return false;
+                }
+                if (this.selectedGroup === "ungrouped" && template.group) {
+                    return false;
+                }
+                return template.name.includes(this.keyword) || template.id.toString().includes(this.keyword);
             });
         },
         templateTooltipClass(template) {
@@ -126,7 +151,6 @@ export default {
             } else {
                 result += "-single-line"
             }
-
             return result;
         }
     }

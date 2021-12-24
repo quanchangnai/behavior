@@ -30,6 +30,7 @@
             <template-list v-if="config"
                            :templates="config.templates"
                            :template-types="config.templateTypes"
+                           :template-groups="config.templateGroups"
                            @select-template="onSelectTemplate"/>
         </div>
         <tree-node v-if="creatingNode!=null"
