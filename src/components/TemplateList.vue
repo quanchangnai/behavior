@@ -9,13 +9,13 @@
                 <el-input v-model="keyword"
                           clearable
                           size="small"
-                          style="margin-top: 1px"
+                          class="keyword-input"
                           placeholder="关键字搜索">
                     <el-select slot="prepend"
+                               class="group-select"
                                v-model="selectedGroup"
                                v-if="selectGroups.length>0"
                                popper-class="template-select-dropdown">
-                        <el-option label="全部" value="all"></el-option>
                         <el-option v-for="group in selectGroups"
                                    :key="group.id"
                                    :label="group.name"
@@ -38,7 +38,7 @@
                             </span>
                         </template>
                         <el-tag size="small"
-                                style="cursor: default;"
+                                style="cursor: default;margin-right: 10px"
                                 @mousedown.native.stop>
                             {{ template.id }}
                         </el-tag>
@@ -70,7 +70,7 @@ export default {
             keyword: null
         }
     },
-    async created() {
+    created() {
         for (let templateType of this.templateTypes) {
             templateType.visible = false;
             //可以作为子节点的模板才显示在模板列表界面
@@ -91,6 +91,7 @@ export default {
 
         if (this.templateGroups && this.templateGroups.length) {
             this.selectedGroup = "all";
+            this.selectGroups.push({id: "all", name: "全部"});
             if (ungrouped) {
                 this.selectGroups.push({id: "ungrouped", name: "未分组"});
             }
@@ -106,12 +107,12 @@ export default {
         this.keyword = "";
 
         this.$events.$on("init-tree", this.onInitTree);
-    }
-    ,
+
+        this.$nextTick(this.groupSelectInput);
+    },
     destroyed() {
         this.$events.$off("init-tree", this.onInitTree);
-    }
-    ,
+    },
     watch: {
         keyword() {
             this.filterTemplates();
@@ -130,7 +131,6 @@ export default {
             });
         },
         filterTemplates() {
-            console.log("selectedGroup:" + this.selectedGroup);
             this.visibleTemplates = this.templates.filter(template => {
                 if (!template.type.visible) {
                     return false;
@@ -152,11 +152,17 @@ export default {
                 result += "-single-line"
             }
             return result;
+        },
+        groupSelectInput() {
+            let groupSelectInput = document.querySelector(".group-select .el-input__inner");
+            //focus会导致输入框text-overflow: ellipsis失效
+            groupSelectInput.onfocus = () => {
+                groupSelectInput.blur();
+            };
         }
     }
 }
 </script>
-
 
 <!--suppress CssUnusedSymbol -->
 <style scoped>
@@ -166,10 +172,22 @@ export default {
     user-select: none;
 }
 
-.el-input >>> .el-input-group__prepend {
-    background-color: #fff;
-    width: 55px;
+.keyword-input {
+    margin: 1px 0
 }
+
+.keyword-input >>> .el-input-group__prepend {
+    background-color: #fff;
+    width: 40px;
+}
+
+.group-select >>> .el-input__inner {
+    padding-left: 10px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
 
 </style>
 <!--suppress CssUnusedSymbol -->
