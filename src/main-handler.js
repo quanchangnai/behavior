@@ -4,17 +4,19 @@ import fs from 'fs'
 import path from 'path'
 
 
-ipcMain.handle("load-config", async () => {
-    let configJson = (await fs.promises.readFile(behavior.configFile)).toString();
+ipcMain.handle("load-config", async event => {
+    let configFile = behavior.getConfigFile(event.sender);
+    let configJson = (await fs.promises.readFile(configFile)).toString();
     return JSON.parse(configJson);
 });
 
 ipcMain.handle("load-trees", async event => {
-        let files = await fs.promises.readdir(behavior.workPath);
+        let workspace = behavior.getWorkspace(event.sender);
+        let files = await fs.promises.readdir(workspace);
         let trees = [];
 
         for (let file of files) {
-            let fileName = path.resolve(behavior.workPath, file);
+            let fileName = path.resolve(workspace, file);
             if (!fileName.endsWith(".json")) {
                 continue;
             }
@@ -44,18 +46,21 @@ ipcMain.handle("load-trees", async event => {
 
 
 ipcMain.handle("save-tree", async (event, tree) => {
+    let workspace = behavior.getWorkspace(event.sender);
     let treeJson = JSON.stringify(tree, null, 4);
-    let treeFile = path.resolve(behavior.workPath, tree.id + ".json");
+    let treeFile = path.resolve(workspace, tree.id + ".json");
     await fs.promises.writeFile(treeFile, treeJson, {encoding: "utf-8"});
 });
 
 ipcMain.handle("delete-tree", async (event, treeId) => {
-    let treeFile = path.resolve(behavior.workPath, treeId + ".json");
+    let workspace = behavior.getWorkspace(event.sender);
+    let treeFile = path.resolve(workspace, treeId + ".json");
     await fs.promises.unlink(treeFile);
 });
 
-ipcMain.handle("open-work-path", async () => {
-    await shell.openPath(behavior.workPath);
+ipcMain.handle("open-work-path", async (event) => {
+    let workspace = behavior.getWorkspace(event.sender);
+    await shell.openPath(workspace);
 });
 
 

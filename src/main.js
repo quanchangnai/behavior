@@ -15,7 +15,7 @@ protocol.registerSchemesAsPrivileged([
 
 async function createWindow() {
     // Create the browser window.
-    const win = new BrowserWindow({
+    const window = new BrowserWindow({
         show: false,
         minWidth: 1200,
         minHeight: 800,
@@ -27,18 +27,15 @@ async function createWindow() {
         }
     });
 
-    win.maximize();
-    win.show();
+    window.maximize();
+    window.show();
     if (process.env.WEBPACK_DEV_SERVER_URL) {
         // Load the url of the dev server if in development mode
-        await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL);
-        // if (!process.env.IS_TEST) {
-        //   win.webContents.openDevTools();
-        // }
+        await window.loadURL(process.env.WEBPACK_DEV_SERVER_URL);
     } else {
         createProtocol('app');
         // Load the index.html when not in development
-        await win.loadURL('app://./index.html');
+        await window.loadURL('app://./index.html');
     }
 }
 
@@ -63,7 +60,7 @@ app.on('activate', () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
-    if (isDevelopment && !process.env.IS_TEST) {
+    if (isDevelopment) {
         // Install Vue Devtools
         try {
             await installExtension(VUEJS_DEVTOOLS)
@@ -71,7 +68,7 @@ app.on('ready', async () => {
             console.error('Vue Devtools failed to install:', e.toString())
         }
     }
-    createWindow();
+    await createWindow();
 });
 
 // Exit cleanly on request from parent process in development mode.
@@ -88,4 +85,7 @@ if (isDevelopment) {
         })
     }
 }
+
+
+app.on("open-window", createWindow);
 

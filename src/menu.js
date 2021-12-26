@@ -1,31 +1,36 @@
-import {Menu, shell} from "electron";
+import {app, Menu, shell} from "electron";
 import behavior from "@/behavior";
 
 const menu = Menu.buildFromTemplate([
     {
-        label: '文件',
+        label: "文件",
         submenu: [
             {
                 label: '打开工作目录',
                 accelerator: "Alt+E",
-                click: () => shell.openPath(behavior.workPath)
+                click: async (item, window) => {
+                    await shell.openPath(behavior.getWorkspace(window.webContents));
+                }
             },
             {
-                label: '重加载工作目录',
-                accelerator: "Alt+R",
-                click: (item, window) => window.webContents.send("reload-trees")
-            }
+                label: "刷新工作区",
+                role: "reload",
+                accelerator: "F5",
+            },
+            {
+                label: '打开工作区',
+                click: () => {
+                    app.emit("open-window");
+                }
+            },
         ]
     },
     {
-        label: '刷新',
-        role: "reload",
-        accelerator: "F5"
-    },
-    {
-        label: '控制台',
+        label: "开发者工具",
         role: "toggleDevTools",
-        accelerator: "F12"
-    }]);
+        accelerator: "F12",
+    }
+
+]);
 
 Menu.setApplicationMenu(menu);
