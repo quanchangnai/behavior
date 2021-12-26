@@ -3,7 +3,7 @@ import behavior from "@/behavior";
 
 const menu = Menu.buildFromTemplate([
     {
-        label: "文件",
+        label: "菜单",
         submenu: [
             {
                 label: '打开工作目录',
@@ -20,17 +20,17 @@ const menu = Menu.buildFromTemplate([
             {
                 label: '打开工作区',
                 click: () => {
-                    app.emit("open-window");
+                    app.emit("create-window");
                 }
             },
+            {
+                label: "开发者工具",
+                role: "toggleDevTools",
+                accelerator: "F12",
+                visible: false
+            }
         ]
-    },
-    {
-        label: "开发者工具",
-        role: "toggleDevTools",
-        accelerator: "F12",
     }
-
 ]);
 
 Menu.setApplicationMenu(menu);

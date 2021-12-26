@@ -116,6 +116,8 @@ export default {
                 }
                 if (!node.children) {
                     this.$set(node, "children", []);
+                }
+                if (!node.childrenFolded) {
                     this.$set(node, "childrenFolded", false);
                 }
             });

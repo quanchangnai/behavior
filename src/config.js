@@ -58,7 +58,8 @@ let defaultTree = {
         tid: 1,
         children: [
             {id: 2, name: "", tid: 2}
-        ]
+        ],
+        childrenFolded: false
     }
 };
 

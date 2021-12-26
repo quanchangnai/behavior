@@ -33,7 +33,6 @@ async function createWindow() {
         // Load the url of the dev server if in development mode
         await window.loadURL(process.env.WEBPACK_DEV_SERVER_URL);
     } else {
-        createProtocol('app');
         // Load the index.html when not in development
         await window.loadURL('app://./index.html');
     }
@@ -68,14 +67,16 @@ app.on('ready', async () => {
             console.error('Vue Devtools failed to install:', e.toString())
         }
     }
-    await createWindow();
+    if (!process.env.WEBPACK_DEV_SERVER_URL) {
+        createProtocol('app');
+    }
 });
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
     if (process.platform === 'win32') {
-        process.on('message', (data) => {
-            if (data === 'graceful-exit') {
+        process.on('message', message => {
+            if (message === 'graceful-exit') {
                 app.quit()
             }
         })
@@ -86,6 +87,4 @@ if (isDevelopment) {
     }
 }
 
-
-app.on("open-window", createWindow);
-
+app.on("create-window", createWindow);
