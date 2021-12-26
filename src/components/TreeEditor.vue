@@ -1,5 +1,7 @@
 <template>
-    <div ref="body" v-loading.fullscreen="config===null">
+    <div id="body"
+         ref="body"
+         v-loading.fullscreen="config===null">
         <div id="left">
             <tree-list v-if="config"
                        :defaultTree="config.defaultTree"
@@ -11,6 +13,7 @@
                        :x="boardX"
                        :y="boardY"
                        @drag-end="onBoardDragEnd"
+                       @dblclick.native="resetBoardPosition"
                        @contextmenu.native="onBoardContextMenu"
                        @mouseup.native="onBoardMouseUp">
                 <canvas id="canvas" @contextmenu.prevent/>
@@ -361,8 +364,8 @@ export default {
                 }
                 //目标节点限制子节点数量
                 if (targetNodeType.childrenNum >= 0
-                        && targetNode.children.length >= targetNodeType.childrenNum
-                        && targetNode.children.indexOf(node) < 0) {
+                    && targetNode.children.length >= targetNodeType.childrenNum
+                    && targetNode.children.indexOf(node) < 0) {
                     canLink = false;
                 }
 
@@ -380,6 +383,10 @@ export default {
 
             return parentNode;
         },
+        resetBoardPosition() {
+            this.boardX = 0;
+            this.boardY = 0;
+        },
         async onBoardDragEnd(event) {
             this.boardX = event.x;
             this.boardY = event.y;
@@ -391,12 +398,10 @@ export default {
             let board = document.querySelector("#board");
             let center = document.querySelector("#center");
             if (event.x < -board.offsetWidth + boardEdgeSpace || event.x > center.offsetWidth - boardEdgeSpace) {
-                this.boardX = 0;
-                this.boardY = 0;
+                this.resetBoardPosition();
             }
             if (event.y < -board.offsetHeight + boardEdgeSpace || event.y > center.offsetHeight - boardEdgeSpace) {
-                this.boardX = 0;
-                this.boardY = 0;
+                this.resetBoardPosition();
             }
         },
         async onBoardMouseUp() {
@@ -481,6 +486,13 @@ export default {
 </script>
 
 <style scoped>
+#body {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
 #left {
     position: absolute;
     width: 220px;
@@ -509,13 +521,15 @@ export default {
     width: 100%;
     height: 100%;
     overflow: hidden;
+    background-color: aliceblue;
 }
 
 #canvas {
     position: absolute;
     width: 100%;
     height: 100%;
-    background-color: aliceblue;
+    z-index: 20;
+    pointer-events: none;
 }
 
 </style>

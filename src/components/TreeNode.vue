@@ -6,7 +6,7 @@
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
-               @dblclick.native="fold"
+               @dblclick.native.stop="fold"
                @contextmenu.native.stop="onContextMenu">
         <template>
             <div ref="content" class="content" :class="{'creating-content':creating}">
@@ -59,7 +59,8 @@
                                         effect="light"
                                         :disabled="typeof param.pattern!=='string'||param.pattern.length===0"
                                         :content="'格式:'+param.pattern"
-                                        :arrowOffset="25"
+                                        :arrowOffset="15"
+                                        :hide-after="1000"
                                         popper-class="node-param-tooltip"
                                         placement="bottom-start">
                                 <el-input v-model="node.params[paramName]"
@@ -141,7 +142,7 @@ export default {
             utils.visitNodes(this.node, node => {
                 node.x += deltaX;
                 node.y += deltaY;
-                node.z = 100;
+                node.z = 10;
             });
 
             this.$emit("dragging", this.node);
@@ -159,13 +160,21 @@ export default {
             this.node.childrenFolded = !this.node.childrenFolded;
             this.$emit("children-fold", this.node);
         },
-        delete() {
+        async delete() {
+            if (this.node.children.length) {
+                try {
+                    await this.$confirm("确定删除该节点及其所有子孙节点？", {type: "warning"});
+                } catch {
+                    return;
+                }
+            }
+
             let index = this.node.parent.children.indexOf(this.node);
             this.node.parent.children.splice(index, 1);
             this.$emit("delete", this.node);
         },
         onContextMenu(event) {
-            this.node.z = 10;
+            this.node.z = 30;
             this.$refs.menu.show(event.clientX, event.clientY);
         },
         paramSelectClass(paramName) {
@@ -290,6 +299,7 @@ export default {
 }
 </style>
 <style>
+/*noinspection CssUnusedSymbol*/
 .node-param-tooltip {
     transform: translateY(-8px);
     box-sizing: border-box;

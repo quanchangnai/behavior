@@ -19,7 +19,7 @@
                     <el-input v-model="keyword"
                               clearable
                               size="small"
-                              placeholder="关键字搜索"
+                              placeholder="输入关键字搜索"
                               prefix-icon="el-icon-search"/>
                 </template>
                 <template #default="{row:tree}">
@@ -65,7 +65,6 @@ export default {
         }
     },
     async created() {
-        ipcRenderer.on("reload-trees", this.loadTrees);
         await this.loadTrees();
         this.$events.$on("delete-tree", this.deleteTree);
     },
@@ -131,9 +130,7 @@ export default {
             if (tree != null) {
                 this.menuItems.push({title: '删除行为树', handler: () => this.deleteTree(tree)});
             }
-
             this.menuItems.push({title: '打开工作目录', handler: () => ipcRenderer.invoke("open-work-path")});
-            this.menuItems.push({title: '重加载工作目录', handler: this.loadTrees});
 
             let body = this.$refs.body;
             let limits = {
@@ -154,19 +151,23 @@ export default {
 
             utils.saveTree(tree);
         },
-        deleteTree(tree) {
+        async deleteTree(tree) {
+            try {
+                await this.$confirm("确定删除行为树？", {type: "warning"});
+            } catch {
+                return;
+            }
             let index = this.allTrees.indexOf(tree);
             this.allTrees.splice(index, 1);
             if (this.selectedTree === tree && this.visibleTrees.length) {
                 this.$refs.table.setCurrentRow(this.visibleTrees[0]);
             }
-
-            ipcRenderer.invoke("delete-tree", tree.id);
+            await ipcRenderer.invoke("delete-tree", tree.id);
         },
         editTreeNameInputStyle(treeId) {
             // noinspection JSUnresolvedVariable
             let treeIdTagWidth = this.$refs['treeIdTag-' + treeId].offsetWidth;
-            return {width: "calc(100% - " + (treeIdTagWidth + 1) + "px)"}
+            return {width: "calc(100% - " + (treeIdTagWidth + 2) + "px)"}
         },
         async showEditTreeNameInput() {
             this.editTreeName = true;

@@ -10,7 +10,8 @@
                           clearable
                           size="small"
                           class="keyword-input"
-                          placeholder="关键字搜索">
+                          :prefix-icon="selectGroups.length===0?'el-icon-search':''"
+                          placeholder="输入关键字搜索">
                     <el-select slot="prepend"
                                class="group-select"
                                v-model="selectedGroup"
@@ -38,7 +39,7 @@
                             </span>
                         </template>
                         <el-tag size="small"
-                                style="cursor: default;margin-right: 10px"
+                                style="cursor: default;margin-right: 10px;"
                                 @mousedown.native.stop>
                             {{ template.id }}
                         </el-tag>
@@ -91,12 +92,12 @@ export default {
 
         if (this.templateGroups && this.templateGroups.length) {
             this.selectedGroup = "all";
-            this.selectGroups.push({id: "all", name: "全部"});
-            if (ungrouped) {
-                this.selectGroups.push({id: "ungrouped", name: "未分组"});
-            }
+            this.selectGroups.push({id: "all", name: "全部分组"});
             for (let templateGroup of this.templateGroups) {
                 this.selectGroups.push(templateGroup);
+            }
+            if (ungrouped) {
+                this.selectGroups.push({id: "ungrouped", name: "未分组"});
             }
         }
 
@@ -108,7 +109,7 @@ export default {
 
         this.$events.$on("init-tree", this.onInitTree);
 
-        this.$nextTick(this.groupSelectInput);
+        this.blurGroupSelectInput();
     },
     destroyed() {
         this.$events.$off("init-tree", this.onInitTree);
@@ -153,12 +154,15 @@ export default {
             }
             return result;
         },
-        groupSelectInput() {
+        async blurGroupSelectInput() {
+            await this.$nextTick();
             let groupSelectInput = document.querySelector(".group-select .el-input__inner");
-            //focus会导致输入框text-overflow: ellipsis失效
-            groupSelectInput.onfocus = () => {
-                groupSelectInput.blur();
-            };
+            if (groupSelectInput != null) {
+                //focus会导致输入框text-overflow: ellipsis失效
+                groupSelectInput.onfocus = () => {
+                    groupSelectInput.blur();
+                };
+            }
         }
     }
 }
@@ -173,19 +177,24 @@ export default {
 }
 
 .keyword-input {
-    margin: 1px 0
+    margin: 1px 0;
 }
 
 .keyword-input >>> .el-input-group__prepend {
     background-color: #fff;
-    width: 40px;
+    width: 50px;
 }
 
 .group-select >>> .el-input__inner {
-    padding-left: 10px;
+    padding-left: 8px;
+    padding-right: 22px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+.group-select >>> .el-input__icon {
+    width: 20px !important;
 }
 
 
@@ -193,12 +202,12 @@ export default {
 <!--suppress CssUnusedSymbol -->
 <style>
 .template-tooltip-single-line {
-    transform: translateY(-7px);
+    transform: translateY(-8px);
     padding: 2px 10px;
 }
 
 .template-tooltip-multi-line {
-    transform: translateY(-7px);
+    transform: translateY(-8px);
     padding: 7px 13px;
 }
 
