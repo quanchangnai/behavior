@@ -66,6 +66,7 @@ export default {
     },
     async created() {
         await this.loadTrees();
+        ipcRenderer.on("create-tree", this.createTree);
         this.$events.$on("delete-tree", this.deleteTree);
     },
     destroyed() {

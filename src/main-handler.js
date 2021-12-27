@@ -1,4 +1,4 @@
-import {ipcMain, shell} from 'electron'
+import {ipcMain} from 'electron'
 import behavior from "@/behavior";
 import fs from 'fs'
 import path from 'path'
@@ -6,7 +6,13 @@ import path from 'path'
 
 ipcMain.handle("load-config", async event => {
     let configFile = behavior.getConfigFile(event.sender);
-    let configJson = (await fs.promises.readFile(configFile)).toString();
+    let configJson;
+    try {
+        configJson = (await fs.promises.readFile(configFile)).toString();
+    } catch (e) {
+        await behavior.createWorkspace(path.dirname(configFile));
+        configJson = (await fs.promises.readFile(configFile)).toString();
+    }
     return JSON.parse(configJson);
 });
 
@@ -59,8 +65,7 @@ ipcMain.handle("delete-tree", async (event, treeId) => {
 });
 
 ipcMain.handle("open-work-path", async (event) => {
-    let workspace = behavior.getWorkspace(event.sender);
-    await shell.openPath(workspace);
+    await behavior.openWorkspacePath(event.sender);
 });
 
 
