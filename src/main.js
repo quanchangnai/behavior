@@ -17,6 +17,8 @@ async function createWindow() {
     // Create the browser window.
     const window = new BrowserWindow({
         show: false,
+        width: 1800,
+        height: 1000,
         minWidth: 1200,
         minHeight: 800,
         webPreferences: {
@@ -27,8 +29,8 @@ async function createWindow() {
         }
     });
 
-    window.maximize();
-    window.show();
+    window.once("ready-to-show", window.maximize);
+
     if (process.env.WEBPACK_DEV_SERVER_URL) {
         // Load the url of the dev server if in development mode
         await window.loadURL(process.env.WEBPACK_DEV_SERVER_URL);
@@ -36,6 +38,7 @@ async function createWindow() {
         // Load the index.html when not in development
         await window.loadURL('app://./index.html');
     }
+
 }
 
 // Quit when all windows are closed.
@@ -50,9 +53,6 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
-    }
 });
 
 // This method will be called when Electron has finished
@@ -87,4 +87,5 @@ if (isDevelopment) {
     }
 }
 
-app.on("create-window", createWindow);
+// noinspection JSCheckFunctionSignatures
+app.on("open-workspace", createWindow);

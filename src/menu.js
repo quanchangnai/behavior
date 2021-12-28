@@ -1,45 +1,18 @@
-import {app, Menu} from "electron";
+import {app, BrowserWindow, ipcMain, Menu, shell} from "electron";
 import behavior from "@/behavior";
-import path from "path";
 
-function buildRecentMenu() {
-    let openRecentWorkspaces = {
-        id: "openRecentWorkspaces",
-        label: "打开最近工作区",
-        submenu: []
-    };
+function buildMenu() {
+    let recentWorkspacesMenuItems = [];
+    let workspacesTitles = behavior.getWorkspacesTitles();
 
-    let allWorkspaces = behavior.getAllWorkspaces();
-    if (allWorkspaces.length === 0) {
-        openRecentWorkspaces.visible = false;
-    }
-
-    let basename2Workspaces = new Map();
-    for (let workspace of allWorkspaces) {
-        let basename = path.basename(workspace);
-        if (!basename2Workspaces.has(basename)) {
-            basename2Workspaces.set(basename, []);
-        }
-        basename2Workspaces.get(basename).push(workspace);
-    }
-
-    for (let workspace of allWorkspaces) {
-        let basename = path.basename(workspace);
-        let label = basename;
-        if (basename2Workspaces.get(basename).length > 1) {
-            label = workspace;
-        }
-        openRecentWorkspaces.submenu.push({
+    for (let workspace of workspacesTitles.keys()) {
+        recentWorkspacesMenuItems.push({
             id: workspace,
-            label: label,
+            label: "打开工作区：" + workspacesTitles.get(workspace),
             click: () => behavior.openWorkspace(workspace)
         });
     }
 
-    return openRecentWorkspaces;
-}
-
-function buildMenu() {
     return [
         {
             label: "文件",
@@ -64,12 +37,12 @@ function buildMenu() {
                     }
                 },
                 {
-                    label: '打开工作区',
+                    label: '打开工作区...',
                     click: async (item, window) => {
                         await behavior.showOpenWorkspaceDialog(window);
                     }
                 },
-                buildRecentMenu()
+                ...recentWorkspacesMenuItems
             ]
         },
         {
@@ -79,14 +52,66 @@ function buildMenu() {
                     label: "开发者工具",
                     role: "toggleDevTools",
                     accelerator: "F12",
+                },
+                {
+                    label: "放大",
+                    role: "zoomIn"
+                },
+                {
+                    label: "缩小",
+                    role: "zoomOut"
+                },
+                {
+                    label: "还原",
+                    role: "resetZoom"
+                }
+            ]
+        },
+        {
+            label: "帮助",
+            submenu: [
+                {
+                    label: "关于",
+                    role: "about"
+                },
+                {
+                    label: "联系",
+                    async click() {
+                        await shell.openExternal("mailto:quanchangnai@126.com")
+                    }
                 }
             ]
         }
     ];
 }
 
-app.on("browser-window-created", (event, window) => {
+// noinspection JSCheckFunctionSignatures
+app.on("open-workspace", () => {
     let menu = Menu.buildFromTemplate(buildMenu());
-    window.setMenu(menu);
+    Menu.setApplicationMenu(menu);
 });
 
+app.on("browser-window-created", (event, window) => {
+    if (!window.setMenu) {
+        return;
+    }
+
+    let allWindows = [...BrowserWindow.getAllWindows(), window];
+    for (let win of allWindows) {
+        let menu = Menu.buildFromTemplate(buildMenu());
+        let menuItem = menu.getMenuItemById(behavior.getWorkspace(win.webContents));
+        menuItem.visible = false;
+        win.setMenu(menu);
+        win.$menu = menu;
+    }
+});
+
+ipcMain.handle("title", event => {
+    let win = BrowserWindow.fromWebContents(event.sender);
+    // noinspection JSUnresolvedVariable
+    if (!win.$menu) {
+        return;
+    }
+    let title = behavior.getWorkspacesTitles().get(behavior.getWorkspace(win.webContents));
+    return win.getTitle() + " - " + title;
+});

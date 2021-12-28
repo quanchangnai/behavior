@@ -6,11 +6,15 @@
 
 <script>
 import TreeEditor from './components/TreeEditor.vue'
+import {ipcRenderer} from "electron";
 
 export default {
     name: 'App',
     components: {
         TreeEditor
+    },
+    async mounted() {
+        document.title = await ipcRenderer.invoke("title");
     }
 }
 </script>

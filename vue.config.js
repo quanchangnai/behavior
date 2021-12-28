@@ -6,7 +6,9 @@ module.exports = {
             mainProcessFile: 'src/main.js',
             rendererProcessFile: 'src/render.js',
             builderOptions: {
-                win: {target: "dir"}
+                win: {target: "dir"},
+                mac: {target: "dir"},
+                linux: {target: "dir"}
             }
         }
     }

@@ -3,7 +3,6 @@ import behavior from "@/behavior";
 import fs from 'fs'
 import path from 'path'
 
-
 ipcMain.handle("load-config", async event => {
     let configFile = behavior.getConfigFile(event.sender);
     let configJson;
