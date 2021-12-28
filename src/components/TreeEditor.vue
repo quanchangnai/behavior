@@ -363,9 +363,10 @@ export default {
                     canLink = false;
                 }
                 //目标节点限制子节点数量
-                if (targetNodeType.childrenNum >= 0
-                    && targetNode.children.length >= targetNodeType.childrenNum
-                    && targetNode.children.indexOf(node) < 0) {
+                let childrenNum = targetNode.template.childrenNum || targetNodeType.childrenNum;
+                if (childrenNum >= 0
+                        && targetNode.children.length >= childrenNum
+                        && targetNode.children.indexOf(node) < 0) {
                     canLink = false;
                 }
 
