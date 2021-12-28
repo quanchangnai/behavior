@@ -424,7 +424,7 @@ export default {
 
             let template = event.template;
 
-            this.creatingNode = {
+            let node = {
                 id: ++this.tree.maxNodeId,
                 tid: template.id,
                 template: template,
@@ -439,9 +439,11 @@ export default {
 
             if (template.params) {
                 for (let paramName of Object.keys(template.params)) {
-                    this.creatingNode.params[paramName] = template.params[paramName].value;
+                    node.params[paramName] = template.params[paramName].value;
                 }
             }
+
+            this.creatingNode = node;
 
             await this.$nextTick();
 
