@@ -8,6 +8,7 @@
   },
   "main": "background.js",
   "dependencies": {
+    "ajv": "^6.12.6",
     "core-js": "^3.6.5",
     "element-ui": "^2.13.2",
     "vue": "^2.6.11"

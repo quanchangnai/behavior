@@ -2,11 +2,11 @@ import {app, BrowserWindow, ipcMain, Menu, shell} from "electron";
 import behavior from "@/behavior";
 
 function buildMenu() {
-    let recentWorkspacesMenuItems = [];
+    let workspacesItems = [];
     let workspacesTitles = behavior.getWorkspacesTitles();
 
     for (let workspace of workspacesTitles.keys()) {
-        recentWorkspacesMenuItems.push({
+        workspacesItems.push({
             id: workspace,
             label: "打开工作区：" + workspacesTitles.get(workspace),
             click: () => behavior.openWorkspace(workspace)
@@ -42,7 +42,7 @@ function buildMenu() {
                         await behavior.showOpenWorkspaceDialog(window);
                     }
                 },
-                ...recentWorkspacesMenuItems
+                ...workspacesItems
             ]
         },
         {

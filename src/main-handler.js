@@ -2,6 +2,7 @@ import {ipcMain} from 'electron'
 import behavior from "@/behavior";
 import fs from 'fs'
 import path from 'path'
+import {validateConfig} from "@/validator";
 
 ipcMain.handle("load-config", async event => {
     let configFile = behavior.getConfigFile(event.sender);
@@ -12,7 +13,12 @@ ipcMain.handle("load-config", async event => {
         await behavior.createWorkspace(path.dirname(configFile));
         configJson = (await fs.promises.readFile(configFile)).toString();
     }
-    return JSON.parse(configJson);
+
+    let config = JSON.parse(configJson);
+    if (!validateConfig(config)) {
+        throw new Error("行为树编辑器配置格式错误\n" + JSON.stringify(validateConfig.errors, null, 4));
+    }
+    return config;
 });
 
 ipcMain.handle("load-trees", async event => {

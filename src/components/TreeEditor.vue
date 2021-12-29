@@ -78,7 +78,13 @@ export default {
             this.$message({message: msg, type: type ? type : "info", center: true, offset: 150});
         });
 
-        this.config = await ipcRenderer.invoke("load-config");
+        try {
+            this.config = await ipcRenderer.invoke("load-config");
+        } catch (e) {
+            console.error(e);
+            this.$message.error("加载行为树编辑器配置报错，按F12查看错误详情");
+            return;
+        }
 
         window.addEventListener("resize", this.drawTree);
     },

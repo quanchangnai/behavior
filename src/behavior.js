@@ -9,15 +9,15 @@ let appWorkspaces = [];
 let homeWorkspaces = [];
 //用户正在打开的工作区，此时窗口还未创建成功
 let openingWorkspace = null;
-let webContents2Workspaces = new Map();
-let workspaces2WebContents = new Map();
-
+//webContents.id:workspace
+let webContentsWorkspaces = new Map();
+//workspace:webContents.id
+let workspacesWebContents = new Map();
 //工作区对应的窗口标题
-let workspaces2Titles = new Map();
+let workspacesTitles = new Map();
 
 let behavior = {
     async addWorkspace(workspaces, workspace, loading) {
-        console.log("addWorkspace:", loading);
         await this.createWorkspace(workspace);
 
         if (appWorkspaces.indexOf(workspace) >= 0) {
@@ -53,13 +53,13 @@ let behavior = {
      * @returns {String}
      */
     getWorkspace(webContents) {
-        return webContents2Workspaces.get(webContents.id);
+        return webContentsWorkspaces.get(webContents.id);
     },
     getAllWorkspaces() {
         return [...appWorkspaces, ...homeWorkspaces];
     },
     getWorkspacesTitles() {
-        return workspaces2Titles;
+        return workspacesTitles;
     },
     async openWorkspacePath(webContents) {
         await shell.openPath(this.getWorkspace(webContents));
@@ -79,17 +79,16 @@ let behavior = {
         }
     },
     async openWorkspace(workspace) {
-        openingWorkspace = workspace;
-        await behavior.addWorkspace(homeWorkspaces, openingWorkspace);
+        await behavior.addWorkspace(homeWorkspaces, workspace);
         buildWorkspacesTitles();
 
-        let webContentsId = workspaces2WebContents.get(openingWorkspace);
+        let webContentsId = workspacesWebContents.get(workspace);
         if (webContentsId) {
-            openingWorkspace = null;
             let browserWindow = BrowserWindow.fromWebContents(webContents.fromId(webContentsId));
             browserWindow.moveTop();
             browserWindow.focus();
         } else {
+            openingWorkspace = workspace;
             app.emit("open-workspace");
         }
     }
@@ -146,20 +145,20 @@ app.on('activate', async () => {
 });
 
 app.on("browser-window-created", async (event, window) => {
-    webContents2Workspaces.set(window.webContents.id, openingWorkspace);
-    workspaces2WebContents.set(openingWorkspace, window.webContents.id);
+    webContentsWorkspaces.set(window.webContents.id, openingWorkspace);
+    workspacesWebContents.set(openingWorkspace, window.webContents.id);
     openingWorkspace = null;
 
     window.on("close", () => {
-        workspaces2WebContents.delete(webContents2Workspaces.get(window.webContents.id));
-        webContents2Workspaces.delete(window.webContents.id);
+        workspacesWebContents.delete(webContentsWorkspaces.get(window.webContents.id));
+        webContentsWorkspaces.delete(window.webContents.id);
     });
 
     await save();
 });
 
 function buildWorkspacesTitles() {
-    workspaces2Titles.clear();
+    workspacesTitles.clear();
     let workspaces = behavior.getAllWorkspaces();
 
     let basename2Workspaces = new Map();
@@ -176,7 +175,7 @@ function buildWorkspacesTitles() {
         let dirname = path.dirname(workspace);
 
         if (basename2Workspaces.get(basename).length < 2) {
-            workspaces2Titles.set(workspace, basename);
+            workspacesTitles.set(workspace, basename);
             continue
         }
 
@@ -195,7 +194,7 @@ function buildWorkspacesTitles() {
             }
         }
 
-        workspaces2Titles.set(workspace, path.resolve(dirname, basename));
+        workspacesTitles.set(workspace, path.resolve(dirname, basename));
     }
 
 }
