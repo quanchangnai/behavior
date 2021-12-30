@@ -1,5 +1,6 @@
 <template>
     <el-table border
+              ref="table"
               size="medium"
               :height="'100%'"
               :data="visibleTemplates"
@@ -91,14 +92,14 @@ export default {
         }
 
         if (this.templateGroups && this.templateGroups.length) {
-            this.selectedGroup = "all";
-            this.selectGroups.push({id: "all", name: "全部分组"});
+            this.selectGroups.push({id: -1, name: "全部分组"});
             for (let templateGroup of this.templateGroups) {
                 this.selectGroups.push(templateGroup);
             }
             if (ungrouped) {
-                this.selectGroups.push({id: "ungrouped", name: "未分组"});
+                this.selectGroups.push({id: -2, name: "未分组"});
             }
+            this.selectedGroup = this.selectGroups[0].id;
         }
 
         for (const template of this.templates) {
@@ -136,10 +137,10 @@ export default {
                 if (!template.type.visible) {
                     return false;
                 }
-                if (typeof this.selectedGroup === 'number' && template.group !== this.selectedGroup) {
+                if (typeof this.selectedGroup > 0 && template.group !== this.selectedGroup) {
                     return false;
                 }
-                if (this.selectedGroup === "ungrouped" && template.group) {
+                if (this.selectedGroup === -2 && template.group) {
                     return false;
                 }
                 return template.name.includes(this.keyword) || template.id.toString().includes(this.keyword);
@@ -163,7 +164,12 @@ export default {
                     groupSelectInput.blur();
                 };
             }
-        }
+        },
+        async doLayout() {
+            await this.$nextTick();
+            this.$refs.table.doLayout();
+            this.$refs.table.doLayout();
+        },
     }
 }
 </script>
@@ -201,6 +207,7 @@ export default {
 </style>
 <!--suppress CssUnusedSymbol -->
 <style>
+
 .template-tooltip-single-line {
     transform: translateY(-8px);
     padding: 2px 10px;

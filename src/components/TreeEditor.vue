@@ -2,6 +2,7 @@
     <div id="body" ref="body" v-loading.fullscreen="config===null">
         <div id="left" :style="{width:leftWidth+'px'}">
             <tree-list v-if="config"
+                       ref="treeList"
                        :defaultTree="config.defaultTree"
                        @select-tree="onSelectTree"/>
         </div>
@@ -29,6 +30,7 @@
         </div>
         <div id="right" :style="{width:rightWidth+'px'}">
             <template-list v-if="config"
+                           ref="templateList"
                            :templates="config.templates"
                            :template-types="config.templateTypes"
                            :template-groups="config.templateGroups"
@@ -86,11 +88,15 @@ export default {
         }
 
         window.addEventListener("resize", this.drawTree);
-        ipcRenderer.on("leftVisible", (event, visible) => {
-            this.leftWidth = visible ? leftWidth : 0;
+        ipcRenderer.on("leftVisible", () => {
+            this.leftWidth = this.leftWidth === leftWidth ? 0 : leftWidth;
+            this.drawTree();
+            this.$refs.treeList.doLayout();
         });
-        ipcRenderer.on("rightVisible", (event, visible) => {
-            this.rightWidth = visible ? rightWidth : 0;
+        ipcRenderer.on("rightVisible", () => {
+            this.rightWidth = this.rightWidth === rightWidth ? 0 : rightWidth;
+            this.drawTree();
+            this.$refs.templateList.doLayout();
         });
     },
     destroyed() {
@@ -534,6 +540,7 @@ export default {
     height: 100%;
     overflow: hidden;
     background-color: aliceblue;
+
 }
 
 #canvas {

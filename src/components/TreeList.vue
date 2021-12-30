@@ -178,14 +178,16 @@ export default {
             this.editTreeName = true;
             await this.$nextTick();
             this.$refs.editTreeNameInput.focus();
+        },
+        async doLayout() {
+            await this.$nextTick();
+            this.$refs.table.doLayout();
+            this.$refs.table.doLayout();
         }
     }
 }
 </script>
 
 <style scoped>
-/*noinspection CssUnusedSymbol*/
-.el-table {
-    height: 100%;
-}
+
 </style>

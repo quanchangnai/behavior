@@ -25,11 +25,6 @@ function buildMenu() {
                     }
                 },
                 {
-                    label: "刷新工作区",
-                    role: "reload",
-                    accelerator: "F5",
-                },
-                {
                     label: '打开工作目录',
                     accelerator: "Alt+E",
                     click: async (item, window) => {
@@ -49,16 +44,23 @@ function buildMenu() {
             label: "视图",
             submenu: [
                 {
-                    label: "隐藏树列表",
+                    label: "行为树列表",
                     click(item, window) {
-                        window.webContents.send("leftVisible", false);
-                    }
+                        window.webContents.send("leftVisible");
+                    },
+                    accelerator: "CommandOrControl+Left"
                 },
                 {
-                    label: "隐藏模板列表",
+                    label: "模板列表",
                     click(item, window) {
-                        window.webContents.send("rightVisible", false);
-                    }
+                        window.webContents.send("rightVisible");
+                    },
+                    accelerator: "CommandOrControl+Right"
+                },
+                {
+                    label: "刷新",
+                    role: "reload",
+                    accelerator: "F5",
                 },
                 {
                     label: "开发者工具",
