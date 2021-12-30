@@ -31,8 +31,8 @@
                                       :rules="paramRules(param)"
                                       :show-message="false"
                                       :prop="'params.'+paramName"
-                                      :label="param.label?param.label:paramName">
-                            <el-radio-group v-if="typeof param.value==='boolean'"
+                                      :label="param.label || paramName">
+                            <el-radio-group v-if="typeof param.value==='boolean' && !param.options"
                                             v-model="node.params[paramName]">
                                 <el-radio :label="true">是</el-radio>
                                 <el-radio :label="false">否</el-radio>
@@ -216,7 +216,7 @@ export default {
     border-radius: 5px;
     font-size: 14px;
     white-space: nowrap;
-    max-width: 235px;
+    max-width: 250px;
 }
 
 .content > div {

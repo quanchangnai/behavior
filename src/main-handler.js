@@ -1,8 +1,8 @@
 import {ipcMain} from 'electron'
-import behavior from "@/behavior";
+import behavior from "./behavior";
 import fs from 'fs'
 import path from 'path'
-import {validateConfig} from "@/validator";
+import {validateConfig} from "./validator";
 
 ipcMain.handle("load-config", async event => {
     let configFile = behavior.getConfigFile(event.sender);

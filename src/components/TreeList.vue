@@ -31,6 +31,8 @@
                                   ref="editTreeNameInput"
                                   size="mini"
                                   v-model="tree.name"
+                                  :minlength="1"
+                                  :maxlength="10"
                                   @focusout.native="editTreeName=false"
                                   :style="editTreeNameInputStyle(tree.id)"/>
                         <span v-else>{{ tree.name }}</span>

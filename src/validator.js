@@ -2,7 +2,6 @@ import Ajv from "ajv/dist/2020";
 import addFormats from "ajv-formats"
 import localize from "ajv-i18n";
 
-
 //节点格式
 let node = {
     $id: "node",
@@ -13,7 +12,8 @@ let node = {
             minimum: 1
         },
         name: {
-            type: "string"
+            type: "string",
+            maxLength: 10
         },
         tid: {
             type: "integer",
@@ -51,7 +51,7 @@ let node = {
             type: "boolean",
         }
     },
-    required: ["id", "name", "tid"],
+    required: ["id", "tid"],
     additionalProperties: false
 };
 
@@ -65,14 +65,16 @@ let tree = {
             minimum: 1
         },
         name: {
-            type: "string"
+            type: "string",
+            minLength: 1,
+            maxLength: 10
         },
         root: {
             $ref: "node"
         }
     },
     required: ["id", "name", "root"],
-    additionalProperties: false,
+    additionalProperties: false
 };
 
 //模板类型格式
@@ -86,7 +88,9 @@ let templateTypes = {
                 minimum: 1
             },
             name: {
-                type: "string"
+                type: "string",
+                minLength: 1,
+                maxLength: 10
             },
             childrenTypes: {
                 type: "array",
@@ -119,7 +123,9 @@ let templateGroups = {
                 minimum: 1
             },
             name: {
-                type: "string"
+                type: "string",
+                minLength: 1,
+                maxLength: 10
             }
         },
         required: ["id", "name"],
@@ -135,7 +141,7 @@ let templateParams = {
         type: "object",
         properties: {
             label: {
-                type: "string",
+                type: "string"
             },
             value: {
                 oneOf: [
@@ -161,7 +167,8 @@ let templateParams = {
             },
             precision: {
                 type: "integer",
-                minimum: 0
+                minimum: 0,
+                maximum: 6
             },
             min: {type: "number"},
             max: {type: "number"},
@@ -170,13 +177,16 @@ let templateParams = {
                 items: {
                     type: "object",
                     properties: {
-                        label: {type: "string"},
+                        label: {
+                            type: "string",
+                            maxLength: 5
+                        },
                         value: {
                             oneOf: [
                                 {type: "string"},
                                 {type: "boolean"},
                                 {type: "number"},
-                            ]
+                            ],
                         }
                     },
                     required: ["label", "value"],
@@ -191,10 +201,7 @@ let templateParams = {
         dependentSchemas: {
             pattern: {
                 properties: {
-                    value: {
-                        type: "string",
-                        format: "regex"
-                    }
+                    value: {type: "string"}
                 }
             },
             precision: {
@@ -213,7 +220,7 @@ let templateParams = {
                 }
             },
         }
-    },
+    }
 };
 
 //模板格式
@@ -227,7 +234,9 @@ let templates = {
                 minimum: 1
             },
             name: {
-                type: "string"
+                type: "string",
+                minLength: 1,
+                maxLength: 10
             },
             type: {
                 type: "integer",
@@ -238,7 +247,9 @@ let templates = {
                 minimum: 1
             },
             desc: {
-                type: "string"
+                type: "string",
+                minLength: 5,
+                maxLength: 300
             },
             params: templateParams,
             childrenNum: {
@@ -266,15 +277,31 @@ let config = {
         },
     },
     required: ["templateTypes", "templates", "defaultTree"],
-    additionalProperties: false,
+    additionalProperties: false
 };
 
-let ajv = new Ajv({strictTypes: true});
+let behavior = {
+    $id: "behavior",
+    type: "object",
+    properties: {
+        workspaces: {
+            type: "array",
+            items: {
+                type: "string"
+            }
+        }
+    },
+    required: ["workspaces"],
+    additionalProperties: false
+};
+
+let ajv = new Ajv();
 addFormats(ajv);
 
 ajv.addSchema(node);
 ajv.addSchema(tree);
 ajv.addSchema(config);
+ajv.addSchema(behavior);
 
 function localizeProxy(validate) {
     return new Proxy(validate, {
@@ -292,7 +319,7 @@ function localizeProxy(validate) {
 let validateNode = localizeProxy(ajv.getSchema("node"));
 let validateTree = localizeProxy(ajv.getSchema("tree"));
 let validateConfig = localizeProxy(ajv.getSchema("config"));
+let validateBehavior = localizeProxy(ajv.getSchema("behavior"));
 
-
-export {validateConfig, validateTree, validateNode}
+export {validateNode, validateTree, validateConfig, validateBehavior}
 

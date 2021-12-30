@@ -2,6 +2,7 @@ import {app, dialog, shell, BrowserWindow, webContents} from 'electron'
 import path from "path";
 import fs from "fs";
 import config from "./config";
+import {validateBehavior} from "./validator";
 
 //程序目录下配置的工作区
 let appWorkspaces = [];
@@ -106,9 +107,13 @@ async function load() {
     if (fs.existsSync(appBehaviorFile)) {
         let json = (await fs.promises.readFile(appBehaviorFile)).toString();
         let appBehavior = JSON.parse(json);
-        for (let workspace of appBehavior.workspaces) {
-            workspace = path.resolve(".", workspace);
-            await behavior.addWorkspace(appWorkspaces, path.resolve(".", workspace), true);
+        if (validateBehavior(appBehavior)) {
+            for (let workspace of appBehavior.workspaces) {
+                workspace = path.resolve(".", workspace);
+                await behavior.addWorkspace(appWorkspaces, path.resolve(".", workspace), true);
+            }
+        } else {
+            console.error("app behavior error\n", validateBehavior.errors);
         }
     }
 
@@ -121,11 +126,17 @@ async function load() {
     let homeBehaviorFile = path.resolve(homeBehaviorPath, "behavior.json");
     let homeBehavior;
 
-    if (!fs.existsSync(homeBehaviorFile)) {
-        homeBehavior = {workspaces: [path.resolve(homeBehaviorPath, "workspace")]};
-    } else {
+    if (fs.existsSync(homeBehaviorFile)) {
         let json = (await fs.promises.readFile(homeBehaviorFile)).toString();
         homeBehavior = JSON.parse(json);
+        if (!validateBehavior(homeBehavior)) {
+            homeBehavior = null;
+            console.error("home behavior error\n", validateBehavior.errors);
+        }
+    }
+
+    if (!homeBehavior) {
+        homeBehavior = {workspaces: [path.resolve(homeBehaviorPath, "workspace")]};
     }
 
     for (let workspace of homeBehavior.workspaces) {

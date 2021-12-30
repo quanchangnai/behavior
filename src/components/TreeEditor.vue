@@ -74,15 +74,12 @@ export default {
         }
     },
     async created() {
-        ipcRenderer.on("msg", (event, msg, type) => {
-            this.$message({message: msg, type: type ? type : "info", center: true, offset: 150});
-        });
 
         try {
             this.config = await ipcRenderer.invoke("load-config");
         } catch (e) {
             console.error(e);
-            this.$message.error("加载行为树编辑器配置报错，按F12查看错误详情");
+            this.$message.error({message: "加载行为树编辑器配置报错，按F12查看错误详情", center: true, offset: 200});
             return;
         }
 
@@ -432,6 +429,7 @@ export default {
 
             let node = {
                 id: ++this.tree.maxNodeId,
+                name: "",
                 tid: template.id,
                 template: template,
                 x: event.x - utils.getClientX(this.$refs.body),
