@@ -1,13 +1,11 @@
 <template>
-    <div id="body"
-         ref="body"
-         v-loading.fullscreen="config===null">
-        <div id="left">
+    <div id="body" ref="body" v-loading.fullscreen="config===null">
+        <div id="left" :style="{width:leftWidth+'px'}">
             <tree-list v-if="config"
                        :defaultTree="config.defaultTree"
                        @select-tree="onSelectTree"/>
         </div>
-        <div id="center">
+        <div id="center" :style="{left:leftWidth+'px',right:rightWidth+'px'}">
             <draggable id="board"
                        :freeze="boardFreeze"
                        :x="boardX"
@@ -29,7 +27,7 @@
                            @delete="drawTree"/>
             </draggable>
         </div>
-        <div id="right">
+        <div id="right" :style="{width:rightWidth+'px'}">
             <template-list v-if="config"
                            :templates="config.templates"
                            :template-types="config.templateTypes"
@@ -60,6 +58,9 @@ const nodeSpaceX = 50;//节点x轴间隔空间
 const nodeSpaceY = 30;//节点y轴间隔空间
 const boardEdgeSpace = 100;//画板边缘空间
 
+const leftWidth = 220;
+const rightWidth = 250;
+
 export default {
     name: "TreeEditor",
     components: {Draggable, TreeNode, TreeList, TemplateList, ContextMenu},
@@ -70,20 +71,27 @@ export default {
             creatingNode: null,//正在新建的节点
             boardFreeze: false,
             boardX: 0,
-            boardY: 0
+            boardY: 0,
+            leftWidth,
+            rightWidth
         }
     },
     async created() {
-
         try {
             this.config = await ipcRenderer.invoke("load-config");
         } catch (e) {
             console.error(e);
-            this.$message.error({message: "加载行为树编辑器配置报错，按F12查看错误详情", center: true, offset: 200});
+            this.$message.error({message: "加载编辑器配置报错，按F12查看错误详情", center: true, offset: 200});
             return;
         }
 
         window.addEventListener("resize", this.drawTree);
+        ipcRenderer.on("leftVisible", (event, visible) => {
+            this.leftWidth = visible ? leftWidth : 0;
+        });
+        ipcRenderer.on("rightVisible", (event, visible) => {
+            this.rightWidth = visible ? rightWidth : 0;
+        });
     },
     destroyed() {
         window.removeEventListener("resize", this.drawTree);
@@ -416,6 +424,7 @@ export default {
             let creatingNode = this.creatingNode;
             this.creatingNode = null;
             creatingNode.dragging = false;
+            creatingNode.z = 1;
             this.linkParentNode(creatingNode, creatingNode.parent);
 
             await this.drawTree();
@@ -502,13 +511,11 @@ export default {
 
 #left {
     position: absolute;
-    width: 220px;
     height: 100%;
 }
 
 #right {
     position: absolute;
-    width: 250px;
     height: 100%;
     right: 0;
     user-select: none;
@@ -516,8 +523,6 @@ export default {
 
 #center {
     position: absolute;
-    left: 220px;
-    right: 250px;
     height: 100%;
     box-sizing: border-box;
     overflow: hidden;

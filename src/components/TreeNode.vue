@@ -142,7 +142,7 @@ export default {
             utils.visitNodes(this.node, node => {
                 node.x += deltaX;
                 node.y += deltaY;
-                node.z = 10;
+                node.z = this.creating ? 30 : 10;
             });
 
             this.$emit("dragging", this.node);

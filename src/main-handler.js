@@ -16,7 +16,9 @@ ipcMain.handle("load-config", async event => {
 
     let config = JSON.parse(configJson);
     if (!validateConfig(config)) {
-        throw new Error("行为树编辑器配置格式错误\n" + JSON.stringify(validateConfig.errors, null, 4));
+        let msg = configFile + " 配置错误\n";
+        msg += JSON.stringify(validateConfig.errors, null, 4);
+        throw new Error(msg);
     }
     return config;
 });

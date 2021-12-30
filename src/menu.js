@@ -46,24 +46,24 @@ function buildMenu() {
             ]
         },
         {
-            label: "工具",
+            label: "视图",
             submenu: [
+                {
+                    label: "隐藏树列表",
+                    click(item, window) {
+                        window.webContents.send("leftVisible", false);
+                    }
+                },
+                {
+                    label: "隐藏模板列表",
+                    click(item, window) {
+                        window.webContents.send("rightVisible", false);
+                    }
+                },
                 {
                     label: "开发者工具",
                     role: "toggleDevTools",
                     accelerator: "F12",
-                },
-                {
-                    label: "放大",
-                    role: "zoomIn"
-                },
-                {
-                    label: "缩小",
-                    role: "zoomOut"
-                },
-                {
-                    label: "还原",
-                    role: "resetZoom"
                 }
             ]
         },
