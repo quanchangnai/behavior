@@ -1,4 +1,3 @@
-
 //行为树编辑器默认配置
 //节点模板类型，用于控制节点连接性和子节点数量
 let templateTypes = [
@@ -48,19 +47,21 @@ templates[7].params = {
     p3: {label: '参数3', value: ['aaa'], options: [{label: '选项3-1', value: 'aaa'}, {label: '选项3-2', value: 'bbb'}]},//多选
 };
 
-//默认行为树，新建时自动创建，不能为空
-let defaultTree = {
-    id: 1,
-    name: "新建行为树",
-    root: {
+//创建行为树时原型
+let archetypes = [
+    {
         id: 1,
-        name: "",
-        tid: 1,
-        children: [
-            {id: 2, name: "", tid: 2}
-        ],
-        childrenFolded: false
+        name: "新建行为树",
+        root: {
+            id: 1,
+            name: "",
+            tid: 1,
+            children: [
+                {id: 2, name: "", tid: 2}
+            ],
+            childrenFolded: false
+        }
     }
-};
+];
 
-export default {templateTypes, templateGroups, templates, defaultTree};
+export default {templateTypes, templateGroups, templates, archetypes};

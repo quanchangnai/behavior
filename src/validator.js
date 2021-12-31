@@ -333,7 +333,7 @@ let templates = {
     uniqueItems: true
 };
 
-//行为树配置格式
+//编辑器配置格式
 let config = {
     $id: "config",
     type: "object",
@@ -341,11 +341,14 @@ let config = {
         templateTypes,
         templateGroups,
         templates,
-        defaultTree: {
-            $ref: "tree"
+        archetypes: {
+            type: "array",
+            items: {$ref: "tree"},
+            minItems: 1,
+            uniqueItems: true
         },
     },
-    required: ["templateTypes", "templates", "defaultTree"],
+    required: ["templateTypes", "templates", "archetypes"],
     additionalProperties: false
 };
 

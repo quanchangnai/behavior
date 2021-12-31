@@ -3,9 +3,9 @@
          style="height: 100%;width: 100%"
          @contextmenu="onContextMenu">
         <el-table border
-                  ref="table"
+                  ref="treesTable"
                   size="medium"
-                  :height="'100%'"
+                  height="100%"
                   :data="visibleTrees"
                   highlight-current-row
                   @current-change="selectTree"
@@ -41,6 +41,32 @@
             </el-table-column>
         </el-table>
         <context-menu ref="menu" :items="menuItems"/>
+        <el-dialog top="25vh"
+                   width="500px"
+                   title="选择原型"
+                   @opened="onArchetypesOpened"
+                   :visible.sync="archetypesVisible">
+            <el-table size="small"
+                      width="200px"
+                      max-height="160px"
+                      :data="archetypes"
+                      :show-header="false"
+                      id="archetypesTable"
+                      ref="archetypesTable"
+                      highlight-current-row
+                      @current-change="row=>this.selectedArchetype=row">
+                <el-table-column type="selection"
+                                 align="center"
+                                 width="100px"/>
+                <el-table-column #default="{row}">
+                    <span style="margin-left: 10px"> {{ row.name }}</span>
+                </el-table-column>
+            </el-table>
+            <span slot="footer" class="dialog-footer">
+                <el-button size="medium" @click="archetypesVisible = false">取消</el-button>
+                <el-button type="primary" size="medium" @click="doCreateTree">创建</el-button>
+            </span>
+        </el-dialog>
     </div>
 </template>
 
@@ -53,7 +79,7 @@ export default {
     name: "TreeList",
     components: {ContextMenu},
     props: {
-        defaultTree: Object
+        archetypes: Array
     },
     data() {
         return {
@@ -63,7 +89,9 @@ export default {
             editTreeName: false,
             maxTreeId: 0,
             keyword: "",
-            menuItems: []
+            menuItems: [],
+            archetypesVisible: false,
+            selectedArchetype: null
         }
     },
     async created() {
@@ -91,7 +119,7 @@ export default {
 
             this.visibleTrees = this.allTrees;
             if (this.visibleTrees.length) {
-                this.$refs.table.setCurrentRow(this.visibleTrees[0]);
+                this.$refs.treesTable.setCurrentRow(this.visibleTrees[0]);
             }
         },
         selectTree(tree) {
@@ -147,14 +175,28 @@ export default {
             this.$refs.menu.show(event.clientX, event.clientY, limits);
         },
         createTree() {
-            let tree = JSON.parse(JSON.stringify(this.defaultTree));
+            if (this.archetypes.length > 1) {
+                this.archetypesVisible = true;
+            } else {
+                this.selectedArchetype = this.archetypes[0];
+                this.doCreateTree();
+            }
+
+        },
+        doCreateTree() {
+            this.archetypesVisible = false;
+
+            let tree = JSON.parse(JSON.stringify(this.selectedArchetype));
             tree.id = ++this.maxTreeId;
-            tree.name = tree.name + this.maxTreeId;
+            tree.name = tree.name + "-" + this.maxTreeId;
 
             this.allTrees.push(tree);
-            this.$refs.table.setCurrentRow(tree);
+            this.$refs.treesTable.setCurrentRow(tree);
 
             utils.saveTree(tree);
+        },
+        onArchetypesOpened() {
+            this.$refs.archetypesTable.setCurrentRow(this.selectedArchetype || this.archetypes[0]);
         },
         async deleteTree(tree) {
             try {
@@ -165,7 +207,7 @@ export default {
             let index = this.allTrees.indexOf(tree);
             this.allTrees.splice(index, 1);
             if (this.selectedTree === tree && this.visibleTrees.length) {
-                this.$refs.table.setCurrentRow(this.visibleTrees[0]);
+                this.$refs.treesTable.setCurrentRow(this.visibleTrees[0]);
             }
             await ipcRenderer.invoke("delete-tree", tree.id);
         },
@@ -181,13 +223,17 @@ export default {
         },
         async doLayout() {
             await this.$nextTick();
-            this.$refs.table.doLayout();
-            this.$refs.table.doLayout();
+            this.$refs.treesTable.doLayout();
+            this.$refs.treesTable.doLayout();
         }
     }
 }
 </script>
 
 <style scoped>
-
+#archetypesTable {
+    border-top: solid #ebeef5 1px;
+    border-left: solid #ebeef5 1px;
+    border-right: solid #ebeef5 1px;
+}
 </style>

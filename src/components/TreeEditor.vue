@@ -3,7 +3,7 @@
         <div id="left" :style="{width:leftWidth+'px'}">
             <tree-list v-if="config"
                        ref="treeList"
-                       :defaultTree="config.defaultTree"
+                       :archetypes="config.archetypes"
                        @select-tree="onSelectTree"/>
         </div>
         <div id="center" :style="{left:leftWidth+'px',right:rightWidth+'px'}">
