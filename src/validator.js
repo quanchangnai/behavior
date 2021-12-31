@@ -17,7 +17,7 @@ let node = {
         },
         tid: {
             type: "integer",
-            minimum: 1
+            minimum: 1,
         },
         params: {
             type: "object",
@@ -171,7 +171,10 @@ let templateParams = {
                 maximum: 6
             },
             min: {type: "number"},
-            max: {type: "number"},
+            max: {
+                type: "number",
+                minimum: {$data: "1/min"}
+            },
             options: {
                 type: "array",
                 items: {
@@ -218,8 +221,74 @@ let templateParams = {
                 properties: {
                     value: {type: "number"}
                 }
+            }
+        },
+        allOf: [
+            {
+                if: {
+                    properties: {
+                        value: {type: "array"}
+                    }
+                },
+                then: {
+                    required: ["options"],
+                }
             },
-        }
+            {
+                if: {
+                    properties: {
+                        value: {type: "string"}
+                    }
+                },
+                then: {
+                    properties: {
+                        options: {
+                            items: {
+                                properties: {
+                                    value: {type: "string"}
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                if: {
+                    properties: {
+                        value: {type: "number"}
+                    }
+                },
+                then: {
+                    properties: {
+                        options: {
+                            items: {
+                                properties: {
+                                    value: {type: "number"}
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                if: {
+                    properties: {
+                        value: {type: "boolean"}
+                    }
+                },
+                then: {
+                    properties: {
+                        options: {
+                            items: {
+                                properties: {
+                                    value: {type: "boolean"}
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+        ]
     }
 };
 
@@ -295,7 +364,7 @@ let behavior = {
     additionalProperties: false
 };
 
-let ajv = new Ajv();
+let ajv = new Ajv({$data: true});
 addFormats(ajv);
 
 ajv.addSchema(node);
