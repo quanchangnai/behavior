@@ -91,12 +91,10 @@ export default {
         ipcRenderer.on("leftVisible", () => {
             this.leftWidth = this.leftWidth === leftWidth ? 0 : leftWidth;
             this.drawTree();
-            this.$refs.treeList.doLayout();
         });
         ipcRenderer.on("rightVisible", () => {
             this.rightWidth = this.rightWidth === rightWidth ? 0 : rightWidth;
             this.drawTree();
-            this.$refs.templateList.doLayout();
         });
     },
     destroyed() {

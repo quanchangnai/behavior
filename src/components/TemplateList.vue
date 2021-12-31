@@ -112,6 +112,9 @@ export default {
 
         this.blurGroupSelectInput();
     },
+    mounted() {
+        new ResizeObserver(this.$refs.table.doLayout).observe(this.$refs.table.$el);
+    },
     destroyed() {
         this.$events.$off("init-tree", this.onInitTree);
     },
@@ -164,12 +167,7 @@ export default {
                     groupSelectInput.blur();
                 };
             }
-        },
-        async doLayout() {
-            await this.$nextTick();
-            this.$refs.table.doLayout();
-            this.$refs.table.doLayout();
-        },
+        }
     }
 }
 </script>

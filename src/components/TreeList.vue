@@ -54,12 +54,13 @@
                       id="archetypesTable"
                       ref="archetypesTable"
                       highlight-current-row
-                      @current-change="row=>this.selectedArchetype=row">
+                      @select="(s,r)=>this.selectArchetype(r)"
+                      @current-change="selectArchetype">
                 <el-table-column type="selection"
                                  align="center"
-                                 width="100px"/>
+                                 width="120px"/>
                 <el-table-column #default="{row}">
-                    <span style="margin-left: 10px"> {{ row.name }}</span>
+                    <span style="margin-left: 20px"> {{ row.name }}</span>
                 </el-table-column>
             </el-table>
             <span slot="footer" class="dialog-footer">
@@ -98,6 +99,9 @@ export default {
         await this.loadTrees();
         ipcRenderer.on("create-tree", this.createTree);
         this.$events.$on("delete-tree", this.deleteTree);
+    },
+    mounted() {
+        new ResizeObserver(this.$refs.treesTable.doLayout).observe(this.$refs.body);
     },
     destroyed() {
         this.$events.$off("delete-tree", this.deleteTree);
@@ -174,6 +178,12 @@ export default {
             };
             this.$refs.menu.show(event.clientX, event.clientY, limits);
         },
+        selectArchetype(archetype) {
+            this.selectedArchetype = archetype;
+            this.$refs.archetypesTable.clearSelection();
+            this.$refs.archetypesTable.toggleRowSelection(archetype);
+            this.$refs.archetypesTable.setCurrentRow(archetype);
+        },
         createTree() {
             if (this.archetypes.length > 1) {
                 this.archetypesVisible = true;
@@ -231,6 +241,11 @@ export default {
 </script>
 
 <style scoped>
+/*noinspection ALL*/
+>>> .el-dialog {
+    padding: 0 30px;
+}
+
 #archetypesTable {
     border-top: solid #ebeef5 1px;
     border-left: solid #ebeef5 1px;
