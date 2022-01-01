@@ -3,7 +3,7 @@
          style="height: 100%;width: 100%"
          @contextmenu="onContextMenu">
         <el-table border
-                  ref="treesTable"
+                  ref="table"
                   size="medium"
                   height="100%"
                   :data="visibleTrees"
@@ -41,44 +41,19 @@
             </el-table-column>
         </el-table>
         <context-menu ref="menu" :items="menuItems"/>
-        <el-dialog top="25vh"
-                   width="500px"
-                   title="选择原型"
-                   @opened="onArchetypesOpened"
-                   :visible.sync="archetypesVisible">
-            <el-table size="small"
-                      width="200px"
-                      max-height="160px"
-                      :data="archetypes"
-                      :show-header="false"
-                      id="archetypesTable"
-                      ref="archetypesTable"
-                      highlight-current-row
-                      @select="(s,r)=>this.selectArchetype(r)"
-                      @current-change="selectArchetype">
-                <el-table-column type="selection"
-                                 align="center"
-                                 width="120px"/>
-                <el-table-column #default="{row}">
-                    <span style="margin-left: 20px"> {{ row.name }}</span>
-                </el-table-column>
-            </el-table>
-            <span slot="footer" class="dialog-footer">
-                <el-button size="medium" @click="archetypesVisible = false">取消</el-button>
-                <el-button type="primary" size="medium" @click="doCreateTree">创建</el-button>
-            </span>
-        </el-dialog>
+        <archetypes-dialog ref="dialog" :data="archetypes" @select="doCreateTree"/>
     </div>
 </template>
 
 <script>
 import {ipcRenderer} from 'electron'
 import ContextMenu from './ContextMenu'
+import ArchetypesDialog from "./ArchetypesDialog";
 import utils from "@/utils";
 
 export default {
     name: "TreeList",
-    components: {ContextMenu},
+    components: {ArchetypesDialog, ContextMenu},
     props: {
         archetypes: Array
     },
@@ -90,9 +65,7 @@ export default {
             editTreeName: false,
             maxTreeId: 0,
             keyword: "",
-            menuItems: [],
-            archetypesVisible: false,
-            selectedArchetype: null
+            menuItems: []
         }
     },
     async created() {
@@ -101,10 +74,12 @@ export default {
         this.$events.$on("delete-tree", this.deleteTree);
     },
     mounted() {
-        new ResizeObserver(this.$refs.treesTable.doLayout).observe(this.$refs.body);
+        this.resizeObserver = new ResizeObserver(this.$refs.table.doLayout);
+        this.resizeObserver.observe(this.$refs.body);
     },
     destroyed() {
         this.$events.$off("delete-tree", this.deleteTree);
+        this.resizeObserver.disconnect();
     },
     watch: {
         keyword(value) {
@@ -123,7 +98,7 @@ export default {
 
             this.visibleTrees = this.allTrees;
             if (this.visibleTrees.length) {
-                this.$refs.treesTable.setCurrentRow(this.visibleTrees[0]);
+                this.$refs.table.setCurrentRow(this.visibleTrees[0]);
             }
         },
         selectTree(tree) {
@@ -178,36 +153,25 @@ export default {
             };
             this.$refs.menu.show(event.clientX, event.clientY, limits);
         },
-        selectArchetype(archetype) {
-            this.selectedArchetype = archetype;
-            this.$refs.archetypesTable.clearSelection();
-            this.$refs.archetypesTable.toggleRowSelection(archetype);
-            this.$refs.archetypesTable.setCurrentRow(archetype);
-        },
         createTree() {
             if (this.archetypes.length > 1) {
-                this.archetypesVisible = true;
+                this.$refs.dialog.open();
             } else {
-                this.selectedArchetype = this.archetypes[0];
-                this.doCreateTree();
+                this.doCreateTree(this.archetypes[0]);
             }
 
         },
-        doCreateTree() {
-            this.archetypesVisible = false;
-
-            let tree = JSON.parse(JSON.stringify(this.selectedArchetype));
+        doCreateTree(archetype) {
+            let tree = JSON.parse(JSON.stringify(archetype));
             tree.id = ++this.maxTreeId;
             tree.name = tree.name + "-" + this.maxTreeId;
 
             this.allTrees.push(tree);
-            this.$refs.treesTable.setCurrentRow(tree);
+            this.$refs.table.setCurrentRow(tree);
 
             utils.saveTree(tree);
         },
-        onArchetypesOpened() {
-            this.$refs.archetypesTable.setCurrentRow(this.selectedArchetype || this.archetypes[0]);
-        },
+
         async deleteTree(tree) {
             try {
                 await this.$confirm("确定删除行为树？", {type: "warning"});
@@ -217,7 +181,7 @@ export default {
             let index = this.allTrees.indexOf(tree);
             this.allTrees.splice(index, 1);
             if (this.selectedTree === tree && this.visibleTrees.length) {
-                this.$refs.treesTable.setCurrentRow(this.visibleTrees[0]);
+                this.$refs.table.setCurrentRow(this.visibleTrees[0]);
             }
             await ipcRenderer.invoke("delete-tree", tree.id);
         },
@@ -233,22 +197,21 @@ export default {
         },
         async doLayout() {
             await this.$nextTick();
-            this.$refs.treesTable.doLayout();
-            this.$refs.treesTable.doLayout();
+            this.$refs.table.doLayout();
+            this.$refs.table.doLayout();
         }
     }
 }
 </script>
 
+<!--suppress CssUnusedSymbol -->
 <style scoped>
-/*noinspection ALL*/
 >>> .el-dialog {
     padding: 0 30px;
 }
 
-#archetypesTable {
-    border-top: solid #ebeef5 1px;
-    border-left: solid #ebeef5 1px;
-    border-right: solid #ebeef5 1px;
+>>> .el-dialog__body {
+    padding: 12px 22px
 }
+
 </style>

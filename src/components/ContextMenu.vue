@@ -1,7 +1,7 @@
 <template>
     <div v-if="visible"
-         class="context-menu"
          ref="menu"
+         class="context-menu"
          :style="{left:x+'px',top:y+'px'}"
          @mouseover="mouseover=true"
          @mouseout="mouseover=false"
@@ -98,6 +98,7 @@ export default {
     border: solid #e4e7ed 1px;
     border-radius: 3px;
     background-color: #ffffff;
+    box-shadow: 2px 2px 2px #a1a6ab;
 }
 
 .context-menu-item {

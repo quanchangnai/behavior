@@ -87,18 +87,21 @@ export default {
             return;
         }
 
-        window.addEventListener("resize", this.drawTree);
         ipcRenderer.on("leftVisible", () => {
             this.leftWidth = this.leftWidth === leftWidth ? 0 : leftWidth;
-            this.drawTree();
+            this.resetBoardPosition();
         });
         ipcRenderer.on("rightVisible", () => {
-            this.rightWidth = this.rightWidth === rightWidth ? 0 : rightWidth;
-            this.drawTree();
+            this.rightWidth = this.rightWidth === rightWidth ?0 : rightWidth;
+            this.resetBoardPosition();
         });
     },
+    mounted() {
+        this.resizeObserver = new ResizeObserver(this.drawTree);
+        this.resizeObserver.observe(document.querySelector("#center"));
+    },
     destroyed() {
-        window.removeEventListener("resize", this.drawTree);
+        this.resizeObserver.disconnect();
     },
     computed: {
         menuItems() {

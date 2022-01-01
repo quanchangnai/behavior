@@ -68,7 +68,7 @@ export default {
             visibleTemplates: [],
             mappedTemplates: new Map(),
             selectGroups: [],
-            selectedGroup: null,
+            selectedGroup: -1,
             keyword: null
         }
     },
@@ -99,7 +99,6 @@ export default {
             if (ungrouped) {
                 this.selectGroups.push({id: -2, name: "未分组"});
             }
-            this.selectedGroup = this.selectGroups[0].id;
         }
 
         for (const template of this.templates) {
@@ -113,10 +112,12 @@ export default {
         this.blurGroupSelectInput();
     },
     mounted() {
-        new ResizeObserver(this.$refs.table.doLayout).observe(this.$refs.table.$el);
+        this.resizeObserver = new ResizeObserver(this.$refs.table.doLayout);
+        this.resizeObserver.observe(this.$refs.table.$el);
     },
     destroyed() {
         this.$events.$off("init-tree", this.onInitTree);
+        this.resizeObserver.disconnect();
     },
     watch: {
         keyword() {
@@ -140,7 +141,7 @@ export default {
                 if (!template.type.visible) {
                     return false;
                 }
-                if (typeof this.selectedGroup > 0 && template.group !== this.selectedGroup) {
+                if (this.selectedGroup > 0 && template.group !== this.selectedGroup) {
                     return false;
                 }
                 if (this.selectedGroup === -2 && template.group) {
