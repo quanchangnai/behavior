@@ -44,6 +44,11 @@ function buildMenu() {
             label: "视图",
             submenu: [
                 {
+                    label: "刷新",
+                    role: "reload",
+                    accelerator: "F5",
+                },
+                {
                     label: "行为树列表",
                     click(item, window) {
                         window.webContents.send("leftVisible");
@@ -51,16 +56,11 @@ function buildMenu() {
                     accelerator: "CommandOrControl+Left"
                 },
                 {
-                    label: "模板列表",
+                    label: "节点模板列表",
                     click(item, window) {
                         window.webContents.send("rightVisible");
                     },
                     accelerator: "CommandOrControl+Right"
-                },
-                {
-                    label: "刷新",
-                    role: "reload",
-                    accelerator: "F5",
                 },
                 {
                     label: "开发者工具",

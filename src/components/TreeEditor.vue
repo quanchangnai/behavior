@@ -92,7 +92,7 @@ export default {
             this.resetBoardPosition();
         });
         ipcRenderer.on("rightVisible", () => {
-            this.rightWidth = this.rightWidth === rightWidth ?0 : rightWidth;
+            this.rightWidth = this.rightWidth === rightWidth ? 0 : rightWidth;
             this.resetBoardPosition();
         });
     },
@@ -160,8 +160,13 @@ export default {
                 this.calcNodeBounds(this.tree.root);
 
                 const board = document.querySelector("#board");
-                board.style.width = Math.max(board.parentElement.offsetWidth, this.tree.root.treeWidth + boardEdgeSpace * 2) + "px";
-                board.style.height = Math.max(board.parentElement.offsetHeight, this.tree.root.treeHeight + boardEdgeSpace * 2) + "px";
+                let boardWidth = Math.max(board.parentElement.offsetWidth, this.tree.root.treeWidth + boardEdgeSpace * 2);
+                let boardHeight = Math.max(board.parentElement.offsetHeight, this.tree.root.treeHeight + boardEdgeSpace * 2);
+                if (this.boardX + boardWidth < boardEdgeSpace || this.boardY + boardHeight < boardEdgeSpace) {
+                    this.resetBoardPosition();
+                }
+                board.style.width = boardWidth + "px";
+                board.style.height = boardHeight + "px";
 
                 this.calcNodePosition(this.tree.root, boardEdgeSpace);
                 this.drawLinkLines();

@@ -72,8 +72,9 @@ export default {
 <!--suppress CssUnusedSymbol -->
 <style scoped>
 .el-table {
-    border-top: solid #ebeef5 1px;
-    border-left: solid #ebeef5 1px;
-    border-right: solid #ebeef5 1px;
+    --border: solid #ebeef5 1px;
+    border-top: var(--border);
+    border-left: var(--border);
+    border-right: var(--border);
 }
 </style>

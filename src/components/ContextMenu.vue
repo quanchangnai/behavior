@@ -48,6 +48,7 @@ export default {
             window.addEventListener("mousedown", this.tryHide, {capture: true});
             window.addEventListener("resize", this.hide);
             window.addEventListener("scroll", this.hide);
+            window.addEventListener("blur", this.hide);
 
             if (!limits) {
                 return;
@@ -74,6 +75,7 @@ export default {
             window.removeEventListener("mousedown", this.tryHide);
             window.removeEventListener("resize", this.hide);
             window.removeEventListener("scroll", this.hide);
+            window.removeEventListener("blur", this.hide);
             this.$emit("hide");
         },
         onItemClick(item) {
