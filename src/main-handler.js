@@ -20,6 +20,7 @@ ipcMain.handle("load-config", async event => {
         msg += JSON.stringify(validateConfig.errors, null, 4);
         throw new Error(msg);
     }
+
     return config;
 });
 

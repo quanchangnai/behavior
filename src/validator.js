@@ -243,7 +243,9 @@ let templateParams = {
                 then: {
                     properties: {
                         options: {
+                            type: "array",
                             items: {
+                                type: "object",
                                 properties: {
                                     value: {type: "string"}
                                 }
@@ -261,7 +263,9 @@ let templateParams = {
                 then: {
                     properties: {
                         options: {
+                            type: "array",
                             items: {
+                                type: "object",
                                 properties: {
                                     value: {type: "number"}
                                 }
@@ -279,7 +283,9 @@ let templateParams = {
                 then: {
                     properties: {
                         options: {
+                            type: "array",
                             items: {
+                                type: "object",
                                 properties: {
                                     value: {type: "boolean"}
                                 }
@@ -360,25 +366,93 @@ let behavior = {
             type: "array",
             items: {
                 type: "string"
-            }
+            },
+            uniqueItems: true
         }
     },
     required: ["workspaces"],
     additionalProperties: false
 };
 
-let ajv = new Ajv({$data: true});
-addFormats(ajv);
+function validateConfigLogic(config) {
+    let errors = [];
 
-ajv.addSchema(node);
-ajv.addSchema(tree);
-ajv.addSchema(config);
-ajv.addSchema(behavior);
+    let mappedTemplateTypes = new Map();
+    for (const templateType of config.templateTypes) {
+        if (mappedTemplateTypes.has(templateType.id)) {
+            errors.push(`节点模板类型ID(${templateType.id})有重复`);
+        }
+        mappedTemplateTypes.set(templateType.id, templateType);
+    }
+
+    let mappedTemplateGroups = new Map();
+    if (config.templateGroups) {
+        for (const templateGroup of config.templateGroups) {
+            if (mappedTemplateGroups.has(templateGroup.id)) {
+                errors.push(`节点模板组ID(${templateGroup.id})有重复`);
+            }
+            mappedTemplateGroups.set(templateGroup.id, templateGroup);
+        }
+    }
+
+    let mappedTemplates = new Map();
+    for (const template of config.templates) {
+        if (mappedTemplates.has(template.id)) {
+            errors.push(`节点模板ID(${template.id})有重复`);
+        }
+        if (!mappedTemplateTypes.has(template.type)) {
+            errors.push(`节点模板(${template.id})的模板类型(${template.type})不存在`);
+        }
+        if (template.group && !mappedTemplateGroups.has(template.group)) {
+            errors.push(`节点模板(${template.id})的模板组(${template.group})不存在`);
+        }
+        mappedTemplates.set(template.id, template);
+    }
+
+    let mappedArchetypes = new Map();
+    for (const archetype of config.archetypes) {
+        if (mappedArchetypes.has(archetype.id)) {
+            errors.push(`行为树原型ID(${archetype.id})有重复`);
+        }
+        mappedArchetypes.set(archetype.id, archetype);
+        let nodeIds = new Set();
+        let validateNode = node => {
+            if (nodeIds.has(node.id)) {
+                errors.push(`行为树原型(${archetype.id})的节点ID(${node.id})有重复`);
+            }
+            if (!mappedTemplates.has(node.tid)) {
+                errors.push(`行为树原型(${archetype.id})节点(${node.id})的模板(${node.tid})不存在`);
+            }
+            nodeIds.add(node.id);
+            if (node.children) {
+                for (let child of node.children) {
+                    validateNode(child);
+                }
+            }
+        };
+        validateNode(archetype.root);
+    }
+
+    return errors;
+}
+
+let logicValidators = {config: validateConfigLogic};
+
+let ajv = addFormats(new Ajv({$data: true}));
+ajv.addSchema([node, tree, config, behavior]);
 
 function localizeProxy(validate) {
     return new Proxy(validate, {
         apply(target, thisArg, argArray) {
             if (target.apply(thisArg, argArray)) {
+                let validateLogic = logicValidators[validate.schema.$id];
+                if (validateLogic) {
+                    let errors = validateLogic(...argArray);
+                    if (errors.length > 0) {
+                        validate.errors = errors;
+                        return false;
+                    }
+                }
                 return true;
             } else {
                 localize.zh(validate.errors);
@@ -388,10 +462,8 @@ function localizeProxy(validate) {
     });
 }
 
-let validateNode = localizeProxy(ajv.getSchema("node"));
-let validateTree = localizeProxy(ajv.getSchema("tree"));
-let validateConfig = localizeProxy(ajv.getSchema("config"));
-let validateBehavior = localizeProxy(ajv.getSchema("behavior"));
-
-export {validateNode, validateTree, validateConfig, validateBehavior}
+export let validateNode = localizeProxy(ajv.getSchema("node"));
+export let validateTree = localizeProxy(ajv.getSchema("tree"));
+export let validateConfig = localizeProxy(ajv.getSchema("config"));
+export let validateBehavior = localizeProxy(ajv.getSchema("behavior"));
 
