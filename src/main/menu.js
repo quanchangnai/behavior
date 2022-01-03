@@ -1,5 +1,5 @@
 import {app, BrowserWindow, ipcMain, Menu, shell} from "electron";
-import behavior from "@/behavior";
+import behavior from "./behavior";
 
 function buildMenu() {
     let workspacesItems = [];

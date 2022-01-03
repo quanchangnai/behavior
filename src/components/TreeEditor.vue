@@ -53,7 +53,6 @@ import TreeNode from "./TreeNode";
 import TemplateList from "./TemplateList";
 import ContextMenu from "./ContextMenu";
 
-import utils from "../utils";
 import {ipcRenderer} from 'electron'
 
 const nodeSpaceX = 50;//节点x轴间隔空间
@@ -131,13 +130,13 @@ export default {
                 return nodes;
             }
 
-            utils.visitNodes(this.tree.root, node => {
+            this.$utils.visitNodes(this.tree.root, node => {
                 nodes.push(node);
                 return !node.childrenFolded;
             });
 
             //数据变化时自动保存
-            utils.saveTree(this.tree);
+            this.$utils.saveTree(this.tree);
 
             return nodes;
         }
@@ -321,7 +320,7 @@ export default {
         },
         onNodeFold() {
             this.tree.folded = 0;
-            utils.visitNodes(this.tree.root, node => {
+            this.$utils.visitNodes(this.tree.root, node => {
                 this.tree.folded |= node.folded ? 1 : 2;
                 return !node.childrenFolded;
             });
@@ -373,7 +372,7 @@ export default {
             let parentNode = null;
             let minDistance2 = -1;
 
-            utils.visitNodes(this.tree.root, targetNode => {
+            this.$utils.visitNodes(this.tree.root, targetNode => {
                 if (!targetNode || targetNode === node || targetNode.collapsed) {
                     return false;
                 }
@@ -453,8 +452,8 @@ export default {
                 name: "",
                 tid: template.id,
                 template: template,
-                x: event.x - utils.getClientX(this.$refs.body),
-                y: event.y - utils.getClientY(this.$refs.body),
+                x: event.x - this.$utils.getClientX(this.$refs.body),
+                y: event.y - this.$utils.getClientY(this.$refs.body),
                 z: 1,
                 folded: true,
                 params: {},
@@ -488,8 +487,8 @@ export default {
         onBoardContextMenu(event) {
             let center = document.querySelector("#center");
             let limits = {
-                x: utils.getClientX(center),
-                y: utils.getClientY(center),
+                x: this.$utils.getClientX(center),
+                y: this.$utils.getClientY(center),
                 width: center.offsetWidth,
                 height: center.offsetHeight,
             };
@@ -497,14 +496,14 @@ export default {
         },
         foldAllNode(folded) {
             this.tree.folded = folded ? 1 : 2;
-            utils.visitNodes(this.tree.root, node => {
+            this.$utils.visitNodes(this.tree.root, node => {
                 node.folded = folded;
             });
             this.drawTree();
         },
         unfoldAllNodeChildren() {
             this.tree.childrenFolded = false;
-            utils.visitNodes(this.tree.root, node => {
+            this.$utils.visitNodes(this.tree.root, node => {
                 node.childrenFolded = false
             });
             this.drawTree();

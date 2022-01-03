@@ -3,7 +3,7 @@
 import {app, protocol, BrowserWindow} from 'electron'
 import {createProtocol} from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, {VUEJS_DEVTOOLS} from 'electron-devtools-installer'
-import './main-handler'
+import './handler'
 import './menu'
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -39,6 +39,10 @@ async function createWindow() {
         await window.loadURL('app://./index.html');
     }
 
+}
+
+if (!app.requestSingleInstanceLock()) {
+    app.quit();
 }
 
 // Quit when all windows are closed.

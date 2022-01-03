@@ -466,4 +466,3 @@ export let validateNode = localizeProxy(ajv.getSchema("node"));
 export let validateTree = localizeProxy(ajv.getSchema("tree"));
 export let validateConfig = localizeProxy(ajv.getSchema("config"));
 export let validateBehavior = localizeProxy(ajv.getSchema("behavior"));
-

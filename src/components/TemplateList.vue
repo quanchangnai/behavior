@@ -54,8 +54,6 @@
 
 <script>
 
-import utils from "@/utils";
-
 export default {
     name: "TemplateList",
     props: {
@@ -132,7 +130,7 @@ export default {
             this.$emit("select-template", {x: event.clientX, y: event.clientY, template});
         },
         onInitTree(tree) {
-            utils.visitNodes(tree.root, node => {
+            this.$utils.visitNodes(tree.root, node => {
                 this.$set(node, "template", this.mappedTemplates.get(node.tid));
             });
         },

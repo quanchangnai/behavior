@@ -49,7 +49,6 @@
 import {ipcRenderer} from 'electron'
 import ContextMenu from './ContextMenu'
 import ArchetypesDialog from "./ArchetypesDialog";
-import utils from "@/utils";
 
 export default {
     name: "TreeList",
@@ -113,7 +112,7 @@ export default {
             tree.maxNodeId = 0;
             this.$set(tree, "folded", 1);
 
-            utils.visitNodes(tree.root, (node, parent) => {
+            this.$utils.visitNodes(tree.root, (node, parent) => {
                 tree.maxNodeId = Math.max(tree.maxNodeId, node.id);
                 this.$set(tree, "childrenFolded", tree.childrenFolded || node.childrenFolded);
                 node.parent = parent;
@@ -146,8 +145,8 @@ export default {
 
             let body = this.$refs.body;
             let limits = {
-                x: utils.getClientX(body),
-                y: utils.getClientY(body),
+                x: this.$utils.getClientX(body),
+                y: this.$utils.getClientY(body),
                 width: body.offsetWidth,
                 height: body.offsetHeight,
             };
@@ -169,7 +168,7 @@ export default {
             this.allTrees.push(tree);
             this.$refs.table.setCurrentRow(tree);
 
-            utils.saveTree(tree);
+            this.$utils.saveTree(tree);
         },
 
         async deleteTree(tree) {

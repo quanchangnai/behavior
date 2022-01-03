@@ -92,7 +92,6 @@
 <script>
 import Draggable from './Draggable'
 import ContextMenu from './ContextMenu'
-import utils from "@/utils";
 
 // noinspection JSUnresolvedVariable
 export default {
@@ -139,7 +138,7 @@ export default {
             const deltaX = event.x - this.node.x;
             const deltaY = event.y - this.node.y;
 
-            utils.visitNodes(this.node, node => {
+            this.$utils.visitNodes(this.node, node => {
                 node.x += deltaX;
                 node.y += deltaY;
                 node.z = this.creating ? 30 : 10;
@@ -149,7 +148,7 @@ export default {
         },
         onDragEnd() {
             this.node.dragging = false;
-            utils.visitNodes(this.node, node => node.z = 1);
+            this.$utils.visitNodes(this.node, node => node.z = 1);
             this.$emit("drag-end", this.node);
         },
         fold() {

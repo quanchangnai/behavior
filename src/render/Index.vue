@@ -5,11 +5,11 @@
 </template>
 
 <script>
-import TreeEditor from './components/TreeEditor.vue'
+import TreeEditor from '../components/TreeEditor.vue'
 import {ipcRenderer} from "electron";
 
 export default {
-    name: 'App',
+    name: 'Index',
     components: {
         TreeEditor
     },
