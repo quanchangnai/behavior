@@ -97,6 +97,21 @@ let behavior = {
             openingWorkspace = workspace;
             app.emit("open-workspace");
         }
+    },
+    /**
+     * 命令行参数中解析要打开的工作区
+     * @param args {string[]}
+     * @returns {string|undefined}
+     */
+    parseWorkspace(args) {
+        if (!app.isPackaged) {
+            return;
+        }
+        for (let i = 1; i < args.length; i++) {
+            if (!args[i].startsWith("-")) {
+                return path.resolve(".", args[i]);
+            }
+        }
     }
 };
 
@@ -149,16 +164,11 @@ async function load() {
         await behavior.addWorkspace(homeWorkspaces, workspace, true);
     }
 
-    await behavior.openWorkspace(behavior.getAllWorkspaces()[0]);
+    let workspace = behavior.parseWorkspace(process.argv) || behavior.getAllWorkspaces()[0];
+    await behavior.openWorkspace(workspace);
 }
 
 app.on("ready", load);
-
-app.on('activate', async () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-        await behavior.openWorkspace();
-    }
-});
 
 app.on("browser-window-created", async (event, window) => {
     webContentsWorkspaces.set(window.webContents.id, openingWorkspace);

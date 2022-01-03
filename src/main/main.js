@@ -3,6 +3,7 @@
 import {app, protocol, BrowserWindow} from 'electron'
 import {createProtocol} from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, {VUEJS_DEVTOOLS} from 'electron-devtools-installer'
+import behavior from "./behavior";
 import './handler'
 import './menu'
 
@@ -41,10 +42,16 @@ async function createWindow() {
 
 }
 
+
 if (!app.requestSingleInstanceLock()) {
     app.quit();
 } else {
-    app.on("second-instance", () => {
+    app.on("second-instance", async (e, args) => {
+        let workspace = behavior.parseWorkspace(args);
+        if (workspace) {
+            await behavior.openWorkspace(workspace);
+            return;
+        }
         let windows = BrowserWindow.getAllWindows();
         if (windows.length > 0) {
             let win = windows[0];
@@ -65,9 +72,12 @@ app.on('window-all-closed', () => {
     }
 });
 
-app.on('activate', () => {
+app.on('activate', async () => {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
+    if (BrowserWindow.getAllWindows().length === 0) {
+        await behavior.openWorkspace();
+    }
 });
 
 // This method will be called when Electron has finished
