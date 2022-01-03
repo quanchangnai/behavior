@@ -80,14 +80,19 @@ let behavior = {
         }
     },
     async openWorkspace(workspace) {
-        await behavior.addWorkspace(homeWorkspaces, workspace);
+        workspace = workspace || this.getAllWorkspaces()[0];
+
+        await this.addWorkspace(homeWorkspaces, workspace);
         buildWorkspacesTitles();
 
         let webContentsId = workspacesWebContents.get(workspace);
         if (webContentsId) {
-            let browserWindow = BrowserWindow.fromWebContents(webContents.fromId(webContentsId));
-            browserWindow.moveTop();
-            browserWindow.focus();
+            let win = BrowserWindow.fromWebContents(webContents.fromId(webContentsId));
+            if (win.isMinimized()) {
+                win.restore();
+            }
+            win.moveTop();
+            win.focus();
         } else {
             openingWorkspace = workspace;
             app.emit("open-workspace");
@@ -151,7 +156,7 @@ app.on("ready", load);
 
 app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-        await behavior.openWorkspace(behavior.getAllWorkspaces()[0]);
+        await behavior.openWorkspace();
     }
 });
 

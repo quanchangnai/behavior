@@ -1,15 +1,13 @@
 <template>
-    <div id="app">
-        <tree-editor/>
-    </div>
+    <tree-editor/>
 </template>
 
 <script>
-import TreeEditor from '../components/TreeEditor.vue'
+import TreeEditor from './TreeEditor.vue'
 import {ipcRenderer} from "electron";
 
 export default {
-    name: 'Index',
+    name: 'IndexPage',
     components: {
         TreeEditor
     },

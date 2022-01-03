@@ -43,6 +43,17 @@ async function createWindow() {
 
 if (!app.requestSingleInstanceLock()) {
     app.quit();
+} else {
+    app.on("second-instance", () => {
+        let windows = BrowserWindow.getAllWindows();
+        if (windows.length > 0) {
+            let win = windows[0];
+            if (win.isMinimized()) {
+                win.restore();
+            }
+            win.focus();
+        }
+    });
 }
 
 // Quit when all windows are closed.
