@@ -1,11 +1,11 @@
 //行为树编辑器默认配置
 //节点模板类型，用于控制节点连接性和子节点数量
 let templateTypes = [
-    {id: 1, name: "根节点", childrenTypes: [2], childrenNum: -1},
-    {id: 2, name: "状态节点", childrenTypes: [3, 4, 5], childrenNum: -1},
-    {id: 3, name: "组合节点", childrenTypes: [3, 4, 5], childrenNum: -1},
+    {id: 1, name: "根节点", childrenTypes: [2], childrenNum: -1,nodeHasName:true},
+    {id: 2, name: "状态节点", childrenTypes: [3, 4, 5], childrenNum: -1,nodeHasName:true},
+    {id: 3, name: "组合节点", childrenTypes: [3, 4, 5], childrenNum: -1,nodeHasName:true},
     {id: 4, name: "装饰节点", childrenTypes: [3, 4, 5], childrenNum: 1},
-    {id: 5, name: "叶子节点", childrenTypes: [], childrenNum: 0,nodeHasName:false},
+    {id: 5, name: "叶子节点", childrenTypes: [], childrenNum: 0},
 ];
 
 //可选的节点模板组，用于搜索筛选逻辑
@@ -29,7 +29,7 @@ let templates = [
     {id: 9, name: "动作节点3", type: 5, group: 3, desc: "动作节点3描述"},
     {id: 10, name: "条件节点1", type: 5, group: 2, desc: "条件节点1描述"},
     {id: 11, name: "条件节点2", type: 5, group: 3, desc: "条件节点2描述"},
-    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenNum: 3,nodeHasName:true},
+    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenNum: 3,nodeHasName:false},
 ];
 
 //模板参数

@@ -85,7 +85,7 @@ export default {
                 template.type = this.templateTypes.find(type => type.id === template.type);
                 if (template.nodeHasName === undefined) {
                     if (template.type.nodeHasName === undefined) {
-                        template.nodeHasName = true;
+                        template.nodeHasName = false;
                     } else {
                         template.nodeHasName = template.type.nodeHasName;
                     }
