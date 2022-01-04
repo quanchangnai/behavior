@@ -83,6 +83,13 @@ export default {
         for (let template of this.templates) {
             if (typeof template.type === "number") {
                 template.type = this.templateTypes.find(type => type.id === template.type);
+                if (template.nodeHasName === undefined) {
+                    if (template.type.nodeHasName === undefined) {
+                        template.nodeHasName = true;
+                    } else {
+                        template.nodeHasName = template.type.nodeHasName;
+                    }
+                }
             }
             if (template.type.visible && !template.group) {
                 ungrouped = true;

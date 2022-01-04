@@ -6,15 +6,15 @@
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
-               @dblclick.native.stop="fold"
+               @dblclick.native.stop="foldSelf"
                @contextmenu.native.stop="onContextMenu">
         <template>
-            <div ref="content" class="content" :class="{'creating-content':creating}">
+            <div ref="content" class="content" :class="{'no-fold-operation-content': !hasFoldOperation()}">
                 <div style="overflow:hidden;text-overflow: ellipsis;">
                     {{ node.template.name }}
                     <template v-if="node.folded && node.name"> : {{ node.name }}</template>
                 </div>
-                <div v-if="!node.folded">
+                <div v-if="hasFoldOperation()&&!node.folded">
                     <el-form size="mini"
                              :model="node"
                              ref="form"
@@ -23,7 +23,9 @@
                              @validate="onFormValidate"
                              @mousedown.native.stop
                              @dblclick.native.stop>
-                        <el-form-item label="节点名称" prop="name">
+                        <el-form-item v-if="node.template.nodeHasName"
+                                      label="节点名称"
+                                      prop="name">
                             <el-input v-model="node.name"/>
                         </el-form-item>
                         <el-form-item v-for="(param,paramName) in node.template.params"
@@ -71,10 +73,10 @@
                     </el-form>
                 </div>
             </div>
-            <div v-if="!creating"
+            <div v-if="hasFoldOperation()"
                  @mousedown.stop
-                 @click="fold"
-                 class="fold-icon"
+                 @click="foldSelf"
+                 class="fold-self-icon"
                  :class="node.folded?'el-icon-arrow-down':'el-icon-arrow-up'"
                  :title="node.folded?'展开节点':'收起节点'"/>
             <div v-if="node.children.length"
@@ -113,7 +115,9 @@ export default {
     computed: {
         menuItems() {
             let items = [];
-            items.push({title: this.node.folded ? '展开节点' : '收起节点', handler: this.fold});
+            if (this.hasFoldOperation()) {
+                items.push({title: this.node.folded ? '展开节点' : '收起节点', handler: this.foldSelf});
+            }
             if (this.node.children.length) {
                 items.push({title: this.node.childrenFolded ? '展开子树' : '收起子树', handler: this.foldChildren});
             }
@@ -151,9 +155,17 @@ export default {
             this.$utils.visitNodes(this.node, node => node.z = 1);
             this.$emit("drag-end", this.node);
         },
-        fold() {
-            this.node.folded = !this.node.folded;
-            this.$emit("fold");
+        hasFoldOperation() {
+            if (this.creating) {
+                return false;
+            }
+            return this.node.template.nodeHasName || Object.keys(this.node.params).length > 0;
+        },
+        foldSelf() {
+            if (this.hasFoldOperation()) {
+                this.node.folded = !this.node.folded;
+                this.$emit("fold");
+            }
         },
         foldChildren() {
             this.node.childrenFolded = !this.node.childrenFolded;
@@ -226,7 +238,7 @@ export default {
     border-top: solid cadetblue 1px;
 }
 
-.creating-content > div {
+.no-fold-operation-content > div {
     padding: 0 12px 0 12px !important;
 }
 
@@ -235,7 +247,7 @@ export default {
     cursor: grab;
 }
 
-.fold-icon {
+.fold-self-icon {
     position: absolute;
     top: 0;
     left: 0;

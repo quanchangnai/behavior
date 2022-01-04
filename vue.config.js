@@ -27,9 +27,9 @@ module.exports = {
             mainProcessWatch: ['src/main/*.js'],
             builderOptions: {
                 icon: "public/icon",
-                win: {target: "dir"},
-                mac: {target: "dir"},
-                linux: {target: "dir"},
+                win: {target: "zip"},
+                mac: {target: "zip"},
+                linux: {target: "tar.gz"},
                 afterPack
             }
         }

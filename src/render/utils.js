@@ -63,7 +63,10 @@ export default {
         }
 
         let build = node => {
-            let result = {id: node.id, name: node.name, tid: node.tid};
+            let result = {id: node.id, tid: node.tid};
+            if (node.template.nodeHasName) {
+                result.name = node.name;
+            }
 
             let params = Object.keys(node.params);
             if (params.length) {

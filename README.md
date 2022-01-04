@@ -22,7 +22,7 @@ npm run run
 npm run build
 ```
 
-## 行为树编辑器使用
+## 编辑器使用
 
 ### 启动
 
@@ -57,12 +57,13 @@ templateTypes = [
     {id: 2, name: "状态节点", childrenTypes: [3, 4, 5], childrenNum: -1},
     {id: 3, name: "组合节点", childrenTypes: [3, 4, 5], childrenNum: -1},
     {id: 4, name: "装饰节点", childrenTypes: [3, 4, 5], childrenNum: 1},
-    {id: 5, name: "叶子节点", childrenTypes: [], childrenNum: 0},
+    {id: 5, name: "叶子节点", childrenTypes: [], childrenNum: 0,nodeHasName:false},
 ];
 ```
 
 childrenTypes:限制子节点的类型,类型不合法的节点不允许作为子节点挂载<br>
 childrenNum:限制子节点的数量，-1:不限制,0:不允许挂子节点...<br>
+nodeHasName:是否可以给节点起名,可选字段，默认值为:true
 
 ### templateGroups
 
@@ -95,11 +96,14 @@ let templates = [
     {id: 9, name: "动作节点3", type: 5, group: 3, desc: "动作节点3描述"},
     {id: 10, name: "条件节点1", type: 5, group: 2, desc: "条件节点1描述"},
     {id: 11, name: "条件节点2", type: 5, group: 3, desc: "条件节点2描述"},
-    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenNum: 3}
+    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenNum: 3,nodeHasName:true}
 ];
 ```
 
-childrenNum:可以选择覆盖模板类型的childrenNum。 params:节点模板参数字段可选，详情看下面示例。
+id、name、type是必填字段，其他字段都是可选的。<br>
+childrenNum:可以选择覆盖模板类型的childrenNum。<br>
+nodeHasName:可以选择覆盖模板类型的nodeHasName。<br>
+params:节点模板参数，详情看下面示例。
 
 ```js
 //节点模板参数示例
@@ -120,12 +124,17 @@ templates[7].params = {
 
 p1-p4:参数名<br>
 label:参数标签，用于显示。<br>
-value:默认参数值,合法类型boolean、number、string以及三者的数组(此时options必选)。<br>
-options:可选字段，参数选项列表,默认参数值为数组时则选项列表为多选，默认参数值为单值时则选项列表为单选。<br>
+value:默认参数值,合法类型boolean、number、string以及三者的数组，<br>
+value类型为number时支持可选字段precision、min、max，<br>
+value类型为string时支持可选字段pattern，<br>
+value类型为数组时options字段必选。<br>
+pattern:字符串参数的正则表达式格式<br>
+precision:数字精度，min:最小值，max:最大值<br>
+options:参数选项列表,参数value类型为数组时则选项列表为多选，参数value类型为单值时则选项列表为单选。<br>
 
 ### archetypes
 
-创建行为树时的原型，至少有一个原型，最简单的就是只带一个根节点，示例如下：
+创建行为树时的原型，至少有一个，最简单的就是只带一个根节点，示例如下：
 
 ```js
  archetypes = [

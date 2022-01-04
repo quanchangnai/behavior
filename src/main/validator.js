@@ -103,6 +103,9 @@ let templateTypes = {
             childrenNum: {
                 type: "integer",
                 minimum: -1
+            },
+            nodeHasName: {
+                type: "boolean"
             }
         },
         required: ["id", "name", "childrenTypes", "childrenNum"],
@@ -330,6 +333,9 @@ let templates = {
             childrenNum: {
                 type: "integer",
                 minimum: -1
+            },
+            nodeHasName: {
+                type: "boolean"
             }
         },
         required: ["id", "name", "type"],
