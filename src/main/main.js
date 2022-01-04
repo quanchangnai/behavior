@@ -39,7 +39,6 @@ async function createWindow() {
         // Load the index.html when not in development
         await window.loadURL('app://./index.html');
     }
-
 }
 
 

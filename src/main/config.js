@@ -8,7 +8,7 @@ let templateTypes = [
     {id: 5, name: "叶子节点", childrenTypes: [], childrenNum: 0},
 ];
 
-//可选的节点模板组，用于搜索筛选
+//可选的节点模板组，用于搜索筛选逻辑
 let templateGroups = [
     {id: 1, name: "基础节点"},
     {id: 2, name: "逻辑节点1"},
@@ -47,7 +47,7 @@ templates[7].params = {
     p3: {label: '参数3', value: ['aaa'], options: [{label: '选项3-1', value: 'aaa'}, {label: '选项3-2', value: 'bbb'}]},//多选
 };
 
-//创建行为树时原型
+//创建行为树时的原型
 let archetypes = [
     {
         id: 1,

@@ -1,8 +1,11 @@
-import {app, dialog, shell, BrowserWindow, webContents} from 'electron'
 import path from "path";
 import fs from "fs";
+import {app, dialog, shell, BrowserWindow, webContents} from 'electron'
+import logger from "electron-log";
 import config from "./config";
 import {validateBehavior} from "./validator";
+
+logger.catchErrors();
 
 //程序目录下配置的工作区
 let appWorkspaces = [];
@@ -99,7 +102,7 @@ let behavior = {
         }
     },
     /**
-     * 命令行参数中解析要打开的工作区
+     * 从命令行参数中解析要打开的工作区
      * @param args {string[]}
      * @returns {string|undefined}
      */
@@ -133,7 +136,7 @@ async function load() {
                 await behavior.addWorkspace(appWorkspaces, path.resolve(".", workspace), true);
             }
         } else {
-            console.error("app behavior error\n", validateBehavior.errors);
+            logger.error("app behavior error\n", validateBehavior.errors);
         }
     }
 
@@ -151,7 +154,7 @@ async function load() {
         homeBehavior = JSON.parse(json);
         if (!validateBehavior(homeBehavior)) {
             homeBehavior = null;
-            console.error("home behavior error\n", validateBehavior.errors);
+            logger.error("home behavior error\n", validateBehavior.errors);
         }
     }
 

@@ -141,7 +141,7 @@ export default {
             if (tree != null) {
                 this.menuItems.push({title: '删除行为树', handler: () => this.deleteTree(tree)});
             }
-            this.menuItems.push({title: '打开工作目录', handler: () => ipcRenderer.invoke("open-work-path")});
+            this.menuItems.push({title: '打开工作目录', handler: () => ipcRenderer.invoke("open-workspace-path")});
 
             let body = this.$refs.body;
             let limits = {

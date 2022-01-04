@@ -72,7 +72,7 @@ ipcMain.handle("delete-tree", async (event, treeId) => {
     await fs.promises.unlink(treeFile);
 });
 
-ipcMain.handle("open-work-path", async (event) => {
+ipcMain.handle("open-workspace-path", async (event) => {
     await behavior.openWorkspacePath(event.sender);
 });
 

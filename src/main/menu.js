@@ -1,4 +1,5 @@
 import {app, BrowserWindow, ipcMain, Menu, shell} from "electron";
+import path from "path";
 import behavior from "./behavior";
 
 function buildMenu() {
@@ -75,6 +76,13 @@ function buildMenu() {
                 {
                     label: "关于",
                     role: "about"
+                },
+                {
+                    label: "文档",
+                    async click() {
+                        await shell.openExternal(path.resolve(".", "README.html"));
+                    },
+                    visible: app.isPackaged
                 },
                 {
                     label: "联系",
