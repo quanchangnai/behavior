@@ -40,7 +40,7 @@
                             </span>
                         </template>
                         <el-tag size="small"
-                                style="cursor: default;margin-right: 10px;"
+                                class="template-tag"
                                 @mousedown.native.stop>
                             {{ template.id }}
                         </el-tag>
@@ -104,6 +104,16 @@ export default {
             if (ungrouped) {
                 this.selectGroups.push({id: -2, name: "未分组"});
             }
+        } else {
+            this.selectGroups.push({id: -1, name: "全部类型"});
+            for (let templateType of this.templateTypes) {
+                if (templateType.visible) {
+                    this.selectGroups.push(templateType);
+                }
+            }
+            if (this.selectGroups.length === 1) {
+                this.selectGroups.pop();
+            }
         }
 
         for (const template of this.templates) {
@@ -146,12 +156,19 @@ export default {
                 if (!template.type.visible) {
                     return false;
                 }
-                if (this.selectedGroup > 0 && template.group !== this.selectedGroup) {
+                if (this.templateGroups && this.templateGroups.length) {
+                    //按模板组搜索
+                    if (this.selectedGroup > 0 && template.group !== this.selectedGroup) {
+                        return false;
+                    }
+                    if (this.selectedGroup === -2 && template.group) {
+                        return false;
+                    }
+                } else if (this.selectedGroup > 0 && template.type.id !== this.selectedGroup) {
+                    //按模板类型搜索
                     return false;
                 }
-                if (this.selectedGroup === -2 && template.group) {
-                    return false;
-                }
+
                 return template.name.includes(this.keyword) || template.id.toString().includes(this.keyword);
             });
         },
@@ -207,6 +224,13 @@ export default {
     width: 20px !important;
 }
 
+.template-tag {
+    cursor: default;
+    margin-right: 10px;
+    max-width: 50px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
 </style>
 <!--suppress CssUnusedSymbol -->

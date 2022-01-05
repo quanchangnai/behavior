@@ -308,8 +308,10 @@ let templates = {
         type: "object",
         properties: {
             id: {
-                type: "integer",
-                minimum: 1
+                type: ["integer","string"],
+                minimum: 1,
+                minLength: 1,
+                maxLength: 10
             },
             name: {
                 type: "string",
@@ -326,7 +328,6 @@ let templates = {
             },
             desc: {
                 type: "string",
-                minLength: 5,
                 maxLength: 300
             },
             params: templateParams,
