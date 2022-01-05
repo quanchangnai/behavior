@@ -195,10 +195,10 @@ export default {
             return {"el-select-normal": normal, "el-select-multiple": !normal}
         },
         paramRules(param) {
-            if (typeof param.value !== 'string' || param.options || !param.pattern) {
-                return null;
+            if (typeof param.value === 'string' && param.pattern) {
+                return {pattern: param.pattern};
             }
-            return {pattern: param.pattern};
+            return null;
         },
         onParamFocusIn(paramName) {
             this.backupParams[paramName] = this.node.params[paramName];

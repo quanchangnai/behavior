@@ -74,10 +74,6 @@ function buildMenu() {
             label: "帮助",
             submenu: [
                 {
-                    label: "关于",
-                    role: "about"
-                },
-                {
                     label: "文档",
                     async click() {
                         await shell.openExternal(path.resolve(".", "README.html"));
@@ -112,16 +108,11 @@ app.on("browser-window-created", (event, window) => {
         let menuItem = menu.getMenuItemById(behavior.getWorkspace(win.webContents));
         menuItem.visible = false;
         win.setMenu(menu);
-        win.$menu = menu;
     }
 });
 
 ipcMain.handle("title", event => {
     let win = BrowserWindow.fromWebContents(event.sender);
-    // noinspection JSUnresolvedVariable
-    if (!win.$menu) {
-        return;
-    }
     let title = behavior.getWorkspacesTitles().get(behavior.getWorkspace(win.webContents));
     return win.getTitle() + " - " + title;
 });

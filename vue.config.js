@@ -3,13 +3,13 @@ const path = require("path");
 const {marked} = require("marked");
 
 async function afterPack(cxt) {
-    let src = (await fs.promises.readFile("README.md")).toString();
+    let md = (await fs.promises.readFile("README.md")).toString();
     return new Promise((resolve, reject) => {
-        marked(src, function (err, result) {
+        marked(md, function (err, html) {
             if (err) {
                 reject(err);
             } else {
-                fs.writeFileSync(path.resolve(cxt.appOutDir, "README.html"), result);
+                fs.writeFileSync(path.resolve(cxt.appOutDir, "README.html"), html);
                 resolve();
             }
         });
