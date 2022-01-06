@@ -252,8 +252,9 @@ export default {
     cursor: default;
     margin-right: 10px;
     max-width: 50px;
-    /*overflow-x: hidden;*/
-    /*text-overflow: ellipsis;*/
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
 }
 
 </style>
