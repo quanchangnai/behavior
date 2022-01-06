@@ -211,12 +211,12 @@ let templateParams = {
             },
             min: {
                 properties: {
-                    type: {enum: ["int","float"]}
+                    type: {enum: ["int", "float"]}
                 }
             },
             max: {
                 properties: {
-                    type: {enum: ["int","float"]}
+                    type: {enum: ["int", "float"]}
                 }
             }
         },
@@ -354,7 +354,7 @@ let templateParams = {
                 then: {
                     properties: {
                         default: {
-                            oneOf:[
+                            oneOf: [
                                 {type: "boolean"},
                                 {type: "number"},
                                 {type: "string"},
@@ -485,6 +485,13 @@ function validateConfigLogic(config) {
         }
         if (mappedTemplateTypes.size > 0 && !template.type) {
             errors.push(`节点模板(${template.id})的模板类型未设置`);
+        }
+        if (template.childrenTypes) {
+            for (const childrenType of template.childrenTypes) {
+                if (!mappedTemplateTypes.has(childrenType)) {
+                    errors.push(`节点模板(${template.id})限制的子节点模板类型(${childrenType})不存在`);
+                }
+            }
         }
         if (template.type && !mappedTemplateTypes.has(template.type)) {
             errors.push(`节点模板(${template.id})的模板类型(${template.type})不存在`);

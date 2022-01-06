@@ -71,6 +71,8 @@ export default {
         }
     },
     created() {
+        this.keyword = "";
+
         let mappedTemplateTypes = new Map();
         if (this.templateTypes) {
             for (let templateType of this.templateTypes) {
@@ -84,9 +86,12 @@ export default {
         }
 
         for (let template of this.templates) {
+            this.mappedTemplates.set(template.id, template);
+
             if (typeof template.type !== "number") {
                 continue
             }
+
             template.type = mappedTemplateTypes.get(template.type);
             if (template.childrenTypes) {
                 for (let childrenType of template.childrenTypes) {
@@ -99,6 +104,7 @@ export default {
             if (template.childrenNum === undefined) {
                 template.childrenNum = template.type.childrenNum;
             }
+
             if (template.nodeHasName === undefined) {
                 if (template.type.nodeHasName === undefined) {
                     template.nodeHasName = false;
@@ -140,19 +146,12 @@ export default {
             }
         }
 
-        for (const template of this.templates) {
-            this.mappedTemplates.set(template.id, template);
-        }
-
-        this.keyword = "";
-
         this.$events.$on("init-tree", this.onInitTree);
-
-        this.blurGroupSelectInput();
     },
     mounted() {
         this.resizeObserver = new ResizeObserver(this.$refs.table.doLayout);
         this.resizeObserver.observe(this.$refs.table.$el);
+        this.blurGroupSelectInput();
     },
     destroyed() {
         this.$events.$off("init-tree", this.onInitTree);
