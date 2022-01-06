@@ -113,28 +113,29 @@ params:可选字段，节点模板参数，详情看下面示例。
 //节点模板参数示例
 //动作节点1参数
 templates[6].params = {
-    p1: {label: '参数1', value: 1},//整数
-    p2: {label: '参数2', value: '', pattern: '^[abc]*$'},//字符串,可选的正则格式
-    p3: {label: '参数3', value: true},//boolean
-    p4: {label: '参数4', value: 2, precision: 0, min: 0, max: 100},//可选的精度和取值范围
+    p1: {label: '参数1', type: "int"},
+    p2: {label: '参数2', type: "string",pattern: '^[abc]*$'},//字符串,可选的正则格式
+    p3: {label: '参数3', type: "boolean", default: true},
+    p4: {label: '参数4', type: "float", default: 2, min: 0, max: 100},//取值范围
 };
 //动作节点2参数
 templates[7].params = {
-    p1: {label: '参数1', value: 1, options: [{label: '选项1-1', value: 1}, {label: '选项1-2', value: 2}]},
-    p2: {label: '参数2', value: 'aaa', options: [{label: '选项2-1', value: 'aaa'}, {label: '选项2-2', value: 'bbb'}]},
-    p3: {label: '参数3', value: ['aaa'], options: [{label: '选项3-1', value: 'aaa'}, {label: '选项3-2', value: 'bbb'}]},
+    p1: {label: '参数1', type: "int", default: 1, options: [{label: '选项1-1', value: 1}, {label: '选项1-2', value: 2}]},
+    p2: {label: '参数2', type: "string", default: 'aaa', options: [{label: '选项2-1', value: 'aaa'}, {label: '选项2-2', value: 'bbb'}]},//单选
+    p3: {label: '参数3', type: "string", default: ['aaa'], options: [{label: '选项3-1', value: 'aaa'}, {label: '选项3-2', value: 'bbb'}]},//多选
 };
 ```
 
 p1-p4:参数名<br>
 label:参数标签，用于显示。<br>
-value:默认参数值,合法类型boolean、number、string以及三者的数组，<br>
-value类型为number时支持可选字段precision、min、max，<br>
-value类型为string时支持可选字段pattern，<br>
-value类型为数组时options字段必选。<br>
+type:参数类型,合法类型boolean、int、float、string。<br>
+参数类型为int、float时支持可选字段min、max，<br>
+参数类型为string时支持可选字段pattern，<br>
+参数类型为数组时字段options必选。<br>
+default:参数默认值，可选字段，类型boolean、int、float、string以及它们的数组或空数组。<br>
 pattern:字符串参数的正则表达式格式<br>
-precision:数字精度，min:最小值，max:最大值<br>
-options:参数选项列表,参数value类型为数组时则选项列表为多选，参数value类型为单值时则选项列表为单选。<br>
+min:最小值，max:最大值，可选字段<br>
+options:参数选项列表,参数默认值为数组时则选项列表为多选，否则选项列表为单选。<br>
 
 ### archetypes
 
