@@ -185,7 +185,7 @@ let templateParams = {
                     properties: {
                         label: {
                             type: "string",
-                            maxLength: 5
+                            minLength: 1
                         },
                         value: {
                             oneOf: [
@@ -308,7 +308,7 @@ let templates = {
         type: "object",
         properties: {
             id: {
-                type: ["integer","string"],
+                type: ["integer", "string"],
                 minimum: 1,
                 minLength: 1,
                 maxLength: 10
@@ -331,6 +331,14 @@ let templates = {
                 maxLength: 300
             },
             params: templateParams,
+            childrenTypes: {
+                type: "array",
+                items: {
+                    type: "integer",
+                    minimum: 1
+                },
+                uniqueItems: true
+            },
             childrenNum: {
                 type: "integer",
                 minimum: -1
@@ -339,7 +347,7 @@ let templates = {
                 type: "boolean"
             }
         },
-        required: ["id", "name", "type"],
+        required: ["id", "name"],
         additionalProperties: false
     },
     minItems: 1,
@@ -361,7 +369,7 @@ let config = {
             uniqueItems: true
         },
     },
-    required: ["templateTypes", "templates", "archetypes"],
+    required: ["templates", "archetypes"],
     additionalProperties: false
 };
 
@@ -385,11 +393,13 @@ function validateConfigLogic(config) {
     let errors = [];
 
     let mappedTemplateTypes = new Map();
-    for (const templateType of config.templateTypes) {
-        if (mappedTemplateTypes.has(templateType.id)) {
-            errors.push(`节点模板类型ID(${templateType.id})有重复`);
+    if (config.templateTypes) {
+        for (const templateType of config.templateTypes) {
+            if (mappedTemplateTypes.has(templateType.id)) {
+                errors.push(`节点模板类型ID(${templateType.id})有重复`);
+            }
+            mappedTemplateTypes.set(templateType.id, templateType);
         }
-        mappedTemplateTypes.set(templateType.id, templateType);
     }
 
     let mappedTemplateGroups = new Map();
@@ -407,7 +417,10 @@ function validateConfigLogic(config) {
         if (mappedTemplates.has(template.id)) {
             errors.push(`节点模板ID(${template.id})有重复`);
         }
-        if (!mappedTemplateTypes.has(template.type)) {
+        if (mappedTemplateTypes.size > 0 && !template.type) {
+            errors.push(`节点模板(${template.id})的模板类型未设置`);
+        }
+        if (template.type && !mappedTemplateTypes.has(template.type)) {
             errors.push(`节点模板(${template.id})的模板类型(${template.type})不存在`);
         }
         if (template.group && !mappedTemplateGroups.has(template.group)) {

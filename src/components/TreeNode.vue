@@ -32,8 +32,10 @@
                                       :key="paramName"
                                       :rules="paramRules(param)"
                                       :show-message="false"
-                                      :prop="'params.'+paramName"
-                                      :label="param.label || paramName">
+                                      :prop="'params.'+paramName">
+                            <template #label>
+                                <span class="paramLabel">{{ param.label || paramName }}奥德赛奥德赛</span>
+                            </template>
                             <el-radio-group v-if="typeof param.value==='boolean' && !param.options"
                                             v-model="node.params[paramName]">
                                 <el-radio :label="true">是</el-radio>
@@ -272,6 +274,13 @@ export default {
 
 .el-form-item {
     margin-bottom: 0;
+}
+
+.paramLabel {
+    display: inline-block;
+    max-width: 70px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .el-input, .el-input-number, .el-select, .el-radio-group {

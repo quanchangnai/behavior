@@ -382,15 +382,13 @@ export default {
                 let canLink = true;
 
                 //目标节点限制子节点类型
-                let targetNodeType = targetNode.template.type;
-                if (targetNodeType.childrenTypes.indexOf(node.template.type.id) < 0) {
+                if (node.template.type && targetNode.template.childrenTypes.indexOf(node.template.type.id) < 0) {
                     canLink = false;
                 }
                 //目标节点限制子节点数量
-                let childrenNum = targetNode.template.childrenNum || targetNodeType.childrenNum;
-                if (childrenNum >= 0
-                        && targetNode.children.length >= childrenNum
-                        && targetNode.children.indexOf(node) < 0) {
+                if (targetNode.children.indexOf(node) < 0
+                        && targetNode.template.childrenNum >= 0
+                        && targetNode.children.length >= targetNode.template.childrenNum) {
                     canLink = false;
                 }
 
@@ -453,7 +451,7 @@ export default {
                 id: ++this.tree.maxNodeId,
                 name: "",
                 tid: template.id,
-                template: template,
+                template,
                 x: event.x - this.$utils.getClientX(this.$refs.body),
                 y: event.y - this.$utils.getClientY(this.$refs.body),
                 z: 1,

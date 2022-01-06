@@ -48,7 +48,7 @@ npm run build
 
 ### templateTypes
 
-节点模板类型，主要用于控制节点连接性和子节点数量。
+节点模板类型，主要用于控制节点连接性和子节点数量，可选字段。
 
 ```js
 //节点模板类型示例
@@ -67,7 +67,7 @@ nodeHasName:是否可以给节点起名,可选字段
 
 ### templateGroups
 
-节点模板组，用于搜索筛选逻辑，不需要筛选可以不配置。
+节点模板组，用于搜索筛选逻辑，可选字段。
 
 ```js
 //节点模板组示例
@@ -100,10 +100,14 @@ let templates = [
 ];
 ```
 
-id、name、type是必填字段，其他字段都是可选的。<br>
-childrenNum:可以选择覆盖模板类型的childrenNum。<br>
-nodeHasName:可以选择覆盖模板类型的nodeHasName。<br>
-params:节点模板参数，详情看下面示例。
+id:必填字段，正整数或字符串。<br>
+name:必填字段，节点模板名称。<br>
+desc:可选字段，节点模板描述。<br>
+type:可选字段，节点模板类型，和配置的templateTypes字段同时出现。<br>
+childrenTypes:可选字段，覆盖模板类型的childrenTypes。<br>
+childrenNum:可选字段，覆盖模板类型的childrenNum。<br>
+nodeHasName:可选字段，覆盖模板类型的nodeHasName。<br>
+params:可选字段，节点模板参数，详情看下面示例。
 
 ```js
 //节点模板参数示例

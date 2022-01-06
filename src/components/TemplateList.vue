@@ -71,28 +71,52 @@ export default {
         }
     },
     created() {
-        for (let templateType of this.templateTypes) {
-            templateType.visible = false;
-            //可以作为子节点的模板才显示在模板列表界面
-            if (this.templateTypes.find(t => t.childrenTypes.indexOf(templateType.id) >= 0)) {
-                templateType.visible = true;
+        let mappedTemplateTypes = new Map();
+        if (this.templateTypes) {
+            for (let templateType of this.templateTypes) {
+                mappedTemplateTypes.set(templateType.id, templateType);
+                templateType.visible = false;
+                //可以作为子节点的模板才显示在模板列表界面
+                if (this.templateTypes.find(t => t.childrenTypes.indexOf(templateType.id) >= 0)) {
+                    templateType.visible = true;
+                }
             }
         }
 
-        let ungrouped = false;
         for (let template of this.templates) {
-            if (typeof template.type === "number") {
-                template.type = this.templateTypes.find(type => type.id === template.type);
-                if (template.nodeHasName === undefined) {
-                    if (template.type.nodeHasName === undefined) {
-                        template.nodeHasName = false;
-                    } else {
-                        template.nodeHasName = template.type.nodeHasName;
-                    }
+            if (typeof template.type !== "number") {
+                continue
+            }
+            template.type = mappedTemplateTypes.get(template.type);
+            if (template.childrenTypes) {
+                for (let childrenType of template.childrenTypes) {
+                    mappedTemplateTypes.get(childrenType).visible = true;
+                }
+            } else {
+                template.childrenTypes = template.type.childrenTypes;
+            }
+
+            if (template.childrenNum === undefined) {
+                template.childrenNum = template.type.childrenNum;
+            }
+            if (template.nodeHasName === undefined) {
+                if (template.type.nodeHasName === undefined) {
+                    template.nodeHasName = false;
+                } else {
+                    template.nodeHasName = template.type.nodeHasName;
                 }
             }
-            if (template.type.visible && !template.group) {
-                ungrouped = true;
+        }
+
+        let hasUngrouped = false;
+
+        for (let template of this.templates) {
+            template.visible = true;
+            if (template.type) {
+                template.visible = template.type.visible;
+            }
+            if (template.visible && !template.group) {
+                hasUngrouped = true;
             }
         }
 
@@ -101,10 +125,10 @@ export default {
             for (let templateGroup of this.templateGroups) {
                 this.selectGroups.push(templateGroup);
             }
-            if (ungrouped) {
+            if (hasUngrouped) {
                 this.selectGroups.push({id: -2, name: "未分组"});
             }
-        } else {
+        } else if (this.templateTypes && this.templateTypes.length) {
             this.selectGroups.push({id: -1, name: "全部类型"});
             for (let templateType of this.templateTypes) {
                 if (templateType.visible) {
@@ -153,7 +177,7 @@ export default {
         },
         filterTemplates() {
             this.visibleTemplates = this.templates.filter(template => {
-                if (!template.type.visible) {
+                if (!template.visible) {
                     return false;
                 }
                 if (this.templateGroups && this.templateGroups.length) {
@@ -164,7 +188,8 @@ export default {
                     if (this.selectedGroup === -2 && template.group) {
                         return false;
                     }
-                } else if (this.selectedGroup > 0 && template.type.id !== this.selectedGroup) {
+                } else if (this.templateTypes && this.templateTypes.length &&
+                        this.selectedGroup > 0 && template.type.id !== this.selectedGroup) {
                     //按模板类型搜索
                     return false;
                 }
@@ -174,7 +199,7 @@ export default {
         },
         templateTooltipClass(template) {
             let result = "template-tooltip";
-            if (template.desc.split('\n').length > 1) {
+            if (template.desc && template.desc.split('\n').length > 1) {
                 result += "-multi-line"
             } else {
                 result += "-single-line"
@@ -228,8 +253,8 @@ export default {
     cursor: default;
     margin-right: 10px;
     max-width: 50px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /*overflow-x: hidden;*/
+    /*text-overflow: ellipsis;*/
 }
 
 </style>
