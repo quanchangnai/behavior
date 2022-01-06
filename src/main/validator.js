@@ -146,32 +146,31 @@ let templateParams = {
             label: {
                 type: "string"
             },
-            value: {
+            type: {
+                type: "string",
+                enum: ["boolean", "int", "float", "string"]
+            },
+            default: {
                 oneOf: [
-                    {type: "string"},
                     {type: "boolean"},
                     {type: "number"},
+                    {type: "string"},
                     {
                         type: "array",
                         items: {
                             oneOf: [
-                                {type: "string"},
                                 {type: "boolean"},
                                 {type: "number"},
-                            ],
+                                {type: "string"},
+                            ]
                         },
                         uniqueItems: true
                     },
-                ],
+                ]
             },
             pattern: {
                 type: "string",
                 format: "regex"
-            },
-            precision: {
-                type: "integer",
-                minimum: 0,
-                maximum: 6
             },
             min: {type: "number"},
             max: {
@@ -202,27 +201,22 @@ let templateParams = {
                 uniqueItems: true
             },
         },
-        required: ["label", "value"],
+        required: ["label", "type"],
         additionalProperties: false,
         dependentSchemas: {
             pattern: {
                 properties: {
-                    value: {type: "string"}
-                }
-            },
-            precision: {
-                properties: {
-                    value: {type: "number"}
+                    type: {const: "string"}
                 }
             },
             min: {
                 properties: {
-                    value: {type: "number"}
+                    type: {enum: ["int","float"]}
                 }
             },
             max: {
                 properties: {
-                    value: {type: "number"}
+                    type: {enum: ["int","float"]}
                 }
             }
         },
@@ -230,21 +224,22 @@ let templateParams = {
             {
                 if: {
                     properties: {
-                        value: {type: "array"}
-                    }
-                },
-                then: {
-                    required: ["options"],
-                }
-            },
-            {
-                if: {
-                    properties: {
-                        value: {type: "string"}
+                        type: {const: "string"}
                     }
                 },
                 then: {
                     properties: {
+                        default: {
+                            oneOf: [
+                                {type: "string"},
+                                {
+                                    type: "array",
+                                    items: {
+                                        type: "string"
+                                    }
+                                },
+                            ]
+                        },
                         options: {
                             type: "array",
                             items: {
@@ -260,11 +255,53 @@ let templateParams = {
             {
                 if: {
                     properties: {
-                        value: {type: "number"}
+                        type: {const: "int"}
                     }
                 },
                 then: {
                     properties: {
+                        default: {
+                            oneOf: [
+                                {type: "integer"},
+                                {
+                                    type: "array",
+                                    items: {
+                                        type: "integer"
+                                    }
+                                },
+                            ]
+                        },
+                        options: {
+                            type: "array",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    value: {type: "integer"}
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                if: {
+                    properties: {
+                        type: {const: "float"}
+                    }
+                },
+                then: {
+                    properties: {
+                        default: {
+                            oneOf: [
+                                {type: "number"},
+                                {
+                                    type: "array",
+                                    items: {
+                                        type: "number"
+                                    }
+                                },
+                            ]
+                        },
                         options: {
                             type: "array",
                             items: {
@@ -280,11 +317,22 @@ let templateParams = {
             {
                 if: {
                     properties: {
-                        value: {type: "boolean"}
+                        type: {type: "boolean"}
                     }
                 },
                 then: {
                     properties: {
+                        default: {
+                            oneOf: [
+                                {type: "boolean"},
+                                {
+                                    type: "array",
+                                    items: {
+                                        type: "boolean"
+                                    }
+                                },
+                            ]
+                        },
                         options: {
                             type: "array",
                             items: {
@@ -297,6 +345,24 @@ let templateParams = {
                     }
                 }
             },
+            {
+                if: {
+                    not: {
+                        required: ["options"]
+                    }
+                },
+                then: {
+                    properties: {
+                        default: {
+                            oneOf:[
+                                {type: "boolean"},
+                                {type: "number"},
+                                {type: "string"},
+                            ]
+                        }
+                    }
+                }
+            }
         ]
     }
 };

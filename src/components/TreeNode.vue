@@ -36,7 +36,7 @@
                             <template #label>
                                 <span class="paramLabel">{{ param.label || paramName }}奥德赛奥德赛</span>
                             </template>
-                            <el-radio-group v-if="typeof param.value==='boolean' && !param.options"
+                            <el-radio-group v-if="param.type==='boolean' && !param.options"
                                             v-model="node.params[paramName]">
                                 <el-radio :label="true">是</el-radio>
                                 <el-radio :label="false">否</el-radio>
@@ -54,12 +54,12 @@
                                            :value="option.value"/>
                             </el-select>
                             <!--suppress JSUnresolvedVariable -->
-                            <el-input-number v-else-if="typeof param.value==='number'"
+                            <el-input-number v-else-if="param.type==='int' || param.type==='float'"
                                              v-model="node.params[paramName]"
-                                             :precision="typeof param.precision==='number'?param.precision:2"
+                                             :precision="param.type==='float'?2:0"
                                              :min="typeof param.min==='number'?param.min:-Infinity"
                                              :max="typeof param.max==='number'?param.max:Infinity"/>
-                            <el-tooltip v-else-if="typeof param.value==='string'"
+                            <el-tooltip v-else-if="param.type==='string'"
                                         effect="light"
                                         :disabled="typeof param.pattern!=='string'||param.pattern.length===0"
                                         :content="'格式:'+param.pattern"
@@ -197,7 +197,7 @@ export default {
             return {"el-select-normal": normal, "el-select-multiple": !normal}
         },
         paramRules(param) {
-            if (typeof param.value === 'string' && param.pattern) {
+            if (param.type === 'string' && param.pattern) {
                 return {pattern: param.pattern};
             }
             return null;

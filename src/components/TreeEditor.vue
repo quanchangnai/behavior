@@ -463,7 +463,12 @@ export default {
 
             if (template.params) {
                 for (let paramName of Object.keys(template.params)) {
-                    node.params[paramName] = template.params[paramName].value;
+                    let defaultValue = template.params[paramName].default;
+                    if (Array.isArray(defaultValue)) {
+                        node.params[paramName] = [...defaultValue];
+                    } else {
+                        node.params[paramName] = defaultValue;
+                    }
                 }
             }
 
