@@ -23,7 +23,7 @@
                              @validate="onFormValidate"
                              @mousedown.native.stop
                              @dblclick.native.stop>
-                        <el-form-item v-if="node.template.nodeHasName"
+                        <el-form-item v-if="node.template.nodeName"
                                       label="节点名称"
                                       prop="name">
                             <el-input v-model="node.name"/>
@@ -161,7 +161,7 @@ export default {
             if (this.creating) {
                 return false;
             }
-            return this.node.template.nodeHasName || Object.keys(this.node.params).length > 0;
+            return this.node.template.nodeName || Object.keys(this.node.params).length > 0;
         },
         foldSelf() {
             if (this.hasFoldOperation()) {

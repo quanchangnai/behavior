@@ -105,11 +105,11 @@ export default {
                 template.childrenNum = template.type.childrenNum;
             }
 
-            if (template.nodeHasName === undefined) {
-                if (template.type.nodeHasName === undefined) {
-                    template.nodeHasName = false;
+            if (template.nodeName === undefined) {
+                if (template.type.nodeName === undefined) {
+                    template.nodeName = false;
                 } else {
-                    template.nodeHasName = template.type.nodeHasName;
+                    template.nodeName = template.type.nodeName;
                 }
             }
         }

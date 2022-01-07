@@ -54,8 +54,8 @@ npm run build
 //节点模板类型示例
 templateTypes = [
     {id: 1, name: "根节点", childrenTypes: [2], childrenNum: -1},
-    {id: 2, name: "状态节点", childrenTypes: [3, 4, 5], childrenNum: -1,nodeHasName:true},
-    {id: 3, name: "组合节点", childrenTypes: [3, 4, 5], childrenNum: -1,nodeHasName:true},
+    {id: 2, name: "状态节点", childrenTypes: [3, 4, 5], childrenNum: -1,nodeName:true},
+    {id: 3, name: "组合节点", childrenTypes: [3, 4, 5], childrenNum: -1,nodeName:true},
     {id: 4, name: "装饰节点", childrenTypes: [3, 4, 5], childrenNum: 1},
     {id: 5, name: "叶子节点", childrenTypes: [], childrenNum: 0},
 ];
@@ -63,7 +63,7 @@ templateTypes = [
 
 childrenTypes:限制子节点的类型,类型不合法的节点不允许作为子节点挂载<br>
 childrenNum:限制子节点的数量，-1:不限制,0:不允许挂子节点...<br>
-nodeHasName:是否可以给节点起名,可选字段
+nodeName:是否可以给节点起名,可选字段
 
 ### templateGroups
 
@@ -96,7 +96,7 @@ let templates = [
     {id: 9, name: "动作节点3", type: 5, group: 3, desc: "动作节点3描述"},
     {id: 10, name: "条件节点1", type: 5, group: 2, desc: "条件节点1描述"},
     {id: 11, name: "条件节点2", type: 5, group: 3, desc: "条件节点2描述"},
-    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenNum: 3,nodeHasName:false}
+    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenNum: 3,nodeName:false}
 ];
 ```
 
@@ -106,7 +106,7 @@ desc:可选字段，节点模板描述。<br>
 type:可选字段，节点模板类型，和配置的templateTypes字段同时出现。<br>
 childrenTypes:可选字段，覆盖模板类型的childrenTypes。<br>
 childrenNum:可选字段，覆盖模板类型的childrenNum。<br>
-nodeHasName:可选字段，覆盖模板类型的nodeHasName。<br>
+nodeName:可选字段，覆盖模板类型的nodeName。<br>
 params:可选字段，节点模板参数，详情看下面示例。
 
 ```js

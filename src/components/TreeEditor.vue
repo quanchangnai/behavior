@@ -321,7 +321,7 @@ export default {
         onNodeFold() {
             this.tree.folded = 0;
             this.$utils.visitNodes(this.tree.root, node => {
-                if (node.template.nodeHasName || Object.keys(node.params).length > 0) {
+                if (node.template.nodeName || Object.keys(node.params).length > 0) {
                     this.tree.folded |= node.folded ? 1 : 2;
                 }
                 return !node.childrenFolded;

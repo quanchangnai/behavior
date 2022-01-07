@@ -104,7 +104,7 @@ let templateTypes = {
                 type: "integer",
                 minimum: -1
             },
-            nodeHasName: {
+            nodeName: {
                 type: "boolean"
             }
         },
@@ -409,7 +409,7 @@ let templates = {
                 type: "integer",
                 minimum: -1
             },
-            nodeHasName: {
+            nodeName: {
                 type: "boolean"
             }
         },
