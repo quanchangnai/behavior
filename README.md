@@ -27,8 +27,8 @@ npm run build
 ### 启动
 
 点击程序目录下得behavior.exe启动，或者通过命令行"behavior.exe aaa"启动，<br>
-参数aaa是要打开的工作区，后续编辑的行为树都会以json文件的形式保存在这里，<br>
-也还可以在程序目录下创建文件behavior.json配置，
+参数aaa是要打开的工作区，后续编辑的行为树都会以json文件的形式保存在工作区，<br>
+也还可以在程序目录下创建文件behavior.json配置默认工作区，
 
 ```json
 {
@@ -43,8 +43,8 @@ npm run build
 ## 配置
 
 配置主要用来告诉编辑器如何编辑行为树，<br>
-第一次打开工作区时会在工作区目录下自动创建配置文件_config.json，可以修改成自己的配置。<br>
-配置文件包含四个要素：
+第一次打开工作区时会在目录下自动创建配置文件_config.json，可以修改成自己的配置。<br>
+配置文件是一个JSON对象，包含四个要素：
 
 ### templateTypes
 
@@ -104,6 +104,7 @@ id:必填字段，正整数或字符串。<br>
 name:必填字段，节点模板名称。<br>
 desc:可选字段，节点模板描述。<br>
 type:可选字段，节点模板类型，和配置的templateTypes字段同时出现。<br>
+group:可选字段，节点模板所属的分组。<br>
 childrenTypes:可选字段，覆盖模板类型的childrenTypes。<br>
 childrenNum:可选字段，覆盖模板类型的childrenNum。<br>
 nodeName:可选字段，覆盖模板类型的nodeName。<br>
@@ -129,13 +130,15 @@ templates[7].params = {
 p1-p4:参数名<br>
 label:参数标签，用于显示。<br>
 type:参数类型,合法类型boolean、int、float、string。<br>
-参数类型为int、float时支持可选字段min、max，<br>
-参数类型为string时支持可选字段pattern，<br>
-参数类型为数组时字段options必选。<br>
-default:参数默认值，可选字段，类型boolean、int、float、string以及它们的数组或空数组。<br>
+     参数类型为int、float时支持可选字段min、max，<br>
+     参数类型为string时支持可选字段pattern，<br>
+     参数类型为数组时字段options必选。<br>
+default:参数默认值，可选字段，类型可以是参数类型、参数类型的数组、空数组。<br>
 pattern:字符串参数的正则表达式格式<br>
-min:最小值，max:最大值，可选字段<br>
-options:参数选项列表,参数默认值为数组时则选项列表为多选，否则选项列表为单选。<br>
+min:最小值，max:最大值，参数类型为int、float时可能需要。<br>
+options:参数选项列表，可选字段，数组类型，<br>
+        其中每个选项包含label、value两个字段，value字段的类型要和参数类型保持一致，<br>
+        参数default字段为数组时则选项列表为多选，否则选项列表为单选。<br>
 
 ### archetypes
 

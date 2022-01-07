@@ -64,87 +64,20 @@ export default {
     data() {
         return {
             visibleTemplates: [],
+            mappedTemplateTypes: new Map(),
             mappedTemplates: new Map(),
             selectGroups: [],
             selectedGroup: -1,
+            hasUngrouped: false,
             keyword: null
         }
     },
     created() {
         this.keyword = "";
 
-        let mappedTemplateTypes = new Map();
-        if (this.templateTypes) {
-            for (let templateType of this.templateTypes) {
-                mappedTemplateTypes.set(templateType.id, templateType);
-                templateType.visible = false;
-                //可以作为子节点的模板才显示在模板列表界面
-                if (this.templateTypes.find(t => t.childrenTypes.indexOf(templateType.id) >= 0)) {
-                    templateType.visible = true;
-                }
-            }
-        }
-
-        for (let template of this.templates) {
-            this.mappedTemplates.set(template.id, template);
-
-            if (typeof template.type !== "number") {
-                continue
-            }
-
-            template.type = mappedTemplateTypes.get(template.type);
-            if (template.childrenTypes) {
-                for (let childrenType of template.childrenTypes) {
-                    mappedTemplateTypes.get(childrenType).visible = true;
-                }
-            } else {
-                template.childrenTypes = template.type.childrenTypes;
-            }
-
-            if (template.childrenNum === undefined) {
-                template.childrenNum = template.type.childrenNum;
-            }
-
-            if (template.nodeName === undefined) {
-                if (template.type.nodeName === undefined) {
-                    template.nodeName = false;
-                } else {
-                    template.nodeName = template.type.nodeName;
-                }
-            }
-        }
-
-        let hasUngrouped = false;
-
-        for (let template of this.templates) {
-            template.visible = true;
-            if (template.type) {
-                template.visible = template.type.visible;
-            }
-            if (template.visible && !template.group) {
-                hasUngrouped = true;
-            }
-        }
-
-        if (this.templateGroups && this.templateGroups.length) {
-            this.selectGroups.push({id: -1, name: "全部分组"});
-            for (let templateGroup of this.templateGroups) {
-                this.selectGroups.push(templateGroup);
-            }
-            if (hasUngrouped) {
-                this.selectGroups.push({id: -2, name: "未分组"});
-            }
-        } else if (this.templateTypes && this.templateTypes.length) {
-            this.selectGroups.push({id: -1, name: "全部类型"});
-            for (let templateType of this.templateTypes) {
-                if (templateType.visible) {
-                    this.selectGroups.push(templateType);
-                }
-            }
-            if (this.selectGroups.length === 1) {
-                this.selectGroups.pop();
-            }
-        }
+        this.initTemplateTypes();
+        this.initTemplates();
+        this.initSelectGroups();
 
         this.$events.$on("init-tree", this.onInitTree);
     },
@@ -166,6 +99,77 @@ export default {
         }
     },
     methods: {
+        initTemplateTypes() {
+            if (!this.templateTypes) {
+                return
+            }
+            for (let templateType of this.templateTypes) {
+                this.mappedTemplateTypes.set(templateType.id, templateType);
+                //可以作为子节点的模板才显示在模板列表界面
+                templateType.visible = undefined !== this.templateTypes.find(t => t.childrenTypes.indexOf(templateType.id) >= 0);
+            }
+        },
+        initTemplates() {
+            for (let template of this.templates) {
+                this.mappedTemplates.set(template.id, template);
+
+                if (typeof template.type !== "number") {
+                    continue
+                }
+
+                template.type = this.mappedTemplateTypes.get(template.type);
+                if (template.childrenTypes) {
+                    for (let childrenType of template.childrenTypes) {
+                        this.mappedTemplateTypes.get(childrenType).visible = true;
+                    }
+                } else {
+                    template.childrenTypes = template.type.childrenTypes;
+                }
+
+                if (template.childrenNum === undefined) {
+                    template.childrenNum = template.type.childrenNum;
+                }
+
+                if (template.nodeName === undefined) {
+                    if (template.type.nodeName === undefined) {
+                        template.nodeName = false;
+                    } else {
+                        template.nodeName = template.type.nodeName;
+                    }
+                }
+            }
+
+            for (let template of this.templates) {
+                template.visible = true;
+                if (template.type) {
+                    template.visible = template.type.visible;
+                }
+                if (template.visible && !template.group) {
+                    this.hasUngrouped = true;
+                }
+            }
+        },
+        initSelectGroups() {
+            if (this.templateGroups?.length) {
+                this.selectGroups.push({id: -1, name: "全部分组"});
+                for (let templateGroup of this.templateGroups) {
+                    this.selectGroups.push(templateGroup);
+                }
+                if (this.hasUngrouped) {
+                    this.selectGroups.push({id: -2, name: "未分组"});
+                }
+            } else if (this.templateTypes?.length) {
+                this.selectGroups.push({id: -1, name: "全部类型"});
+                for (let templateType of this.templateTypes) {
+                    if (templateType.visible) {
+                        this.selectGroups.push(templateType);
+                    }
+                }
+                if (this.selectGroups.length === 1) {
+                    this.selectGroups.pop();
+                }
+            }
+        },
         selectTemplate(event, template) {
             this.$emit("select-template", {x: event.clientX, y: event.clientY, template});
         },
@@ -179,7 +183,7 @@ export default {
                 if (!template.visible) {
                     return false;
                 }
-                if (this.templateGroups && this.templateGroups.length) {
+                if (this.templateGroups?.length) {
                     //按模板组搜索
                     if (this.selectedGroup > 0 && template.group !== this.selectedGroup) {
                         return false;
@@ -187,8 +191,7 @@ export default {
                     if (this.selectedGroup === -2 && template.group) {
                         return false;
                     }
-                } else if (this.templateTypes && this.templateTypes.length &&
-                        this.selectedGroup > 0 && template.type.id !== this.selectedGroup) {
+                } else if (this.templateTypes?.length && this.selectedGroup > 0 && template.type.id !== this.selectedGroup) {
                     //按模板类型搜索
                     return false;
                 }
