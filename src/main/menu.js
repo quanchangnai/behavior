@@ -64,6 +64,20 @@ function buildMenu() {
                     accelerator: "CommandOrControl+Right"
                 },
                 {
+                    label: "展开全部节点",
+                    click(item, window) {
+                        window.webContents.send("foldAllNode", false);
+                    },
+                    accelerator: "CommandOrControl+Down"
+                },
+                {
+                    label: "收起全部节点",
+                    click(item, window) {
+                        window.webContents.send("foldAllNode", true);
+                    },
+                    accelerator: "CommandOrControl+Up"
+                },
+                {
                     label: "开发者工具",
                     role: "toggleDevTools",
                     accelerator: "F12",

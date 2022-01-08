@@ -226,7 +226,7 @@ export default {
 <style scoped>
 .template {
     padding: 10px 0;
-    cursor: grab;
+    cursor: pointer;
     user-select: none;
 }
 

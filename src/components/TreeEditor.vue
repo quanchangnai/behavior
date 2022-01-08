@@ -94,6 +94,7 @@ export default {
             this.rightWidth = this.rightWidth === rightWidth ? 0 : rightWidth;
             this.resetBoardPosition();
         });
+        ipcRenderer.on("foldAllNode", (e, fold) => this.foldAllNode(fold));
     },
     mounted() {
         this.resizeObserver = new ResizeObserver(this.drawTree);
@@ -500,10 +501,10 @@ export default {
             };
             this.$refs.menu.show(event.clientX, event.clientY, limits);
         },
-        foldAllNode(folded) {
-            this.tree.folded = folded ? 1 : 2;
+        foldAllNode(fold) {
+            this.tree.folded = fold ? 1 : 2;
             this.$utils.visitNodes(this.tree.root, node => {
-                node.folded = folded;
+                node.folded = fold;
             });
             this.drawTree();
         },

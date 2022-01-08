@@ -6,10 +6,14 @@
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
+               @click.native="selected=true"
                @dblclick.native.stop="foldSelf"
                @contextmenu.native.stop="onContextMenu">
         <template>
-            <div ref="content" class="content" :class="{'no-fold-operation-content': !hasFoldOperation()}">
+            <div ref="content"
+                 :style="contentStyle"
+                 class="content"
+                 :class="{'no-fold-operation-content': !hasFoldOperation()}">
                 <div style="overflow:hidden;text-overflow: ellipsis;">
                     {{ node.template.name }}
                     <template v-if="node.folded && node.name"> : {{ node.name }}</template>
@@ -110,9 +114,13 @@ export default {
     },
     data() {
         return {
+            selected: false,
             backupParams: {},
             validations: {}
         };
+    },
+    mounted() {
+        window.addEventListener('click', () => this.selected = false, {capture: true});
     },
     computed: {
         menuItems() {
@@ -129,8 +137,16 @@ export default {
             return items;
         },
         nodeStyle() {
-            return {'pointer-events': this.creating ? 'none' : 'auto', 'z-index': this.node.z};
-        }
+            return {
+                'pointer-events': this.creating ? 'none' : 'auto',
+                'z-index': this.node.z
+            };
+        },
+        contentStyle() {
+            return {
+                'background-color': this.selected ? '#B499FFFF' : '#99ccff',
+            }
+        },
     },
     methods: {
         content() {
@@ -291,7 +307,7 @@ export default {
 
 
 .content:hover {
-    cursor: grab;
+    cursor: pointer;
 }
 
 .fold-self-icon {
@@ -302,7 +318,7 @@ export default {
     height: 24px;
     padding-top: 7px;
     padding-left: 4px;
-    cursor: pointer;
+    cursor: default;
 }
 
 .fold-children-icon {
