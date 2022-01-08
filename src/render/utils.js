@@ -64,7 +64,7 @@ export default {
 
         let build = node => {
             let result = {id: node.id, tid: node.tid};
-            if (node.template.nodeHasName) {
+            if (node.template.nodeName) {
                 result.name = node.name;
             }
 

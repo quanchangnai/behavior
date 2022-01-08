@@ -2,33 +2,11 @@
 
 behavior是一款可配置的可视化行为树编辑器。
 
-## 工程设置
+## 启动
 
-### 安装依赖
-
-```
-npm install
-```
-
-### 运行
-
-```
-npm run run
-```
-
-### 打包
-
-```
-npm run build
-```
-
-## 编辑器使用
-
-### 启动
-
-点击程序目录下得behavior.exe启动，或者通过命令行"behavior.exe aaa"启动，<br>
+点击程序目录下的behavior.exe启动，或者通过命令行执行"behavior.exe aaa"启动，<br>
 参数aaa是要打开的工作区，后续编辑的行为树都会以json文件的形式保存在工作区，<br>
-也还可以在程序目录下创建文件behavior.json配置默认工作区，
+可以在程序目录下创建文件behavior.json配置默认工作区，在程序启动后还可以通过菜单打开工作区。
 
 ```json
 {
@@ -38,7 +16,6 @@ npm run build
 }
 ```
 
-在程序启动后也还可以通过菜单手动打开工作区。
 
 ## 配置
 
@@ -125,6 +102,10 @@ templates[7].params = {
     p2: {label: '参数2', type: "string", default: 'aaa', options: [{label: '选项2-1', value: 'aaa'}, {label: '选项2-2', value: 'bbb'}]},//单选
     p3: {label: '参数3', type: "string", default: ['aaa'], options: [{label: '选项3-1', value: 'aaa'}, {label: '选项3-2', value: 'bbb'}]},//多选
 };
+//切换状态节点
+templates[12].params = {
+    p1: {label: '状态', type: "int", options: {refType: "node", refId: 2}}//下拉选项引用指定模板ID的节点
+};
 ```
 
 p1-p4:参数名<br>
@@ -136,9 +117,10 @@ type:参数类型,合法类型boolean、int、float、string。<br>
 default:参数默认值，可选字段，类型可以是参数类型、参数类型的数组、空数组。<br>
 pattern:字符串参数的正则表达式格式<br>
 min:最小值，max:最大值，参数类型为int、float时可能需要。<br>
-options:参数选项列表，可选字段，数组类型，<br>
-        其中每个选项包含label、value两个字段，value字段的类型要和参数类型保持一致，<br>
-        参数default字段为数组时则选项列表为多选，否则选项列表为单选。<br>
+options:参数选项列表，可选字段，数组或者对象类型，<br>
+        数组类型时，其中每个选项包含label、value两个字段，value字段的类型要和参数类型保持一致，<br>
+        参数default字段为数组时则选项列表为多选，否则选项列表为单选;br>
+        对象类型时，refType: "node"表示选项列表引用行为树节点，refId即几点模板ID。<br>
 
 ### archetypes
 

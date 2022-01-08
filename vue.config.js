@@ -9,8 +9,7 @@ async function afterPack(cxt) {
             if (err) {
                 reject(err);
             } else {
-                fs.writeFileSync(path.resolve(cxt.appOutDir, "README.html"), html);
-                resolve();
+                fs.writeFile(path.resolve(cxt.appOutDir, "README.html"), html, resolve);
             }
         });
     })

@@ -115,6 +115,7 @@ export default {
             this.$utils.visitNodes(tree.root, (node, parent) => {
                 tree.maxNodeId = Math.max(tree.maxNodeId, node.id);
                 this.$set(tree, "childrenFolded", tree.childrenFolded || node.childrenFolded);
+                node.tree = tree;
                 node.parent = parent;
                 this.$set(node, "x", 0);
                 this.$set(node, "y", 0);
@@ -163,7 +164,7 @@ export default {
         doCreateTree(archetype) {
             let tree = JSON.parse(JSON.stringify(archetype));
             tree.id = ++this.maxTreeId;
-            tree.name = tree.name + "-" + this.maxTreeId;
+            tree.name = "新建行为树-" + this.maxTreeId;
 
             this.allTrees.push(tree);
             this.$refs.table.setCurrentRow(tree);

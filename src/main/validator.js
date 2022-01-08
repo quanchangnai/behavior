@@ -178,28 +178,48 @@ let templateParams = {
                 minimum: {$data: "1/min"}
             },
             options: {
-                type: "array",
-                items: {
-                    type: "object",
-                    properties: {
-                        label: {
-                            type: "string",
-                            minLength: 1
+                oneOf: [
+                    {
+                        type: "array",
+                        items: {
+                            type: "object",
+                            properties: {
+                                label: {
+                                    type: "string",
+                                    minLength: 1
+                                },
+                                value: {
+                                    oneOf: [
+                                        {type: "string"},
+                                        {type: "boolean"},
+                                        {type: "number"},
+                                    ],
+                                }
+                            },
+                            required: ["label", "value"],
+                            additionalProperties: false
                         },
-                        value: {
-                            oneOf: [
-                                {type: "string"},
-                                {type: "boolean"},
-                                {type: "number"},
-                            ],
-                        }
+                        minItems: 1,
+                        uniqueItems: true
                     },
-                    required: ["label", "value"],
-                    additionalProperties: false
-                },
-                minItems: 1,
-                uniqueItems: true
-            },
+                    {
+                        type: "object",
+                        properties: {
+                            refType: {
+                                type: "string",
+                                enum: ["node"]
+                            },
+                            refId: {
+                                oneOf: [
+                                    {type: "string"},
+                                    {type: "integer"}
+                                ],
+                            }
+                        },
+                        additionalProperties: false
+                    }
+                ]
+            }
         },
         required: ["label", "type"],
         additionalProperties: false,
@@ -239,7 +259,19 @@ let templateParams = {
                                     }
                                 },
                             ]
-                        },
+                        }
+                    }
+                }
+            },
+            {
+                if: {
+                    properties: {
+                        type: {const: "string"},
+                        options: {type: "array"}
+                    }
+                },
+                then: {
+                    properties: {
                         options: {
                             type: "array",
                             items: {
@@ -270,7 +302,19 @@ let templateParams = {
                                     }
                                 },
                             ]
-                        },
+                        }
+                    }
+                }
+            },
+            {
+                if: {
+                    properties: {
+                        type: {const: "int"},
+                        options: {type: "array"}
+                    }
+                },
+                then: {
+                    properties: {
                         options: {
                             type: "array",
                             items: {
@@ -301,7 +345,19 @@ let templateParams = {
                                     }
                                 },
                             ]
-                        },
+                        }
+                    }
+                }
+            },
+            {
+                if: {
+                    properties: {
+                        type: {const: "float"},
+                        options: {type: "array"}
+                    }
+                },
+                then: {
+                    properties: {
                         options: {
                             type: "array",
                             items: {
@@ -332,7 +388,19 @@ let templateParams = {
                                     }
                                 },
                             ]
-                        },
+                        }
+                    }
+                }
+            },
+            {
+                if: {
+                    properties: {
+                        type: {const: "boolean"},
+                        options: {type: "array"}
+                    }
+                },
+                then: {
+                    properties: {
                         options: {
                             type: "array",
                             items: {
@@ -498,6 +566,15 @@ function validateConfigLogic(config) {
         }
         if (template.group && !mappedTemplateGroups.has(template.group)) {
             errors.push(`节点模板(${template.id})的模板组(${template.group})不存在`);
+        }
+        if (template.params) {
+            for (let paramName in template.params) {
+                let options = template.params[paramName].options;
+                if (typeof options === "object" && options.refType === "node" && !mappedTemplates.has(options.refId)) {
+                    errors.push(`节点模板(${template.id})的参数(${paramName})选项引用的模板(${options.refId})不存在`);
+                }
+            }
+
         }
         mappedTemplates.set(template.id, template);
     }

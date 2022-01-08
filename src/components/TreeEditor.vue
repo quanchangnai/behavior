@@ -434,6 +434,7 @@ export default {
 
             let creatingNode = this.creatingNode;
             this.creatingNode = null;
+            creatingNode.tree = this.tree;
             creatingNode.dragging = false;
             creatingNode.z = 1;
             this.linkParentNode(creatingNode, creatingNode.parent);

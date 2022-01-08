@@ -34,7 +34,7 @@
                                       :show-message="false"
                                       :prop="'params.'+paramName">
                             <template #label>
-                                <span class="paramLabel">{{ param.label || paramName }}奥德赛奥德赛</span>
+                                <span class="paramLabel">{{ param.label || paramName }}</span>
                             </template>
                             <el-radio-group v-if="param.type==='boolean' && !param.options"
                                             v-model="node.params[paramName]">
@@ -42,13 +42,13 @@
                                 <el-radio :label="false">否</el-radio>
                             </el-radio-group>
                             <!--suppress JSUnresolvedVariable -->
-                            <el-select v-else-if="Array.isArray(param.options)"
+                            <el-select v-else-if="param.options"
                                        v-model="node.params[paramName]"
-                                       :multiple="Array.isArray(param.value)"
+                                       :multiple="Array.isArray(param.default)"
                                        :class="paramSelectClass(paramName)"
                                        @visible-change="visible=>visible?node.z=200:node.z=1"
                                        :popper-append-to-body="false">
-                                <el-option v-for="(option,i) in param.options"
+                                <el-option v-for="(option,i) in paramOptions(param.options)"
                                            :key="paramName+'-option-'+i"
                                            :label="option.label"
                                            :value="option.value"/>
@@ -161,7 +161,11 @@ export default {
             if (this.creating) {
                 return false;
             }
-            return this.node.template.nodeName || Object.keys(this.node.params).length > 0;
+            let template = this.node.template;
+            if (template.nodeName) {
+                return true;
+            }
+            return template.params && Object.keys(template.params).length > 0;
         },
         foldSelf() {
             if (this.hasFoldOperation()) {
@@ -201,6 +205,23 @@ export default {
                 return {pattern: param.pattern};
             }
             return null;
+        },
+        paramOptions(options) {
+            if (Array.isArray(options)) {
+                //预定义的选项列表
+                return options;
+            }
+
+            //options.refType==="node",选项列表引用节点
+            let _options = [];
+            this.$utils.visitNodes(this.node.tree.root, node => {
+                if (node.tid === options.refId) {
+                    _options.push({label: node.name || node.template.name + "-" + node.id, value: node.id});
+                }
+            });
+
+            return _options;
+
         },
         onParamFocusIn(paramName) {
             this.backupParams[paramName] = this.node.params[paramName];
