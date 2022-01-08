@@ -502,6 +502,9 @@ export default {
             this.$refs.menu.show(event.clientX, event.clientY, limits);
         },
         foldAllNode(fold) {
+            if (!this.tree) {
+                return;
+            }
             this.tree.folded = fold ? 1 : 2;
             this.$utils.visitNodes(this.tree.root, node => {
                 node.folded = fold;
