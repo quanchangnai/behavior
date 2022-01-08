@@ -188,6 +188,9 @@ export default {
 
             let index = this.node.parent.children.indexOf(this.node);
             this.node.parent.children.splice(index, 1);
+
+            this.deleteParamOptionRefNode();
+
             this.$emit("delete", this.node);
         },
         onContextMenu(event) {
@@ -205,6 +208,27 @@ export default {
                 return {pattern: param.pattern};
             }
             return null;
+        },
+        deleteParamOptionRefNode() {
+            //删除节点时检查其他节点的选项列表引用，删除无效引用
+            let deletedNodeIds = new Set();
+            this.$utils.visitNodes(this.node, node => deletedNodeIds.add(node.id));
+
+            this.$utils.visitNodes(this.node.tree.root, node => {
+                let params = node.template.params;
+                if (!params) {
+                    return;
+                }
+                for (let paramName of Object.keys(params)) {
+                    let options = params[paramName].options;
+                    if (!options || Array.isArray(options) || options.refType !== "node") {
+                        continue;
+                    }
+                    if (deletedNodeIds.has(node.params[paramName])) {
+                        node.params[paramName] = null;
+                    }
+                }
+            });
         },
         paramOptions(options) {
             if (Array.isArray(options)) {
