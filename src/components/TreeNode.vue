@@ -144,7 +144,8 @@ export default {
         },
         contentStyle() {
             return {
-                'background-color': this.selected ? '#B499FFFF' : '#99ccff',
+                'background-color': this.selected ? '#b399fd' : '#99ccff',
+                'border-color': this.selected ? '#a185f1' : '#84bcf6'
             }
         },
     },
@@ -286,7 +287,7 @@ export default {
     min-width: 60px;
     background-color: #99ccff;
     line-height: 30px;
-    border: 1px solid #98a5e9;
+    border: 1px solid #84bcf6;
     border-radius: 5px;
     font-size: 14px;
     white-space: nowrap;
@@ -298,13 +299,13 @@ export default {
 }
 
 .content > div:nth-child(2) {
-    border-top: solid cadetblue 1px;
+    border-top: 1px solid;
+    border-top-color: inherit;
 }
 
 .no-fold-operation-content > div {
     padding: 0 12px 0 12px !important;
 }
-
 
 .content:hover {
     cursor: pointer;
