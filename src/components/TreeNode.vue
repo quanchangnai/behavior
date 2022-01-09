@@ -49,10 +49,11 @@
                             </el-radio-group>
                             <!--suppress JSUnresolvedVariable -->
                             <el-select v-else-if="param.options"
+                                       :ref="'paramSelect-'+paramName"
                                        v-model="node.params[paramName]"
                                        :multiple="Array.isArray(param.default)"
                                        :class="paramSelectClass(paramName)"
-                                       @visible-change="visible=>visible?node.z=200:node.z=1"
+                                       @visible-change="onParamSelectVisibleChange('paramSelect-'+paramName,$event)"
                                        popper-class="node-param-select-dropdown">
                                 <el-option v-for="(option,i) in paramOptions(param.options)"
                                            :key="paramName+'-option-'+i"
@@ -230,6 +231,12 @@ export default {
         onContextMenu(event) {
             this.node.z = 30;
             this.$refs.menu.show(event.clientX, event.clientY);
+        },
+        onParamSelectVisibleChange(ref, visible) {
+            this.node.z = visible ? 200 : 1;
+            if (visible) {
+                this.$emit("param-select-show", this.$refs[ref][0]);
+            }
         },
         paramSelectClass(paramName) {
             let param = this.node.params[paramName];

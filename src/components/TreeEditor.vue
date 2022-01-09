@@ -24,6 +24,7 @@
                            @drag-start="onNodeDragStart"
                            @dragging="onNodeDragging"
                            @drag-end="onNodeDragEnd"
+                           @param-select-show="onParamSelectShow"
                            @fold="onNodeFold"
                            @children-fold="onNodeChildrenFold"
                            @delete="drawTree"/>
@@ -186,11 +187,12 @@ export default {
 
             //坑，v-for中的ref是个数组
             let nodeContent;
-            if (node === this.creatingNode) {
-                // noinspection JSUnresolvedFunction
-                nodeContent = this.$refs["node-" + node.id].content();
+            let nodeRef = this.$refs["node-" + node.id];
+            if (Array.isArray(nodeRef)) {
+                nodeContent = nodeRef[0].content()
             } else {
-                nodeContent = this.$refs["node-" + node.id][0].content();
+                // noinspection JSUnresolvedFunction
+                nodeContent = nodeRef.content()
             }
 
             //界面渲染完成之后才能取到元素大小
@@ -324,7 +326,11 @@ export default {
             this.boardFreeze = false;
             this.drawTree();
         },
+        onParamSelectShow(selectRef) {
+            this.selectRef = selectRef;
+        },
         hideNodeParamDropdown() {
+            this.selectRef?.handleClose();
             for (let dropdown of document.querySelectorAll(".node-param-select-dropdown").values()) {
                 dropdown.style.display = "none";
             }
@@ -421,6 +427,7 @@ export default {
         resetBoardPosition() {
             this.boardX = 0;
             this.boardY = 0;
+            this.hideNodeParamDropdown();
         },
         onBoardDragStart() {
             this.hideNodeParamDropdown();
@@ -523,10 +530,13 @@ export default {
             if (!this.tree) {
                 return;
             }
+
             this.tree.folded = fold ? 1 : 2;
             this.$utils.visitNodes(this.tree.root, node => {
                 node.folded = fold;
             });
+
+            this.hideNodeParamDropdown();
             this.drawTree();
         },
         unfoldAllNodeChildren() {
