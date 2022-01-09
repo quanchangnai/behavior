@@ -14,11 +14,11 @@
                  :style="contentStyle"
                  class="content"
                  :class="{'no-fold-operation-content': !hasFoldOperation()}">
-                <div style="overflow:hidden;text-overflow: ellipsis;">
+                <div class="content-header">
                     {{ node.template.name }}
                     <template v-if="node.folded && node.name"> : {{ node.name }}</template>
                 </div>
-                <div v-if="hasFoldOperation()&&!node.folded">
+                <div class="content-body" v-if="hasFoldOperation()&&!node.folded">
                     <el-form size="mini"
                              :model="node"
                              ref="form"
@@ -53,7 +53,7 @@
                                        :multiple="Array.isArray(param.default)"
                                        :class="paramSelectClass(paramName)"
                                        @visible-change="visible=>visible?node.z=200:node.z=1"
-                                       :popper-append-to-body="false">
+                                       popper-class="node-param-select-dropdown">
                                 <el-option v-for="(option,i) in paramOptions(param.options)"
                                            :key="paramName+'-option-'+i"
                                            :label="option.label"
@@ -157,9 +157,11 @@ export default {
             }
 
             return {
-                'background-color': this.selected ? '#b399fd' : '#99ccff',
+                'background-color': this.selected ? '#c0acf8' : '#99ccff',
                 'border-color': this.selected ? '#a185f1' : '#84bcf6',
-                'box-shadow': error ? '0 0 0 1px #f56c6c' : ''
+                'box-shadow': error ? '0 0 0 1px #f56c6c' : '',
+                '--scrollbar-thumb-color': this.selected ? '#aa8dfa' : '#a2caf6',
+                '--scrollbar-thumb-shadow-color': this.selected ? '#7b4ff5' : '#776eee',
             }
         }
     },
@@ -170,6 +172,7 @@ export default {
         onDragStart() {
             this.node.dragging = true;
             this.$emit("drag-start", {node: this.node});
+
         },
         onDragging(event) {
             const deltaX = event.x - this.node.x;
@@ -318,9 +321,32 @@ export default {
     margin-left: -1px;
 }
 
-.content > div:nth-child(2) {
+.content-header {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.content-body {
     border-top: 1px solid;
     border-top-color: inherit;
+    max-height: 152px;
+    overflow-y: auto;
+}
+
+.content-body::-webkit-scrollbar {
+    width: 13px;
+}
+
+/*noinspection CssUnresolvedCustomProperty*/
+.content-body::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    background-color: var(--scrollbar-thumb-color);
+    box-shadow: inset 0 0 5px var(--scrollbar-thumb-shadow-color);
+}
+
+.content-body::-webkit-scrollbar-track {
+    border-radius: 8px;
+    background: #EDEDED;
 }
 
 .no-fold-operation-content > div {
@@ -351,7 +377,7 @@ export default {
 
 .el-form {
     cursor: default;
-    margin: 5px 10px 7px 0;
+    margin: 5px 12px 5px 0;
 }
 
 .el-form-item {
@@ -379,6 +405,10 @@ export default {
     line-height: 24px;
 }
 
+.el-select-multiple {
+    margin-bottom: 10px;
+}
+
 .el-select-multiple >>> input {
     padding-top: 2px;
     min-height: 28px !important;
@@ -390,22 +420,22 @@ export default {
     height: 22px;
 }
 
->>> .el-select-dropdown {
-    top: calc(100% - 8px) !important;
-    left: 0 !important;
+</style>
+<!--suppress CssUnusedSymbol -->
+<style>
+.node-param-select-dropdown {
+    transform: translateY(-7px);
 }
 
->>> .el-select-dropdown__item {
+.node-param-select-dropdown .el-select-dropdown__item {
     height: 24px;
     line-height: 24px;
 }
 
->>> .popper__arrow {
+.node-param-select-dropdown .popper__arrow {
     left: 10px !important;
 }
-</style>
-<style>
-/*noinspection CssUnusedSymbol*/
+
 .node-param-tooltip {
     transform: translateY(-8px);
     box-sizing: border-box;

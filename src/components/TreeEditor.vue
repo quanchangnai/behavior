@@ -11,6 +11,7 @@
                        :freeze="boardFreeze"
                        :x="boardX"
                        :y="boardY"
+                       @drag-start="onBoardDragStart"
                        @drag-end="onBoardDragEnd"
                        @dblclick.native="resetBoardPosition"
                        @contextmenu.native="onBoardContextMenu"
@@ -20,7 +21,7 @@
                            :key="node.id"
                            :ref="'node-'+node.id"
                            :node="node"
-                           @drag-start="boardFreeze=true"
+                           @drag-start="onNodeDragStart"
                            @dragging="onNodeDragging"
                            @drag-end="onNodeDragEnd"
                            @fold="onNodeFold"
@@ -311,6 +312,10 @@ export default {
                 drawLine(x1, y1, x2, y2);
             }
         },
+        onNodeDragStart() {
+            this.boardFreeze = true;
+            this.hideNodeParamDropdown();
+        },
         onNodeDragging(node) {
             this.linkParentNode(node);
             this.drawLinkLines();
@@ -318,6 +323,11 @@ export default {
         onNodeDragEnd() {
             this.boardFreeze = false;
             this.drawTree();
+        },
+        hideNodeParamDropdown() {
+            for (let dropdown of document.querySelectorAll(".node-param-select-dropdown").values()) {
+                dropdown.style.display = "none";
+            }
         },
         onNodeFold() {
             this.tree.folded = 0;
@@ -411,6 +421,9 @@ export default {
         resetBoardPosition() {
             this.boardX = 0;
             this.boardY = 0;
+        },
+        onBoardDragStart() {
+            this.hideNodeParamDropdown();
         },
         async onBoardDragEnd(event) {
             this.boardX = event.x;
