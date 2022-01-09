@@ -547,7 +547,7 @@ export default {
     height: 100%;
     box-sizing: border-box;
     overflow: hidden;
-    border-top: solid 1px #dcdfe6;
+    border-top: solid 1px #ebeef5;
 }
 
 #board {

@@ -24,6 +24,7 @@
                              ref="form"
                              label-width="auto"
                              label-position="left"
+                             :hide-required-asterisk="false"
                              @validate="onFormValidate"
                              @mousedown.native.stop
                              @dblclick.native.stop>
@@ -34,6 +35,7 @@
                         </el-form-item>
                         <el-form-item v-for="(param,paramName) in node.template.params"
                                       :key="paramName"
+                                      :required="param.required"
                                       :rules="paramRules(param)"
                                       :show-message="false"
                                       :prop="'params.'+paramName">
@@ -143,11 +145,23 @@ export default {
             };
         },
         contentStyle() {
+            let error = Object.keys(this.validations).length > 0;
+            let params = this.node.template.params;
+            if (params) {
+                for (let paramName of Object.keys(params)) {
+                    if (params[paramName].required && this.node.params[paramName] === undefined) {
+                        error = true;
+                        break;
+                    }
+                }
+            }
+
             return {
                 'background-color': this.selected ? '#b399fd' : '#99ccff',
-                'border-color': this.selected ? '#a185f1' : '#84bcf6'
+                'border-color': this.selected ? '#a185f1' : '#84bcf6',
+                'box-shadow': error ? '0 0 0 1px #f56c6c' : ''
             }
-        },
+        }
     },
     methods: {
         content() {
@@ -274,7 +288,11 @@ export default {
             }
         },
         onFormValidate(prop, pass) {
-            this.validations[prop] = pass;
+            if (!pass) {
+                this.validations[prop] = false;
+            } else {
+                delete this.validations[prop];
+            }
         }
     }
 
@@ -285,17 +303,19 @@ export default {
 <style scoped>
 .content {
     min-width: 60px;
+    max-width: 250px;
     background-color: #99ccff;
     line-height: 30px;
     border: 1px solid #84bcf6;
     border-radius: 5px;
     font-size: 14px;
     white-space: nowrap;
-    max-width: 250px;
+    padding-left: 0;
 }
 
 .content > div {
     padding: 0 12px 0 23px;
+    margin-left: -1px;
 }
 
 .content > div:nth-child(2) {
@@ -343,6 +363,10 @@ export default {
     max-width: 70px;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+>>> .el-form-item__label:before {
+    vertical-align: super;
 }
 
 .el-input, .el-input-number, .el-select, .el-radio-group {

@@ -36,10 +36,10 @@ let templates = [
 //模板参数
 //动作节点1参数
 templates[6].params = {
-    p1: {label: '参数1', type: "int"},
-    p2: {label: '参数2', type: "string", pattern: '^[abc]*$'},//字符串,可选的正则格式
+    p1: {label: '参数1', type: "int", required: true},
+    p2: {label: '参数2', type: "string", pattern: '^[abc]*$', required: true},
     p3: {label: '参数3', type: "boolean", default: true},
-    p4: {label: '参数4', type: "float", default: 2, min: 0, max: 100},//取值范围
+    p4: {label: '参数4', type: "float", default: 2, min: 0, max: 100},
 };
 
 //动作节点2参数
@@ -51,7 +51,7 @@ templates[7].params = {
 
 //切换状态节点
 templates[12].params = {
-    p1: {label: '状态', type: "int", options: {refType: "node", refId: 2}}//下拉选项引用指定模板ID的节点
+    p1: {label: '状态', type: "int", options: {refType: "node", refId: 2}}
 };
 
 //创建行为树时的原型

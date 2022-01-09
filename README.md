@@ -16,7 +16,6 @@ behavior是一款可配置的可视化行为树编辑器。
 }
 ```
 
-
 ## 配置
 
 配置主要用来告诉编辑器如何编辑行为树，<br>
@@ -31,8 +30,8 @@ behavior是一款可配置的可视化行为树编辑器。
 //节点模板类型示例
 templateTypes = [
     {id: 1, name: "根节点", childrenTypes: [2], childrenNum: -1},
-    {id: 2, name: "状态节点", childrenTypes: [3, 4, 5], childrenNum: -1,nodeName:true},
-    {id: 3, name: "组合节点", childrenTypes: [3, 4, 5], childrenNum: -1,nodeName:true},
+    {id: 2, name: "状态节点", childrenTypes: [3, 4, 5], childrenNum: -1, nodeName: true},
+    {id: 3, name: "组合节点", childrenTypes: [3, 4, 5], childrenNum: -1, nodeName: true},
     {id: 4, name: "装饰节点", childrenTypes: [3, 4, 5], childrenNum: 1},
     {id: 5, name: "叶子节点", childrenTypes: [], childrenNum: 0},
 ];
@@ -73,12 +72,12 @@ let templates = [
     {id: 9, name: "动作节点3", type: 5, group: 3, desc: "动作节点3描述"},
     {id: 10, name: "条件节点1", type: 5, group: 2, desc: "条件节点1描述"},
     {id: 11, name: "条件节点2", type: 5, group: 3, desc: "条件节点2描述"},
-    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenNum: 3,nodeName:false}
+    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenNum: 3, nodeName: false}
 ];
 ```
 
-id:必填字段，正整数或字符串。<br>
-name:必填字段，节点模板名称。<br>
+id:节点模板ID，正整数或字符串。<br>
+name:节点模板名称。<br>
 desc:可选字段，节点模板描述。<br>
 type:可选字段，节点模板类型，和配置的templateTypes字段同时出现。<br>
 group:可选字段，节点模板所属的分组。<br>
@@ -91,10 +90,10 @@ params:可选字段，节点模板参数，详情看下面示例。
 //节点模板参数示例
 //动作节点1参数
 templates[6].params = {
-    p1: {label: '参数1', type: "int"},
-    p2: {label: '参数2', type: "string",pattern: '^[abc]*$'},//字符串,可选的正则格式
+    p1: {label: '参数1', type: "int", required: true},
+    p2: {label: '参数2', type: "string", pattern: '^[abc]*$', required: true},
     p3: {label: '参数3', type: "boolean", default: true},
-    p4: {label: '参数4', type: "float", default: 2, min: 0, max: 100},//取值范围
+    p4: {label: '参数4', type: "float", default: 2, min: 0, max: 100},
 };
 //动作节点2参数
 templates[7].params = {
@@ -104,23 +103,20 @@ templates[7].params = {
 };
 //切换状态节点
 templates[12].params = {
-    p1: {label: '状态', type: "int", options: {refType: "node", refId: 2}}//下拉选项引用指定模板ID的节点
+    p1: {label: '状态', type: "int", options: {refType: "node", refId: 2}}
 };
 ```
 
 p1-p4:参数名<br>
 label:参数标签，用于显示。<br>
-type:参数类型,合法类型boolean、int、float、string。<br>
-     参数类型为int、float时支持可选字段min、max，<br>
-     参数类型为string时支持可选字段pattern，<br>
-     参数类型为数组时字段options必选。<br>
-default:参数默认值，可选字段，类型可以是参数类型、参数类型的数组、空数组。<br>
-pattern:字符串参数的正则表达式格式<br>
-min:最小值，max:最大值，参数类型为int、float时可能需要。<br>
-options:参数选项列表，可选字段，数组或者对象类型，<br>
-        数组类型时，其中每个选项包含label、value两个字段，value字段的类型要和参数类型保持一致，<br>
-        参数default字段为数组时则选项列表为多选，否则选项列表为单选;br>
-        对象类型时，refType: "node"表示选项列表引用行为树节点，refId即几点模板ID。<br>
+type:参数类型,合法值为boolean、int、float、string。<br>
+default:可选字段，参数默认值，类型可以是参数类型、参数类型的数组、空数组。<br>
+required:可选字段，参数是否必需。<br>
+pattern:可选字段，正则表达式格式，参数类型为string可能需要。<br>
+min、max:可选字段，最小值、最大值，参数类型为int、float时可能需要。<br>
+options:可选字段，参数选项列表，数组或者对象类型。<br>
+options为数组类型时，其中每个选项对象包含label、value两个字段，value字段的类型要和参数类型保持一致，参数default字段为数组时则选项列表为多选，否则选项列表为单选。<br>
+options为对象类型时，refType: "node"表示选项列表引用行为树节点，refId即节点模板ID。<br>
 
 ### archetypes
 

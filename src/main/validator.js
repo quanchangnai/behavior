@@ -168,6 +168,7 @@ let templateParams = {
                     },
                 ]
             },
+            required: {type: "boolean"},
             pattern: {
                 type: "string",
                 format: "regex"
