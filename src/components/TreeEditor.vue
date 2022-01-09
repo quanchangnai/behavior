@@ -436,9 +436,13 @@ export default {
 
             let creatingNode = this.creatingNode;
             this.creatingNode = null;
+
             creatingNode.tree = this.tree;
             creatingNode.dragging = false;
+
+            creatingNode.y = creatingNode.y - this.boardY;
             creatingNode.z = 1;
+
             this.linkParentNode(creatingNode, creatingNode.parent);
 
             await this.drawTree();
