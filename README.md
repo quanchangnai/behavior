@@ -16,9 +16,9 @@ behavior是一款可配置的可视化行为树编辑器。
 }
 ```
 
-## 配置
+## 编辑器配置
 
-配置主要用来告诉编辑器如何编辑行为树，<br>
+编辑器配置主要用来告诉编辑器如何编辑行为树。<br>
 第一次打开工作区时会在目录下自动创建配置文件_config.json，可以修改成自己的配置。<br>
 配置文件是一个JSON对象，包含四个要素：
 
@@ -37,9 +37,9 @@ templateTypes = [
 ];
 ```
 
-childrenTypes:限制子节点的类型,类型不合法的节点不允许作为子节点挂载<br>
+childrenTypes:限制子节点的模板类型,类型不合法的节点不允许作为子节点挂载<br>
 childrenNum:限制子节点的数量，-1:不限制,0:不允许挂子节点...<br>
-nodeName:是否可以给节点起名,可选字段
+nodeName:可选字段，是否可以给节点起名。
 
 ### templateGroups
 
@@ -72,7 +72,8 @@ let templates = [
     {id: 9, name: "动作节点3", type: 5, group: 3, desc: "动作节点3描述"},
     {id: 10, name: "条件节点1", type: 5, group: 2, desc: "条件节点1描述"},
     {id: 11, name: "条件节点2", type: 5, group: 3, desc: "条件节点2描述"},
-    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenNum: 3, nodeName: false}
+    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenTypes: [3, 4, 5], childrenNum: 3, nodeName: false},
+    {id: 13, name: "切换状态节点", type: 5, group: 1, desc: "切换状态节点描述", childrenIds: []},
 ];
 ```
 
@@ -80,10 +81,11 @@ id:节点模板ID，正整数或字符串。<br>
 name:节点模板名称。<br>
 desc:可选字段，节点模板描述。<br>
 type:可选字段，节点模板类型，和配置的templateTypes字段同时出现。<br>
-group:可选字段，节点模板所属的分组。<br>
-childrenTypes:可选字段，覆盖模板类型的childrenTypes。<br>
-childrenNum:可选字段，覆盖模板类型的childrenNum。<br>
-nodeName:可选字段，覆盖模板类型的nodeName。<br>
+group:可选字段，节点模板所属的模板组。<br>
+childrenTypes:可选字段，限制子节点的模板类型，覆盖模板类型的childrenTypes。<br>
+childrenIds:可选字段，限制子节点的模板ID，补充childrenTypes字段，按类型限制有时会比较宽泛。<br>
+childrenNum:可选字段，限制子节点的数量，覆盖模板类型的childrenNum。<br>
+nodeName:可选字段，是否可以给节点起名，覆盖模板类型的nodeName。<br>
 params:可选字段，节点模板参数，详情看下面示例。
 
 ```js

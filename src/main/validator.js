@@ -95,8 +95,7 @@ let templateTypes = {
             childrenTypes: {
                 type: "array",
                 items: {
-                    type: "integer",
-                    minimum: 1
+                    type: "integer"
                 },
                 uniqueItems: true
             },
@@ -469,8 +468,14 @@ let templates = {
             childrenTypes: {
                 type: "array",
                 items: {
-                    type: "integer",
-                    minimum: 1
+                    type: "integer"
+                },
+                uniqueItems: true
+            },
+            childrenIds: {
+                type: "array",
+                items: {
+                    type: "integer"
                 },
                 uniqueItems: true
             },
@@ -555,18 +560,18 @@ function validateConfigLogic(config) {
         if (mappedTemplateTypes.size > 0 && !template.type) {
             errors.push(`节点模板(${template.id})的模板类型未设置`);
         }
+        if (template.type && !mappedTemplateTypes.has(template.type)) {
+            errors.push(`节点模板(${template.id})的模板类型(${template.type})不存在`);
+        }
+        if (template.group && !mappedTemplateGroups.has(template.group)) {
+            errors.push(`节点模板(${template.id})的模板组(${template.group})不存在`);
+        }
         if (template.childrenTypes) {
             for (const childrenType of template.childrenTypes) {
                 if (!mappedTemplateTypes.has(childrenType)) {
                     errors.push(`节点模板(${template.id})限制的子节点模板类型(${childrenType})不存在`);
                 }
             }
-        }
-        if (template.type && !mappedTemplateTypes.has(template.type)) {
-            errors.push(`节点模板(${template.id})的模板类型(${template.type})不存在`);
-        }
-        if (template.group && !mappedTemplateGroups.has(template.group)) {
-            errors.push(`节点模板(${template.id})的模板组(${template.group})不存在`);
         }
         if (template.params) {
             for (let paramName in template.params) {
@@ -578,6 +583,16 @@ function validateConfigLogic(config) {
 
         }
         mappedTemplates.set(template.id, template);
+    }
+
+    for (const template of config.templates) {
+        if (template.childrenIds) {
+            for (const childrenId of template.childrenIds) {
+                if (!mappedTemplates.has(childrenId)) {
+                    errors.push(`节点模板(${template.id})限制的子节点模板ID(${childrenId})不存在`);
+                }
+            }
+        }
     }
 
     let mappedArchetypes = new Map();

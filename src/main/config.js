@@ -29,8 +29,8 @@ let templates = [
     {id: 9, name: "动作节点3", type: 5, group: 3, desc: "动作节点3描述"},
     {id: 10, name: "条件节点1", type: 5, group: 2, desc: "条件节点1描述"},
     {id: 11, name: "条件节点2", type: 5, group: 3, desc: "条件节点2描述"},
-    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenNum: 3, nodeName: false},
-    {id: 13, name: "切换状态节点", type: 5, group: 1, desc: "切换状态节点描述"},
+    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenTypes: [3, 4, 5], childrenNum: 3, nodeName: false},
+    {id: 13, name: "切换状态节点", type: 5, group: 1, desc: "切换状态节点描述", childrenIds: []},
 ];
 
 //模板参数
