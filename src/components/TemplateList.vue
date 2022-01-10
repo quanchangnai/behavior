@@ -132,7 +132,7 @@ export default {
 
                 if (template.nodeName === undefined) {
                     if (template.type.nodeName === undefined) {
-                        template.nodeName = false;
+                        template.nodeName = true;
                     } else {
                         template.nodeName = template.type.nodeName;
                     }

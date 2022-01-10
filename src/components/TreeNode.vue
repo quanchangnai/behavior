@@ -16,9 +16,13 @@
                  :class="{'no-fold-operation-content': !hasFoldOperation()}">
                 <div class="content-header">
                     {{ node.template.name }}
-                    <template v-if="node.folded && node.name"> : {{ node.name }}</template>
+                    <template v-if="node.folded && node.name">
+                        : {{ node.name }}
+                    </template>
                 </div>
-                <div class="content-body" v-if="hasFoldOperation()&&!node.folded">
+                <div class="content-body"
+                     :style="{'height':contentBodHeight+'px'}"
+                     v-if="hasFoldOperation()&&!node.folded">
                     <el-form size="mini"
                              :model="node"
                              ref="form"
@@ -28,9 +32,10 @@
                              @validate="onFormValidate"
                              @mousedown.native.stop
                              @dblclick.native.stop>
-                        <el-form-item v-if="node.template.nodeName"
-                                      label="节点名称"
-                                      prop="name">
+                        <el-form-item v-if="node.template.nodeName" prop="name">
+                            <template #label>
+                                <span class="paramLabel">节点名称</span>
+                            </template>
                             <el-input v-model="node.name"/>
                         </el-form-item>
                         <el-form-item v-for="(param,paramName) in node.template.params"
@@ -119,7 +124,8 @@ export default {
         return {
             selected: false,
             backupParams: {},
-            validations: {}
+            validations: {},
+            contentBodHeight: 0
         };
     },
     mounted() {
@@ -161,9 +167,14 @@ export default {
                 'background-color': this.selected ? '#c0acf8' : '#99ccff',
                 'border-color': this.selected ? '#a185f1' : '#84bcf6',
                 'box-shadow': error ? '0 0 0 1px #f56c6c' : '',
-                '--scrollbar-thumb-color': this.selected ? '#aa8dfa' : '#a2caf6',
-                '--scrollbar-thumb-shadow-color': this.selected ? '#7b4ff5' : '#776eee',
+                '--scrollbar-thumb-color': this.selected ? '#c9b7fc' : '#a2caf6',
+                '--scrollbar-thumb-shadow-color': this.selected ? '#916cf6' : '#776eee',
             }
+        }
+    },
+    watch: {
+        'node.folded': function () {
+            this.$nextTick(this.calcContentBodyHeight);
         }
     },
     methods: {
@@ -303,7 +314,25 @@ export default {
             } else {
                 delete this.validations[prop];
             }
-        }
+        },
+        calcContentBodyHeight() {
+            let form = this.$refs.form;
+            if (!form) {
+                return;
+            }
+            //手动计算高度，多余4个表单项加滚动条，并且防止表单项部分显示
+            const formItemsMax = 4;
+            let formStyle = getComputedStyle(form.$el);
+            this.contentBodHeight = Number.parseFloat(formStyle.marginTop);
+            if (form.$children.length <= formItemsMax) {
+                this.contentBodHeight += Number.parseFloat(formStyle.marginTop);
+            }
+            for (let i = 0; i < form.$children.length && i < formItemsMax; i++) {
+                let formItem = form.$children[i];
+                // noinspection JSUnresolvedVariable
+                this.contentBodHeight += formItem.$el.offsetHeight;
+            }
+        },
     }
 
 }
@@ -315,7 +344,6 @@ export default {
     min-width: 60px;
     max-width: 250px;
     background-color: #99ccff;
-    line-height: 30px;
     border: 1px solid #84bcf6;
     border-radius: 5px;
     font-size: 14px;
@@ -329,6 +357,7 @@ export default {
 }
 
 .content-header {
+    line-height: 30px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -336,7 +365,6 @@ export default {
 .content-body {
     border-top: 1px solid;
     border-top-color: inherit;
-    max-height: 152px;
     overflow-y: auto;
 }
 
@@ -353,7 +381,7 @@ export default {
 
 .content-body::-webkit-scrollbar-track {
     border-radius: 8px;
-    background: #EDEDED;
+    background: #ededed;
 }
 
 .no-fold-operation-content > div {
@@ -384,7 +412,7 @@ export default {
 
 .el-form {
     cursor: default;
-    margin: 5px 12px 5px 0;
+    margin: 4px 12px 4px 0;
 }
 
 .el-form-item {
@@ -396,6 +424,10 @@ export default {
     max-width: 70px;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+>>> .el-form-item__label {
+    height: 30px;
 }
 
 >>> .el-form-item__label:before {
