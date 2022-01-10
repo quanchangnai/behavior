@@ -154,7 +154,7 @@ export default {
         contentStyle() {
             let error = Object.keys(this.validations).length > 0;
             let params = this.node.template.params;
-            if (params) {
+            if (params && !this.creating) {
                 for (let paramName of Object.keys(params)) {
                     if (params[paramName].required && this.node.params[paramName] === undefined) {
                         error = true;

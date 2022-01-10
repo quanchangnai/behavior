@@ -449,8 +449,7 @@ let templates = {
             },
             name: {
                 type: "string",
-                minLength: 1,
-                maxLength: 10
+                minLength: 1
             },
             type: {
                 type: "integer",
@@ -573,6 +572,11 @@ function validateConfigLogic(config) {
                 }
             }
         }
+
+        mappedTemplates.set(template.id, template);
+    }
+
+    for (const template of config.templates) {
         if (template.params) {
             for (let paramName in template.params) {
                 let options = template.params[paramName].options;
@@ -580,12 +584,7 @@ function validateConfigLogic(config) {
                     errors.push(`节点模板(${template.id})的参数(${paramName})选项引用的模板(${options.refId})不存在`);
                 }
             }
-
         }
-        mappedTemplates.set(template.id, template);
-    }
-
-    for (const template of config.templates) {
         if (template.childrenIds) {
             for (const childrenId of template.childrenIds) {
                 if (!mappedTemplates.has(childrenId)) {

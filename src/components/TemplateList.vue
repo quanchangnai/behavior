@@ -5,7 +5,7 @@
               :height="'100%'"
               :data="visibleTemplates"
               :cell-style="{padding:0}">
-        <el-table-column>
+        <el-table-column :show-overflow-tooltip="true">
             <template #header>
                 <el-input v-model="keyword"
                           clearable
@@ -110,6 +110,19 @@ export default {
             }
         },
         initTemplates() {
+            this.templates.sort((t1, t2) => {
+                if (typeof t1.id === "number" && typeof t2.id === "number") {
+                    return t1.id - t2.id;
+                }
+                if (typeof t1.id === "number") {
+                    return -1;
+                }
+                if (typeof t2.id === "number") {
+                    return 1;
+                }
+                return t1.id.localeCompare(t2.id);
+            });
+
             for (let template of this.templates) {
                 this.mappedTemplates.set(template.id, template);
 
@@ -135,6 +148,16 @@ export default {
                         template.nodeName = true;
                     } else {
                         template.nodeName = template.type.nodeName;
+                    }
+                }
+            }
+
+            if (this.templateTypes) {
+                for (let template of this.templates) {
+                    if (template.childrenIds) {
+                        for (let childId of template.childrenIds) {
+                            this.mappedTemplates.get(childId).type.visible = true;
+                        }
                     }
                 }
             }

@@ -62,7 +62,7 @@ const nodeSpaceY = 30;//节点y轴间隔空间
 const boardEdgeSpace = 100;//画板边缘空间
 
 const leftWidth = 220;
-const rightWidth = 250;
+const rightWidth = 270;
 
 export default {
     name: "TreeEditor",
