@@ -399,8 +399,8 @@ export default {
                 let canLink = true;
 
                 //目标节点限制子节点模板类型或者模板ID
-                if (node.template.type && targetNode.template.childrenTypes.indexOf(node.template.type.id) < 0
-                        && targetNode.template.childrenIds?.indexOf(node.template.id) < 0) {
+                if (node.template.type && targetNode.template.childrenTypes.indexOf(node.template.type.id) < 0 &&
+                        (!targetNode.template.childrenIds || targetNode.template.childrenIds.indexOf(node.template.id) < 0)) {
                     canLink = false;
                 }
                 //目标节点限制子节点数量
