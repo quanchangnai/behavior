@@ -6,7 +6,7 @@
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
-               @click.native="selected=true"
+               @mousedown.native="selected=true"
                @dblclick.native.stop="foldSelf"
                @contextmenu.native.stop="onContextMenu">
         <template>
@@ -129,7 +129,12 @@ export default {
         };
     },
     mounted() {
-        window.addEventListener('click', () => this.selected = false, {capture: true});
+        window.addEventListener('mousedown', () => this.selected = false, {capture: true});
+        this.resizeObserver = new ResizeObserver(this.calcContentBodyHeight);
+        this.resizeObserver.observe(this.$refs.content);
+    },
+    destroyed() {
+        this.resizeObserver.disconnect();
     },
     computed: {
         menuItems() {
@@ -327,6 +332,7 @@ export default {
             if (form.$children.length <= formItemsMax) {
                 this.contentBodHeight += Number.parseFloat(formStyle.marginTop);
             }
+            this.contentBodHeight += 1;//上边框
             for (let i = 0; i < form.$children.length && i < formItemsMax; i++) {
                 let formItem = form.$children[i];
                 // noinspection JSUnresolvedVariable

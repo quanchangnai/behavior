@@ -290,7 +290,7 @@ export default {
                     let x2 = child.x;
                     let y2 = child.y + (child.selfHeight - nodeSpaceY) / 2;
                     if (child.dragging) {
-                        context.strokeStyle = "red"
+                        context.strokeStyle = "#b32de0"
                     } else {
                         context.strokeStyle = "#274ff6"
                     }
