@@ -1,4 +1,5 @@
 {
+    "titleUseFullPath": false,
     "workspaces": [
         "ai"
     ]

@@ -17,6 +17,8 @@ let openingWorkspace = null;
 let webContentsWorkspaces = new Map();
 //workspace:webContents.id
 let workspacesWebContents = new Map();
+//窗口标题是否使用工作区全路径
+let titleUseFullPath = false;
 //工作区对应的窗口标题
 let workspacesTitles = new Map();
 
@@ -61,6 +63,14 @@ let behavior = {
     },
     getAllWorkspaces() {
         return [...appWorkspaces, ...homeWorkspaces];
+    },
+    getTitle(webContents) {
+        let workspace = this.getWorkspace(webContents);
+        if (titleUseFullPath) {
+            return workspace;
+        } else {
+            return workspacesTitles.get(workspace)
+        }
     },
     getWorkspacesTitles() {
         return workspacesTitles;
@@ -131,6 +141,7 @@ async function load() {
         let json = (await fs.promises.readFile(appBehaviorFile)).toString();
         let appBehavior = JSON.parse(json);
         if (validateBehavior(appBehavior)) {
+            titleUseFullPath = titleUseFullPath || appBehavior.titleUseFullPath;
             for (let workspace of appBehavior.workspaces) {
                 workspace = path.resolve(".", workspace);
                 await behavior.addWorkspace(appWorkspaces, path.resolve(".", workspace), true);

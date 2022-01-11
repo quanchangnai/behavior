@@ -1,8 +1,15 @@
-import {ipcMain} from 'electron'
+import {BrowserWindow, ipcMain} from 'electron'
 import behavior from "./behavior";
 import fs from 'fs'
 import path from 'path'
 import {validateConfig} from "./validator";
+
+
+ipcMain.handle("title", event => {
+    let win = BrowserWindow.fromWebContents(event.sender);
+    let title = behavior.getTitle(event.sender);
+    return win.getTitle() + " - " + title;
+});
 
 ipcMain.handle("load-config", async event => {
     let configFile = behavior.getConfigFile(event.sender);

@@ -1,4 +1,4 @@
-import {app, BrowserWindow, ipcMain, Menu, shell} from "electron";
+import {app, BrowserWindow, Menu, shell} from "electron";
 import path from "path";
 import behavior from "./behavior";
 
@@ -123,10 +123,4 @@ app.on("browser-window-created", (event, window) => {
         menuItem.visible = false;
         win.setMenu(menu);
     }
-});
-
-ipcMain.handle("title", event => {
-    let win = BrowserWindow.fromWebContents(event.sender);
-    let title = behavior.getWorkspacesTitles().get(behavior.getWorkspace(win.webContents));
-    return win.getTitle() + " - " + title;
 });

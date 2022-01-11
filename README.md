@@ -6,21 +6,34 @@ behavior是一款可配置的可视化行为树编辑器。
 
 点击程序目录下的behavior.exe启动，或者通过命令行执行"behavior.exe aaa"启动，<br>
 参数aaa是要打开的工作区，后续编辑的行为树都会以json文件的形式保存在工作区，<br>
-可以在程序目录下创建文件behavior.json配置默认工作区，在程序启动后还可以通过菜单打开工作区。
+可以在程序目录下创建文件behavior.json，内容如下：
 
 ```json
 {
+    "titleUseFullPath": false,
     "workspaces": [
         "bbb"
     ]
 }
 ```
 
+titleUseFullPath:左上角窗口标题上是否显示工作区全路径，默认显示简短路径。<br>
+workspaces:默认要打开的工作区，在程序启动后还可以通过菜单打开工作区。
+
 ## 编辑器配置
 
-编辑器配置主要用来告诉编辑器如何编辑行为树。<br>
-第一次打开工作区时会在目录下自动创建配置文件_config.json，可以修改成自己的配置。<br>
-配置文件是一个JSON对象，包含四个要素：
+编辑器配置主要用来告诉编辑器如何编辑行为树，<br>
+第一次打开工作区时会在目录下自动创建配置文件_config.json，<br>
+该文件是一个JSON对象，可以按需求修改，包含四个要素：
+
+```json
+{
+    "templateTypes": [],
+    "templateGroups": [],
+    "templates": [],
+    "archetypes": []
+}
+```
 
 ### templateTypes
 

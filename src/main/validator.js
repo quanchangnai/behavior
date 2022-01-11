@@ -516,6 +516,9 @@ let behavior = {
     $id: "behavior",
     type: "object",
     properties: {
+        titleUseFullPath: {
+            type: "boolean",
+        },
         workspaces: {
             type: "array",
             items: {
