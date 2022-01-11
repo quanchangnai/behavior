@@ -58,6 +58,7 @@
                                        v-model="node.params[paramName]"
                                        :multiple="Array.isArray(param.default)"
                                        :class="paramSelectClass(paramName)"
+                                       @remove-tag="calcContentBodyHeight"
                                        @visible-change="onParamSelectVisibleChange('paramSelect-'+paramName,$event)"
                                        popper-class="node-param-select-dropdown">
                                 <el-option v-for="(option,i) in paramOptions(param.options)"
@@ -179,7 +180,7 @@ export default {
     },
     watch: {
         'node.folded': function () {
-            this.$nextTick(this.calcContentBodyHeight);
+            this.calcContentBodyHeight();
         }
     },
     methods: {
@@ -320,20 +321,24 @@ export default {
                 delete this.validations[prop];
             }
         },
-        calcContentBodyHeight() {
+        async calcContentBodyHeight() {
+            await this.$nextTick();
             let form = this.$refs.form;
             if (!form) {
                 return;
             }
+
             //手动计算高度，多余4个表单项加滚动条，并且防止表单项部分显示
-            const formItemsMax = 4;
+            this.contentBodHeight = 1;//上边框
+
+            const maxItems = 4;
             let formStyle = getComputedStyle(form.$el);
-            this.contentBodHeight = Number.parseFloat(formStyle.marginTop);
-            if (form.$children.length <= formItemsMax) {
-                this.contentBodHeight += Number.parseFloat(formStyle.marginTop);
+            this.contentBodHeight += Number.parseFloat(formStyle.marginTop);
+            if (form.$children.length <= maxItems) {
+                this.contentBodHeight += Number.parseFloat(formStyle.marginBottom);
             }
-            this.contentBodHeight += 1;//上边框
-            for (let i = 0; i < form.$children.length && i < formItemsMax; i++) {
+
+            for (let i = 0; i < form.$children.length && i < maxItems; i++) {
                 let formItem = form.$children[i];
                 // noinspection JSUnresolvedVariable
                 this.contentBodHeight += formItem.$el.offsetHeight;
@@ -347,6 +352,7 @@ export default {
 <!--suppress CssUnusedSymbol -->
 <style scoped>
 .content {
+    color: #525456;
     min-width: 60px;
     max-width: 250px;
     background-color: #99ccff;
