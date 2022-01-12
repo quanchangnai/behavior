@@ -344,6 +344,7 @@ export default {
                 }
                 return !node.childrenFolded;
             });
+            this.drawTree();
         },
         onNodeChildrenFold(node) {
             this.tree.childrenFolded = this.tree.childrenFolded || node.childrenFolded;

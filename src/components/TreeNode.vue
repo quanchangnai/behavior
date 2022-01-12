@@ -135,6 +135,7 @@ export default {
             await this.calcContentBodyHeight();
             this.$emit("resize");
         });
+        this.resizeObserver.observe(this.$refs.content);
     },
     destroyed() {
         this.resizeObserver.disconnect();
@@ -174,7 +175,7 @@ export default {
             return {
                 'background-color': this.selected || this.creating ? '#c0acf8' : '#99ccff',
                 'border-color': this.selected || this.creating ? '#a185f1' : '#84bcf6',
-                'box-shadow': error ? '0 0 0 1px #f56c6c' : '',
+                'box-shadow': error ? '0 0 0 1px #fd7f5a' : '',
                 '--scrollbar-thumb-color': this.selected ? '#c9b7fc' : '#a2caf6',
                 '--scrollbar-thumb-shadow-color': this.selected ? '#916cf6' : '#776eee',
             }
