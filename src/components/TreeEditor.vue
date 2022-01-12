@@ -25,6 +25,7 @@
                            @dragging="onNodeDragging"
                            @drag-end="onNodeDragEnd"
                            @param-select-show="onParamSelectShow"
+                           @resize="drawTree"
                            @fold="onNodeFold"
                            @children-fold="onNodeChildrenFold"
                            @delete="drawTree"/>
@@ -292,7 +293,7 @@ export default {
                     if (child.dragging) {
                         context.strokeStyle = "#b32de0"
                     } else {
-                        context.strokeStyle = "#274ff6"
+                        context.strokeStyle = "#5b7af8"
                     }
                     drawLine(x1, y1, x2, y2);
                     lineToChildren(child);
@@ -302,7 +303,7 @@ export default {
             lineToChildren(this.tree.root);
 
             if (this.creatingNode && this.creatingNode.parent) {
-                context.strokeStyle = "red";
+                context.strokeStyle = "#b32de0";
                 let creatingNodeParent = this.creatingNode.parent;
                 let x1 = creatingNodeParent.x + creatingNodeParent.selfWidth - nodeSpaceX;
                 if (creatingNodeParent.children && creatingNodeParent.children.length) {
@@ -343,7 +344,6 @@ export default {
                 }
                 return !node.childrenFolded;
             });
-            this.drawTree();
         },
         onNodeChildrenFold(node) {
             this.tree.childrenFolded = this.tree.childrenFolded || node.childrenFolded;

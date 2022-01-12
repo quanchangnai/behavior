@@ -21,7 +21,7 @@
                     </template>
                 </div>
                 <div class="content-body"
-                     :style="{'height':contentBodHeight+'px'}"
+                     :style="{'height':contentBodyHeight+'px'}"
                      v-if="hasFoldOperation()&&!node.folded">
                     <el-form size="mini"
                              :model="node"
@@ -126,13 +126,15 @@ export default {
             selected: false,
             backupParams: {},
             validations: {},
-            contentBodHeight: 0
+            contentBodyHeight: 0
         };
     },
     mounted() {
         window.addEventListener('mousedown', () => this.selected = false, {capture: true});
-        this.resizeObserver = new ResizeObserver(this.calcContentBodyHeight);
-        this.resizeObserver.observe(this.$refs.content);
+        this.resizeObserver = new ResizeObserver(async () => {
+            await this.calcContentBodyHeight();
+            this.$emit("resize");
+        });
     },
     destroyed() {
         this.resizeObserver.disconnect();
@@ -170,8 +172,8 @@ export default {
             }
 
             return {
-                'background-color': this.selected ? '#c0acf8' : '#99ccff',
-                'border-color': this.selected ? '#a185f1' : '#84bcf6',
+                'background-color': this.selected || this.creating ? '#c0acf8' : '#99ccff',
+                'border-color': this.selected || this.creating ? '#a185f1' : '#84bcf6',
                 'box-shadow': error ? '0 0 0 1px #f56c6c' : '',
                 '--scrollbar-thumb-color': this.selected ? '#c9b7fc' : '#a2caf6',
                 '--scrollbar-thumb-shadow-color': this.selected ? '#916cf6' : '#776eee',
@@ -179,8 +181,14 @@ export default {
         }
     },
     watch: {
-        'node.folded': function () {
-            this.calcContentBodyHeight();
+        'node.folded': function (folded) {
+            if (folded) {
+                this.resizeObserver.unobserve(this.$refs.form.$el);
+            } else {
+                this.$nextTick(() => {
+                    this.resizeObserver.observe(this.$refs.form.$el);
+                })
+            }
         }
     },
     methods: {
@@ -329,19 +337,19 @@ export default {
             }
 
             //手动计算高度，多余4个表单项加滚动条，并且防止表单项部分显示
-            this.contentBodHeight = 1;//上边框
+            this.contentBodyHeight = 1;//上边框
 
             const maxItems = 4;
             let formStyle = getComputedStyle(form.$el);
-            this.contentBodHeight += Number.parseFloat(formStyle.marginTop);
+            this.contentBodyHeight += Number.parseFloat(formStyle.marginTop);
             if (form.$children.length <= maxItems) {
-                this.contentBodHeight += Number.parseFloat(formStyle.marginBottom);
+                this.contentBodyHeight += Number.parseFloat(formStyle.marginBottom);
             }
 
             for (let i = 0; i < form.$children.length && i < maxItems; i++) {
                 let formItem = form.$children[i];
                 // noinspection JSUnresolvedVariable
-                this.contentBodHeight += formItem.$el.offsetHeight;
+                this.contentBodyHeight += formItem.$el.offsetHeight;
             }
         },
     }
