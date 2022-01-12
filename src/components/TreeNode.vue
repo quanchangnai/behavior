@@ -30,13 +30,12 @@
                              label-position="left"
                              :hide-required-asterisk="false"
                              @validate="onFormValidate"
-                             @mousedown.native.stop
                              @dblclick.native.stop>
                         <el-form-item v-if="node.template.nodeName" prop="name">
                             <template #label>
                                 <span class="paramLabel">节点名称</span>
                             </template>
-                            <el-input v-model="node.name"/>
+                            <el-input v-model="node.name" @mousedown.native.stop/>
                         </el-form-item>
                         <el-form-item v-for="(param,paramName) in node.template.params"
                                       :key="paramName"
@@ -48,7 +47,8 @@
                                 <span class="paramLabel">{{ param.label || paramName }}</span>
                             </template>
                             <el-radio-group v-if="param.type==='boolean' && !param.options"
-                                            v-model="node.params[paramName]">
+                                            v-model="node.params[paramName]"
+                                            @mousedown.native.stop>
                                 <el-radio :label="true">是</el-radio>
                                 <el-radio :label="false">否</el-radio>
                             </el-radio-group>
@@ -60,7 +60,8 @@
                                        :class="paramSelectClass(paramName)"
                                        @remove-tag="calcContentBodyHeight"
                                        @visible-change="onParamSelectVisibleChange('paramSelect-'+paramName,$event)"
-                                       popper-class="node-param-select-dropdown">
+                                       popper-class="node-param-select-dropdown"
+                                       @mousedown.native.stop>
                                 <el-option v-for="(option,i) in paramOptions(param.options)"
                                            :key="paramName+'-option-'+i"
                                            :label="option.label"
@@ -71,7 +72,8 @@
                                              v-model="node.params[paramName]"
                                              :precision="param.type==='float'?2:0"
                                              :min="typeof param.min==='number'?param.min:-Infinity"
-                                             :max="typeof param.max==='number'?param.max:Infinity"/>
+                                             :max="typeof param.max==='number'?param.max:Infinity"
+                                             @mousedown.native.stop/>
                             <el-tooltip v-else-if="param.type==='string'"
                                         effect="light"
                                         :disabled="typeof param.pattern!=='string'||param.pattern.length===0"
@@ -82,7 +84,8 @@
                                         placement="bottom-start">
                                 <el-input v-model="node.params[paramName]"
                                           @focusin.native="()=>onParamFocusIn(paramName)"
-                                          @focusout.native="onParamFocusOut(paramName)"/>
+                                          @focusout.native="onParamFocusOut(paramName)"
+                                          @mousedown.native.stop/>
                             </el-tooltip>
                         </el-form-item>
                     </el-form>
@@ -361,7 +364,6 @@ export default {
 <!--suppress CssUnusedSymbol -->
 <style scoped>
 .content {
-    color: #525456;
     min-width: 60px;
     max-width: 250px;
     background-color: #99ccff;
@@ -378,6 +380,7 @@ export default {
 }
 
 .content-header {
+    color: #525456;
     line-height: 30px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -448,6 +451,7 @@ export default {
 }
 
 >>> .el-form-item__label {
+    cursor: pointer;
     height: 30px;
 }
 
