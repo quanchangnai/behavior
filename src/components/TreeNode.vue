@@ -29,13 +29,14 @@
                              label-width="auto"
                              label-position="left"
                              :hide-required-asterisk="false"
+                             @mousedown.native.stop
                              @validate="onFormValidate"
                              @dblclick.native.stop>
                         <el-form-item v-if="node.template.nodeName" prop="name">
                             <template #label>
                                 <span class="paramLabel">节点名称</span>
                             </template>
-                            <el-input v-model="node.name" @mousedown.native.stop/>
+                            <el-input v-model="node.name"/>
                         </el-form-item>
                         <el-form-item v-for="(param,paramName) in node.template.params"
                                       :key="paramName"
@@ -44,11 +45,21 @@
                                       :show-message="false"
                                       :prop="'params.'+paramName">
                             <template #label>
-                                <span class="paramLabel">{{ param.label || paramName }}</span>
+                                <el-tooltip effect="light"
+                                            :disabled="labelTips[paramName]!==true"
+                                            :arrowOffset="15"
+                                            :hide-after="1000"
+                                            :content="param.label"
+                                            popper-class="node-param-label-tooltip"
+                                            placement="bottom-start">
+                                    <span :ref="'paramLabel-'+paramName"
+                                          class="paramLabel">
+                                        {{ param.label || paramName }}
+                                    </span>
+                                </el-tooltip>
                             </template>
                             <el-radio-group v-if="param.type==='boolean' && !param.options"
-                                            v-model="node.params[paramName]"
-                                            @mousedown.native.stop>
+                                            v-model="node.params[paramName]">
                                 <el-radio :label="true">是</el-radio>
                                 <el-radio :label="false">否</el-radio>
                             </el-radio-group>
@@ -60,8 +71,7 @@
                                        :class="paramSelectClass(paramName)"
                                        @remove-tag="calcContentBodyHeight"
                                        @visible-change="onParamSelectVisibleChange('paramSelect-'+paramName,$event)"
-                                       popper-class="node-param-select-dropdown"
-                                       @mousedown.native.stop>
+                                       popper-class="node-param-select-dropdown">
                                 <el-option v-for="(option,i) in paramOptions(param.options)"
                                            :key="paramName+'-option-'+i"
                                            :label="option.label"
@@ -72,11 +82,10 @@
                                              v-model="node.params[paramName]"
                                              :precision="param.type==='float'?2:0"
                                              :min="typeof param.min==='number'?param.min:-Infinity"
-                                             :max="typeof param.max==='number'?param.max:Infinity"
-                                             @mousedown.native.stop/>
+                                             :max="typeof param.max==='number'?param.max:Infinity"/>
                             <el-tooltip v-else-if="param.type==='string'"
                                         effect="light"
-                                        :disabled="typeof param.pattern!=='string'||param.pattern.length===0"
+                                        :disabled="!param.pattern||param.pattern.length===0"
                                         :content="'格式:'+param.pattern"
                                         :arrowOffset="15"
                                         :hide-after="1000"
@@ -84,8 +93,7 @@
                                         placement="bottom-start">
                                 <el-input v-model="node.params[paramName]"
                                           @focusin.native="()=>onParamFocusIn(paramName)"
-                                          @focusout.native="onParamFocusOut(paramName)"
-                                          @mousedown.native.stop/>
+                                          @focusout.native="onParamFocusOut(paramName)"/>
                             </el-tooltip>
                         </el-form-item>
                     </el-form>
@@ -127,8 +135,9 @@ export default {
     data() {
         return {
             selected: false,
-            backupParams: {},
-            validations: {},
+            backupParams: {},//备份的参数值，输入无效参数后回滚用
+            validations: {},//参数校验状态
+            labelTips: {},//参数标签提示状态，文本太长加提示
             contentBodyHeight: 0
         };
     },
@@ -191,6 +200,7 @@ export default {
             } else {
                 this.$nextTick(() => {
                     this.resizeObserver.observe(this.$refs.form.$el);
+                    this.checkParamLabelEllipsis();
                 })
             }
         }
@@ -356,6 +366,15 @@ export default {
                 this.contentBodyHeight += formItem.$el.offsetHeight;
             }
         },
+        async checkParamLabelEllipsis() {
+            await this.$nextTick();
+            for (let paramName of Object.keys(this.node.template.params)) {
+                let paramLabel = this.$refs["paramLabel-" + paramName];
+                if (this.$utils.checkEllipsis(paramLabel[0])) {
+                    this.labelTips[paramName] = true;
+                }
+            }
+        }
     }
 
 }
@@ -451,7 +470,6 @@ export default {
 }
 
 >>> .el-form-item__label {
-    cursor: pointer;
     height: 30px;
 }
 
@@ -500,10 +518,13 @@ export default {
     left: 10px !important;
 }
 
-.node-param-tooltip {
+.node-param-label-tooltip, .node-param-tooltip {
     transform: translateY(-8px);
     box-sizing: border-box;
-    min-width: 120px;
     padding: 5px 10px;
+}
+
+.node-param-tooltip {
+    min-width: 120px;
 }
 </style>

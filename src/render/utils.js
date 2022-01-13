@@ -1,5 +1,17 @@
 import {ipcRenderer} from "electron";
 
+/**
+ * @param el {Element|String} 元素或者选择器
+ * @returns {Element|*}
+ */
+function getElement(el) {
+    if (typeof el === 'string') {
+        return document.querySelector(el);
+    } else {
+        return el;
+    }
+}
+
 export default {
     /**
      *获取元素ClientX
@@ -7,12 +19,7 @@ export default {
      * @returns {number}
      */
     getClientX(el) {
-        let element;
-        if (typeof el === 'string') {
-            element = document.querySelector(el);
-        } else {
-            element = el
-        }
+        let element = getElement(el);
         if (element.offsetParent) {
             return this.getClientX(element.offsetParent) + element.offsetLeft;
         } else {
@@ -25,17 +32,44 @@ export default {
      * @returns {number}
      */
     getClientY(el) {
-        let element;
-        if (typeof el === 'string') {
-            element = document.querySelector(el);
-        } else {
-            element = el
-        }
+        let element = getElement(el);
         if (element.offsetParent) {
             return this.getClientY(element.offsetParent) + element.offsetTop;
         } else {
             return element.offsetTop;
         }
+    },
+    /**
+     * 判断元素x轴方向有没有省略内容
+     * @param el {Element|String} 元素或者选择器
+     * @param axis {"x"|"y"} x轴或者y轴
+     * @returns {boolean}
+     */
+    checkEllipsis(el, axis = "x") {
+        let element = getElement(el);
+
+        let clone = element.cloneNode();
+        clone.style.position = "absolute";
+        clone.style.width = element.offsetWidth + "px";
+        clone.style.height = element.offsetHeight + "px";
+        clone.style.zIndex = -1;
+        clone.style.overflow = "auto";
+        clone.style.opacity = 0;
+        clone.style.whiteSpace = "nowrap";
+        clone.innerHTML = element.innerHTML;
+
+        element.parentNode.appendChild(clone);
+
+        let ellipsis;
+        if (axis === "x") {
+            ellipsis = clone.scrollWidth > element.offsetWidth;
+        } else if (axis === "y") {
+            ellipsis = clone.scrollHeight > element.offsetHeight;
+        }
+
+        element.parentNode.removeChild(clone);
+
+        return ellipsis;
     },
     /**
      * 访问节点及其所有子孙节点

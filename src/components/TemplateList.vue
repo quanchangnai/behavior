@@ -4,6 +4,7 @@
               size="medium"
               :height="'100%'"
               :data="visibleTemplates"
+              tooltip-effect="light"
               :cell-style="{padding:0}">
         <el-table-column :show-overflow-tooltip="true">
             <template #header>
@@ -30,7 +31,7 @@
                 <div class="template" @mousedown.left="event=>selectTemplate(event,template)">
                     <el-tooltip effect="light"
                                 :disabled="!template.desc"
-                                :popper-class="templateTooltipClass(template)"
+                                :popper-class="templateTooltipClass(template.desc)"
                                 placement="bottom-start">
                         <template #content>
                             <span v-for="(line,i) in template.desc.split('\n')"
@@ -222,9 +223,9 @@ export default {
                 return template.name.includes(this.keyword) || template.id.toString().includes(this.keyword);
             });
         },
-        templateTooltipClass(template) {
+        templateTooltipClass(tipText) {
             let result = "template-tooltip";
-            if (template.desc && template.desc.split('\n').length > 1) {
+            if (tipText && tipText.split('\n').length > 1) {
                 result += "-multi-line"
             } else {
                 result += "-single-line"
