@@ -40,12 +40,12 @@ export default {
         }
     },
     /**
-     * 判断元素x轴方向有没有省略内容
+     * 判断元素内容有没有溢出
      * @param el {Element|String} 元素或者选择器
      * @param axis {"x"|"y"} x轴或者y轴
      * @returns {boolean}
      */
-    checkEllipsis(el, axis = "x") {
+    checkOverflow(el, axis = "x") {
         let element = getElement(el);
 
         let clone = element.cloneNode();
@@ -62,9 +62,9 @@ export default {
 
         let ellipsis;
         if (axis === "x") {
-            ellipsis = clone.scrollWidth > element.offsetWidth;
+            ellipsis = clone.scrollWidth > element.offsetWidth + 1;
         } else if (axis === "y") {
-            ellipsis = clone.scrollHeight > element.offsetHeight;
+            ellipsis = clone.scrollHeight > element.offsetHeight + 1;
         }
 
         element.parentNode.removeChild(clone);

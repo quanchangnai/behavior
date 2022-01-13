@@ -28,7 +28,7 @@
                 </el-input>
             </template>
             <template #default="{row:template}">
-                <div class="template" @mousedown.left="event=>selectTemplate(event,template)">
+                <div class="template" @mousedown.left="selectTemplate($event,template)">
                     <el-tooltip effect="light"
                                 :disabled="!template.desc"
                                 :popper-class="templateTooltipClass(template.desc)"

@@ -9,8 +9,10 @@
         <div v-for="(item,index) in items"
              :key="'item-'+index"
              class="context-menu-item"
-             @click="()=>onItemClick(item)">
-            {{ item.title }}
+             @click="onItemClick(item)">
+            <slot :item="item">
+                {{ item.title }}
+            </slot>
         </div>
     </div>
 </template>

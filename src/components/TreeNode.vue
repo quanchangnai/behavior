@@ -29,8 +29,8 @@
                              label-width="auto"
                              label-position="left"
                              :hide-required-asterisk="false"
-                             @mousedown.native.stop
                              @validate="onFormValidate"
+                             @mousedown.native.stop
                              @dblclick.native.stop>
                         <el-form-item v-if="node.template.nodeName" prop="name">
                             <template #label>
@@ -92,7 +92,7 @@
                                         popper-class="node-param-tooltip"
                                         placement="bottom-start">
                                 <el-input v-model="node.params[paramName]"
-                                          @focusin.native="()=>onParamFocusIn(paramName)"
+                                          @focusin.native="onParamFocusIn(paramName)"
                                           @focusout.native="onParamFocusOut(paramName)"/>
                             </el-tooltip>
                         </el-form-item>
@@ -197,10 +197,11 @@ export default {
         'node.folded': function (folded) {
             if (folded) {
                 this.resizeObserver.unobserve(this.$refs.form.$el);
+                this.labelTips = {};
             } else {
                 this.$nextTick(() => {
                     this.resizeObserver.observe(this.$refs.form.$el);
-                    this.checkParamLabelEllipsis();
+                    this.checkParamLabelsOverflow();
                 })
             }
         }
@@ -366,14 +367,18 @@ export default {
                 this.contentBodyHeight += formItem.$el.offsetHeight;
             }
         },
-        async checkParamLabelEllipsis() {
+        async checkParamLabelsOverflow() {
             await this.$nextTick();
+            if (!this.node.template.params) {
+                return;
+            }
             for (let paramName of Object.keys(this.node.template.params)) {
                 let paramLabel = this.$refs["paramLabel-" + paramName];
-                if (this.$utils.checkEllipsis(paramLabel[0])) {
+                if (this.$utils.checkOverflow(paramLabel[0])) {
                     this.labelTips[paramName] = true;
                 }
             }
+            console.log("labelTips:", JSON.stringify(this.labelTips));
         }
     }
 
