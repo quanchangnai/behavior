@@ -43,9 +43,10 @@ export default {
      * 判断元素内容有没有溢出
      * @param el {Element|String} 元素或者选择器
      * @param axis {"x"|"y"} x轴或者y轴
+     * @param d {number} 决定是否溢出的差值
      * @returns {boolean}
      */
-    checkOverflow(el, axis = "x") {
+    checkOverflow(el, axis = "x", d = 0) {
         let element = getElement(el);
 
         let clone = element.cloneNode();
@@ -60,16 +61,16 @@ export default {
 
         element.parentNode.appendChild(clone);
 
-        let ellipsis;
+        let overflow;
         if (axis === "x") {
-            ellipsis = clone.scrollWidth > element.offsetWidth;
+            overflow = clone.scrollWidth > element.offsetWidth + d;
         } else if (axis === "y") {
-            ellipsis = clone.scrollHeight > element.offsetHeight;
+            overflow = clone.scrollHeight > element.offsetHeight + d;
         }
 
         element.parentNode.removeChild(clone);
 
-        return ellipsis;
+        return overflow;
     },
     /**
      * 访问节点及其所有子孙节点

@@ -186,7 +186,7 @@ export default {
 
             return {
                 'background-color': this.selected || this.creating ? '#c0acf8' : '#99ccff',
-                'border-color': this.selected || this.creating ? '#a185f1' : '#84bcf6',
+                'border-color': this.selected || this.creating ? '#b69ffa' : '#84bcf6',
                 'box-shadow': error ? '0 0 0 1px #fd7f5a' : '',
                 '--scrollbar-thumb-color': this.selected ? '#c9b7fc' : '#a2caf6',
                 '--scrollbar-thumb-shadow-color': this.selected ? '#916cf6' : '#776eee',
@@ -195,6 +195,9 @@ export default {
     },
     watch: {
         'node.folded': function (folded) {
+            if (!this.hasFoldOperation()) {
+                return;
+            }
             if (folded) {
                 this.resizeObserver.unobserve(this.$refs.form.$el);
                 this.labelTips = {};
@@ -202,7 +205,7 @@ export default {
                 this.$nextTick(() => {
                     this.resizeObserver.observe(this.$refs.form.$el);
                     this.checkParamLabelsOverflow();
-                })
+                });
             }
         }
     },
@@ -368,13 +371,18 @@ export default {
             }
         },
         async checkParamLabelsOverflow() {
-            await this.$nextTick();
             if (!this.node.template.params) {
                 return;
             }
+
+            //等待参数渲染出来
+            await this.$nextTick();
+
             for (let paramName of Object.keys(this.node.template.params)) {
+                let param = this.node.template.params[paramName];
                 let paramLabel = this.$refs["paramLabel-" + paramName];
-                if (this.$utils.checkOverflow(paramLabel[0])) {
+                //required参数标签前的红色星号不知道什么原因导致clone.scrollWidth多了一个像素
+                if (this.$utils.checkOverflow(paramLabel[0], "x", param.required ? 1 : 0)) {
                     this.labelTips[paramName] = true;
                 }
             }
