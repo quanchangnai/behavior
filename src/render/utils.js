@@ -62,9 +62,9 @@ export default {
 
         let ellipsis;
         if (axis === "x") {
-            ellipsis = clone.scrollWidth > element.offsetWidth + 1;
+            ellipsis = clone.scrollWidth > element.offsetWidth;
         } else if (axis === "y") {
-            ellipsis = clone.scrollHeight > element.offsetHeight + 1;
+            ellipsis = clone.scrollHeight > element.offsetHeight;
         }
 
         element.parentNode.removeChild(clone);

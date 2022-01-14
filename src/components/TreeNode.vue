@@ -378,7 +378,6 @@ export default {
                     this.labelTips[paramName] = true;
                 }
             }
-            console.log("labelTips:", JSON.stringify(this.labelTips));
         }
     }
 
@@ -469,7 +468,7 @@ export default {
 
 .paramLabel {
     display: inline-block;
-    max-width: 70px;
+    max-width: 72px;
     overflow: hidden;
     text-overflow: ellipsis;
 }

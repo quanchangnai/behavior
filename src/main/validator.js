@@ -67,7 +67,7 @@ let tree = {
         name: {
             type: "string",
             minLength: 1,
-            maxLength: 10
+            maxLength: 20
         },
         root: {
             $ref: "node"
