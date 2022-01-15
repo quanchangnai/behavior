@@ -1,4 +1,4 @@
-import {BrowserWindow, ipcMain} from 'electron'
+import {ipcMain} from 'electron'
 import behavior from "./behavior";
 import fs from 'fs'
 import path from 'path'
@@ -6,9 +6,8 @@ import {validateConfig} from "./validator";
 
 
 ipcMain.handle("title", event => {
-    let win = BrowserWindow.fromWebContents(event.sender);
     let title = behavior.getTitle(event.sender);
-    return win.getTitle() + " - " + title;
+    return "behavior - " + title;
 });
 
 ipcMain.handle("load-config", async event => {
@@ -83,4 +82,7 @@ ipcMain.handle("open-workspace-path", async (event) => {
     await behavior.openWorkspacePath(event.sender);
 });
 
+ipcMain.handle("delete-workspace", (event, workspace) => {
+    behavior.deleteWorkspace(workspace);
+})
 

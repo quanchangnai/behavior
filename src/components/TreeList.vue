@@ -206,12 +206,5 @@ export default {
 
 <!--suppress CssUnusedSymbol -->
 <style scoped>
->>> .el-dialog {
-    padding: 0 30px;
-}
-
->>> .el-dialog__body {
-    padding: 12px 22px
-}
 
 </style>

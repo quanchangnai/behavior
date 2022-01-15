@@ -6,8 +6,8 @@
                :visible.sync="visible">
         <el-table ref="table"
                   size="small"
-                  max-height="201px"
                   :data="data"
+                  max-height="201px"
                   :show-header="false"
                   highlight-current-row
                   @select="(s,r)=>this.select(r)"
@@ -71,6 +71,14 @@ export default {
 
 <!--suppress CssUnusedSymbol -->
 <style scoped>
+>>> .el-dialog {
+    padding: 0 30px;
+}
+
+>>> .el-dialog__body {
+    padding: 12px 22px
+}
+
 .el-table {
     --border: solid #ebeef5 1px;
     border-top: var(--border);

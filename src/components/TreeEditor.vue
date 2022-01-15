@@ -89,15 +89,15 @@ export default {
             return;
         }
 
-        ipcRenderer.on("leftVisible", () => {
+        ipcRenderer.on("left-visible", () => {
             this.leftWidth = this.leftWidth === leftWidth ? 0 : leftWidth;
             this.resetBoardPosition();
         });
-        ipcRenderer.on("rightVisible", () => {
+        ipcRenderer.on("right-visible", () => {
             this.rightWidth = this.rightWidth === rightWidth ? 0 : rightWidth;
             this.resetBoardPosition();
         });
-        ipcRenderer.on("foldAllNode", (e, fold) => this.foldAllNode(fold));
+        ipcRenderer.on("fold-all-node", (e, fold) => this.foldAllNode(fold));
     },
     mounted() {
         this.resizeObserver = new ResizeObserver(this.drawTree);

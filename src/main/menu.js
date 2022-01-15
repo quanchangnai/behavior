@@ -38,7 +38,13 @@ function buildMenu() {
                         await behavior.showOpenWorkspaceDialog(window);
                     }
                 },
-                ...workspacesItems
+                ...workspacesItems,
+                {
+                    label: '管理工作区',
+                    click: (item, window) => {
+                        window.webContents.send("manage-workspaces", behavior.manageWorkspaces());
+                    }
+                },
             ]
         },
         {
@@ -52,28 +58,28 @@ function buildMenu() {
                 {
                     label: "行为树列表",
                     click(item, window) {
-                        window.webContents.send("leftVisible");
+                        window.webContents.send("left-visible");
                     },
                     accelerator: "CommandOrControl+Left"
                 },
                 {
                     label: "节点模板列表",
                     click(item, window) {
-                        window.webContents.send("rightVisible");
+                        window.webContents.send("right-visible");
                     },
                     accelerator: "CommandOrControl+Right"
                 },
                 {
                     label: "展开全部节点",
                     click(item, window) {
-                        window.webContents.send("foldAllNode", false);
+                        window.webContents.send("fold-all-node", false);
                     },
                     accelerator: "CommandOrControl+Down"
                 },
                 {
                     label: "收起全部节点",
                     click(item, window) {
-                        window.webContents.send("foldAllNode", true);
+                        window.webContents.send("fold-all-node", true);
                     },
                     accelerator: "CommandOrControl+Up"
                 },
@@ -111,16 +117,18 @@ app.on("open-workspace", () => {
     Menu.setApplicationMenu(menu);
 });
 
-app.on("browser-window-created", (event, window) => {
-    if (!window.setMenu) {
-        return;
-    }
-
-    let allWindows = [...BrowserWindow.getAllWindows(), window];
-    for (let win of allWindows) {
+export function resetMenus() {
+    for (let win of BrowserWindow.getAllWindows()) {
+        if (!win.setMenu) {
+            return;
+        }
         let menu = Menu.buildFromTemplate(buildMenu());
         let menuItem = menu.getMenuItemById(behavior.getWorkspace(win.webContents));
         menuItem.visible = false;
         win.setMenu(menu);
     }
+}
+
+app.on("browser-window-created", () => {
+    setTimeout(resetMenus, 10);
 });

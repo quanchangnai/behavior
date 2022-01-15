@@ -581,7 +581,7 @@ function validateConfigLogic(config) {
 
     for (const template of config.templates) {
         if (template.params) {
-            for (let paramName in template.params) {
+            for (let paramName of Object.keys(template.params)) {
                 let options = template.params[paramName].options;
                 if (typeof options === "object" && options.refType === "node" && !mappedTemplates.has(options.refId)) {
                     errors.push(`节点模板(${template.id})的参数(${paramName})选项引用的模板(${options.refId})不存在`);

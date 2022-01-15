@@ -4,6 +4,7 @@ import {app, dialog, shell, BrowserWindow, webContents} from 'electron'
 import logger from "electron-log";
 import config from "./config";
 import {validateBehavior} from "./validator";
+import {resetMenus} from "./menu";
 
 logger.catchErrors();
 
@@ -83,9 +84,7 @@ let behavior = {
     },
     async showOpenWorkspaceDialog(window) {
         let dialogResult = await dialog.showOpenDialog(window, {
-            title: "打开工作区",
-            buttonLabel: "选择",
-            properties: ["openDirectory"]
+            title: "打开工作区", buttonLabel: "选择", properties: ["openDirectory"]
         });
 
         if (!dialogResult.canceled) {
@@ -125,6 +124,23 @@ let behavior = {
                 return path.resolve(".", args[i]);
             }
         }
+    },
+    manageWorkspaces() {
+        let workspaces = [];
+        for (let appWorkspace of appWorkspaces) {
+            workspaces.push({path: appWorkspace, deletable: false})
+        }
+        for (let homeWorkspace of homeWorkspaces) {
+            workspaces.push({path: homeWorkspace, deletable: !workspacesWebContents.has(homeWorkspace)})
+        }
+        return workspaces;
+    },
+    deleteWorkspace(workspace) {
+        homeWorkspaces.splice(homeWorkspaces.indexOf(workspace), 1);
+        workspacesTitles.delete(workspace);
+        resetMenus();
+        // noinspection JSIgnoredPromiseFromCall
+        save();
     }
 };
 
@@ -228,9 +244,7 @@ function buildWorkspacesTitles() {
                 removedCount++;
             }
             if (removePos > 0) {
-                dirname = dirname.substr(0, removePos)
-                    + ".." + removedCount + ".." +
-                    dirname.substr(removePos, dirname.length - 1);
+                dirname = dirname.substr(0, removePos) + ".." + removedCount + ".." + dirname.substr(removePos, dirname.length - 1);
             }
         }
 
