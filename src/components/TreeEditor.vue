@@ -6,7 +6,7 @@
                        :archetypes="config.archetypes"
                        @select-tree="onSelectTree"/>
         </div>
-        <div id="center" :style="{left:leftWidth+'px',right:rightWidth+'px'}">
+        <div id="center" :style="{left:(leftWidth+2)+'px',right:rightWidth+'px'}">
             <draggable id="board"
                        :freeze="boardFreeze"
                        :x="boardX"
@@ -63,7 +63,7 @@ const nodeSpaceY = 30;//节点y轴间隔空间
 const boardEdgeSpace = 100;//画板边缘空间
 
 const leftWidth = 220;
-const rightWidth = 270;
+const rightWidth = 250;
 
 export default {
     name: "TreeEditor",
@@ -559,24 +559,21 @@ export default {
     overflow: hidden;
 }
 
-#left {
+#left, #center, #right {
     position: absolute;
     height: 100%;
-}
-
-#right {
-    position: absolute;
-    height: 100%;
-    right: 0;
-    user-select: none;
+    background-color: white;
+    box-sizing: border-box;
 }
 
 #center {
-    position: absolute;
-    height: 100%;
-    box-sizing: border-box;
     overflow: hidden;
     border-top: solid 1px #ebeef5;
+}
+
+#right {
+    right: 0;
+    user-select: none;
 }
 
 #board {

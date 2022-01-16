@@ -1,56 +1,58 @@
 <template>
-    <el-table border
-              ref="table"
-              size="medium"
-              :height="'100%'"
-              :data="visibleTemplates"
-              tooltip-effect="light"
-              :cell-style="{padding:0}">
-        <el-table-column :show-overflow-tooltip="true">
-            <template #header>
-                <el-input v-model="keyword"
-                          clearable
-                          size="small"
-                          class="keyword-input"
-                          :prefix-icon="selectGroups.length===0?'el-icon-search':''"
-                          placeholder="输入关键字搜索">
-                    <el-select slot="prepend"
-                               class="group-select"
-                               v-model="selectedGroup"
-                               v-if="selectGroups.length>0"
-                               popper-class="template-select-dropdown">
-                        <el-option v-for="group in selectGroups"
-                                   :key="group.id"
-                                   :label="group.name"
-                                   :value="group.id"/>
+    <div id="body">
+        <div id="search">
+            <el-input v-model="keyword"
+                      clearable
+                      size="small"
+                      class="keyword-input"
+                      :prefix-icon="selectGroups.length===0?'el-icon-search':''"
+                      placeholder="输入关键字搜索">
+                <el-select slot="prepend"
+                           class="group-select"
+                           v-model="selectedGroup"
+                           v-if="selectGroups.length>0"
+                           popper-class="template-select-dropdown">
+                    <el-option v-for="group in selectGroups"
+                               :key="group.id"
+                               :label="group.name"
+                               :value="group.id"/>
 
-                    </el-select>
-                </el-input>
-            </template>
-            <template #default="{row:template}">
-                <div class="template" @mousedown.left="selectTemplate($event,template)">
-                    <el-tooltip effect="light"
-                                :disabled="!template.desc"
-                                :popper-class="templateTooltipClass(template.desc)"
-                                placement="bottom-start">
-                        <template #content>
+                </el-select>
+            </el-input>
+        </div>
+        <el-scrollbar ref="scrollbar" :style="{height: tableHeight}">
+            <el-table ref="table"
+                      size="medium"
+                      :show-header="false"
+                      :data="visibleTemplates"
+                      tooltip-effect="light"
+                      :cell-style="{padding:0}">
+                <el-table-column :show-overflow-tooltip="true"
+                                 #default="{row:template}">
+                    <div class="template" @mousedown.left="selectTemplate($event,template)">
+                        <el-tooltip effect="light"
+                                    :disabled="!template.desc"
+                                    :popper-class="templateTooltipClass(template.desc)"
+                                    placement="bottom-start">
+                            <template #content>
                             <span v-for="(line,i) in template.desc.split('\n')"
                                   :key="'line-'+i"
                                   style="height: 20px;line-height: 20px">
                                 <br v-if="i>0"/>{{ line }}
                             </span>
-                        </template>
-                        <el-tag size="small"
-                                class="template-tag"
-                                @mousedown.native.stop>
-                            {{ template.id }}
-                        </el-tag>
-                    </el-tooltip>
-                    {{ template.name }}
-                </div>
-            </template>
-        </el-table-column>
-    </el-table>
+                            </template>
+                            <el-tag size="small"
+                                    class="template-tag"
+                                    @mousedown.native.stop>
+                                {{ template.id }}
+                            </el-tag>
+                        </el-tooltip>
+                        {{ template.name }}
+                    </div>
+                </el-table-column>
+            </el-table>
+        </el-scrollbar>
+    </div>
 </template>
 
 <script>
@@ -64,6 +66,7 @@ export default {
     },
     data() {
         return {
+            tableHeight: "100%",
             visibleTemplates: [],
             mappedTemplateTypes: new Map(),
             mappedTemplates: new Map(),
@@ -83,8 +86,8 @@ export default {
         this.$events.$on("init-tree", this.onInitTree);
     },
     mounted() {
-        this.resizeObserver = new ResizeObserver(this.$refs.table.doLayout);
-        this.resizeObserver.observe(this.$refs.table.$el);
+        this.resizeObserver = new ResizeObserver(this.doLayout);
+        this.resizeObserver.observe(document.querySelector("#body"));
         this.blurGroupSelectInput();
     },
     destroyed() {
@@ -241,6 +244,14 @@ export default {
                     groupSelectInput.blur();
                 };
             }
+        },
+        async doLayout() {
+            let body = document.querySelector("#body");
+            let search = document.querySelector("#search");
+            this.tableHeight = (body.offsetHeight - search.offsetHeight) + "px";
+            await this.$nextTick();
+            this.$refs.scrollbar.update();
+            this.$refs.table.doLayout();
         }
     }
 }
@@ -248,6 +259,22 @@ export default {
 
 <!--suppress CssUnusedSymbol -->
 <style scoped>
+#body {
+    --border: solid #ebeef5 1px;
+    height: 100%;
+    width: 100%;
+    border: var(--border);
+}
+
+#search {
+    border-bottom: var(--border);
+    padding: 8px 10px
+}
+
+.el-scrollbar >>> .el-scrollbar__wrap {
+    overflow-x: hidden;
+}
+
 .template {
     padding: 10px 0;
     cursor: pointer;

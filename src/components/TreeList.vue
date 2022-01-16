@@ -1,28 +1,25 @@
 <template>
-    <div ref="body"
-         style="height: 100%;width: 100%"
-         @contextmenu="onContextMenu">
-        <el-table border
-                  ref="table"
-                  size="medium"
-                  height="100%"
-                  :data="visibleTrees"
-                  highlight-current-row
-                  @current-change="selectTree"
-                  @row-dblclick="showEditTreeNameInput"
-                  @row-contextmenu="(r,c,e)=>onContextMenu(e,r)">
-            <template #empty>
-                <el-button type="text" @click="createTree">创建行为树&nbsp;&nbsp;&nbsp;&nbsp;</el-button>
-            </template>
-            <el-table-column>
-                <template #header>
-                    <el-input v-model="keyword"
-                              clearable
-                              size="small"
-                              placeholder="输入关键字搜索"
-                              prefix-icon="el-icon-search"/>
+    <div id="body" ref="body" @contextmenu="onContextMenu">
+        <div id="search">
+            <el-input v-model="keyword"
+                      clearable
+                      size="small"
+                      placeholder="输入关键字搜索"
+                      prefix-icon="el-icon-search"/>
+        </div>
+        <el-scrollbar ref="scrollbar" :style="{height: tableHeight}">
+            <el-table ref="table"
+                      size="medium"
+                      :show-header="false"
+                      :data="visibleTrees"
+                      highlight-current-row
+                      @current-change="selectTree"
+                      @row-dblclick="showEditTreeNameInput"
+                      @row-contextmenu="(r,c,e)=>onContextMenu(e,r)">
+                <template #empty>
+                    <el-button type="text" @click="createTree">创建行为树&nbsp;&nbsp;&nbsp;&nbsp;</el-button>
                 </template>
-                <template #default="{row:tree}">
+                <el-table-column #default="{row:tree}">
                     <div>
                         <span :ref="'treeIdTag-'+tree.id">
                             <el-tag size="small" style="margin-right: 10px;">{{ tree.id }}</el-tag>
@@ -37,9 +34,9 @@
                                   :style="editTreeNameInputStyle(tree.id)"/>
                         <span v-else>{{ tree.name }}</span>
                     </div>
-                </template>
-            </el-table-column>
-        </el-table>
+                </el-table-column>
+            </el-table>
+        </el-scrollbar>
         <context-menu ref="menu" :items="menuItems"/>
         <archetypes-dialog ref="dialog" :data="archetypes" @select="doCreateTree"/>
     </div>
@@ -58,6 +55,7 @@ export default {
     },
     data() {
         return {
+            tableHeight: "100%",
             allTrees: null,
             visibleTrees: null,
             selectedTree: null,
@@ -73,7 +71,7 @@ export default {
         this.$events.$on("delete-tree", this.deleteTree);
     },
     mounted() {
-        this.resizeObserver = new ResizeObserver(this.$refs.table.doLayout);
+        this.resizeObserver = new ResizeObserver(this.doLayout);
         this.resizeObserver.observe(this.$refs.body);
     },
     destroyed() {
@@ -196,8 +194,11 @@ export default {
             this.$refs.editTreeNameInput.focus();
         },
         async doLayout() {
+            let body = document.querySelector("#body");
+            let search = document.querySelector("#search");
+            this.tableHeight = (body.offsetHeight - search.offsetHeight) + "px";
             await this.$nextTick();
-            this.$refs.table.doLayout();
+            this.$refs.scrollbar.update();
             this.$refs.table.doLayout();
         }
     }
@@ -206,5 +207,24 @@ export default {
 
 <!--suppress CssUnusedSymbol -->
 <style scoped>
+#body {
+    --border: solid #ebeef5 1px;
+    height: 100%;
+    width: 100%;
+    border: var(--border);
+}
+
+#search {
+    border-bottom: var(--border);
+    padding: 8px 10px
+}
+
+.el-scrollbar >>> .el-scrollbar__wrap {
+    overflow-x: hidden;
+}
+
+.el-table:before {
+    content: none;
+}
 
 </style>
