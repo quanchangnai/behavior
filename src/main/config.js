@@ -24,7 +24,7 @@ let templates = [
     {id: 4, name: "选择节点", type: 3, group: 1, desc: "选择节点描述"},
     {id: 5, name: "装饰节点1", type: 4, group: 1, desc: "装饰节点1描述"},
     {id: 6, name: "装饰节点2", type: 4, group: 1, desc: "装饰节点2描述"},
-    {id: 7, name: "动作节点1", type: 5, group: 2, desc: "动作节点1描述,动作节点1描述,\n动作节点1描述,动作节点1描述,\n动作节点1描述"},
+    {id: 7, name: "动作节点1", type: 5, group: 2, desc: "动作节点1描述,动作节点1描述,动作节点1描述,动作节点1描述,动作节点1描述"},
     {id: 8, name: "动作节点2", type: 5, group: 2, desc: "动作节点2描述"},
     {id: 9, name: "动作节点3", type: 5, group: 3, desc: "动作节点3描述"},
     {id: 10, name: "条件节点1", type: 5, group: 2, desc: "条件节点1描述"},

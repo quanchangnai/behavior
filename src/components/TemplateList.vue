@@ -25,28 +25,52 @@
                       size="medium"
                       :show-header="false"
                       :data="visibleTemplates"
+                      :row-key="templateKey"
+                      :expand-row-keys="expandTemplates"
+                      @expand-change="onExpandChange"
                       tooltip-effect="light"
                       :cell-style="{padding:0}">
-                <el-table-column :show-overflow-tooltip="true"
+                <el-table-column type="expand"
+                                 width="26px"
                                  #default="{row:template}">
-                    <div class="template" @mousedown.left="selectTemplate($event,template)">
+                    <div class="template-expand">
                         <el-tooltip effect="light"
-                                    :disabled="!template.desc"
-                                    :popper-class="templateTooltipClass(template.desc)"
-                                    placement="bottom-start">
-                            <template #content>
-                            <span v-for="(line,i) in template.desc.split('\n')"
-                                  :key="'line-'+i"
-                                  style="height: 20px;line-height: 20px">
-                                <br v-if="i>0"/>{{ line }}
-                            </span>
-                            </template>
-                            <el-tag size="small"
-                                    class="template-tag"
-                                    @mousedown.native.stop>
+                                    :hide-after="1000"
+                                    popper-class="tooltip"
+                                    :arrowOffset="15"
+                                    content="模板ID">
+                            <el-tag size="small" class="template-tag">
                                 {{ template.id }}
                             </el-tag>
                         </el-tooltip>
+                        <el-tooltip v-if="template.type"
+                                    effect="light"
+                                    :hide-after="1000"
+                                    :arrowOffset="15"
+                                    popper-class="tooltip"
+                                    content="模板类型">
+                            <el-tag size="small" class="template-tag">
+                                {{ template.type.name }}
+                            </el-tag>
+                        </el-tooltip>
+                        <el-tooltip v-if="template.group"
+                                    effect="light"
+                                    :hide-after="1000"
+                                    :arrowOffset="15"
+                                    popper-class="tooltip"
+                                    content="模板组">
+                            <el-tag size="small" class="template-tag">
+                                {{ mappedTemplateGroups.get(template.group).name }}
+                            </el-tag>
+                        </el-tooltip>
+                        <div style="margin-top: 8px">
+                            {{ template.desc }}
+                        </div>
+                    </div>
+                </el-table-column>
+                <el-table-column :show-overflow-tooltip="true"
+                                 #default="{row:template}">
+                    <div class="template-name" @mousedown.left="selectTemplate($event,template)">
                         {{ template.name }}
                     </div>
                 </el-table-column>
@@ -69,11 +93,13 @@ export default {
             tableHeight: "100%",
             visibleTemplates: [],
             mappedTemplateTypes: new Map(),
+            mappedTemplateGroups: new Map(),
             mappedTemplates: new Map(),
             selectGroups: [],
             selectedGroup: -1,
             hasUngrouped: false,
-            keyword: null
+            keyword: null,
+            expandTemplates: []
         }
     },
     created() {
@@ -180,6 +206,7 @@ export default {
             if (this.templateGroups?.length) {
                 this.selectGroups.push({id: -1, name: "全部分组"});
                 for (let templateGroup of this.templateGroups) {
+                    this.mappedTemplateGroups.set(templateGroup.id, templateGroup);
                     this.selectGroups.push(templateGroup);
                 }
                 if (this.hasUngrouped) {
@@ -226,15 +253,6 @@ export default {
                 return template.name.includes(this.keyword) || template.id.toString().includes(this.keyword);
             });
         },
-        templateTooltipClass(tipText) {
-            let result = "template-tooltip";
-            if (tipText && tipText.split('\n').length > 1) {
-                result += "-multi-line"
-            } else {
-                result += "-single-line"
-            }
-            return result;
-        },
         async blurGroupSelectInput() {
             await this.$nextTick();
             let groupSelectInput = document.querySelector(".group-select .el-input__inner");
@@ -252,7 +270,17 @@ export default {
             await this.$nextTick();
             this.$refs.scrollbar.update();
             this.$refs.table.doLayout();
-        }
+        },
+        templateKey(template) {
+            return template.id;
+        },
+        onExpandChange(template) {
+            if (this.expandTemplates.length > 0) {
+                this.expandTemplates.pop();
+            } else {
+                this.expandTemplates.push(template.id);
+            }
+        },
     }
 }
 </script>
@@ -273,12 +301,6 @@ export default {
 
 .el-scrollbar >>> .el-scrollbar__wrap {
     overflow-x: hidden;
-}
-
-.template {
-    padding: 10px 0;
-    cursor: pointer;
-    user-select: none;
 }
 
 .keyword-input {
@@ -302,28 +324,41 @@ export default {
     width: 20px !important;
 }
 
+.el-table >>> .cell {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+>>> .el-table__expand-icon--expanded {
+    transform: rotate(-90deg);
+}
+
+>>> .el-table__expand-icon:not(.el-table__expand-icon--expanded) {
+    transform: rotate(90deg);
+}
+
+.template-expand {
+    padding: 2px 10px 0 26px;
+    line-height: 22px
+}
+
+
 .template-tag {
     cursor: default;
-    margin-right: 10px;
-    max-width: 50px;
+    margin-right: 5px;
+}
+
+.template-name {
+    padding: 10px 0;
+    cursor: pointer;
+    margin-right: 5px;
+    user-select: none;
     overflow-x: hidden;
     text-overflow: ellipsis;
-    vertical-align: middle;
 }
 
 </style>
-<!--suppress CssUnusedSymbol -->
 <style>
-
-.template-tooltip-single-line {
-    transform: translateY(-8px);
-    padding: 2px 10px;
-}
-
-.template-tooltip-multi-line {
-    transform: translateY(-8px);
-    padding: 7px 13px;
-}
 
 .template-select-dropdown {
     transform: translateY(-7px);

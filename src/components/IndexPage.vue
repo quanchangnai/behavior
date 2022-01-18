@@ -45,4 +45,10 @@ export default {
 .el-table__body-wrapper::-webkit-scrollbar-track {
     background: #ffffff;
 }
+
+.tooltip {
+    transform: translateY(-8px);
+    padding: 5px 10px;
+    box-sizing: border-box;
+}
 </style>

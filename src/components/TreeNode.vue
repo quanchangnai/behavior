@@ -50,7 +50,7 @@
                                             :arrowOffset="15"
                                             :hide-after="1000"
                                             :content="param.label"
-                                            popper-class="node-param-label-tooltip"
+                                            popper-class="tooltip"
                                             placement="bottom-start">
                                     <span :ref="'paramLabel-'+paramName"
                                           class="paramLabel">
@@ -89,7 +89,7 @@
                                         :content="'格式:'+param.pattern"
                                         :arrowOffset="15"
                                         :hide-after="1000"
-                                        popper-class="node-param-tooltip"
+                                        popper-class="tooltip node-param-tooltip"
                                         placement="bottom-start">
                                 <el-input v-model="node.params[paramName]"
                                           @focusin.native="onParamFocusIn(paramName)"
@@ -528,12 +528,6 @@ export default {
 
 .node-param-select-dropdown .popper__arrow {
     left: 10px !important;
-}
-
-.node-param-label-tooltip, .node-param-tooltip {
-    transform: translateY(-8px);
-    box-sizing: border-box;
-    padding: 5px 10px;
 }
 
 .node-param-tooltip {
