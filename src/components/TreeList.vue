@@ -17,7 +17,11 @@
                       @row-dblclick="showEditTreeNameInput"
                       @row-contextmenu="(r,c,e)=>onContextMenu(e,r)">
                 <template #empty>
-                    <el-button type="text" @click="createTree">创建行为树&nbsp;&nbsp;&nbsp;&nbsp;</el-button>
+                    <el-button type="text"
+                               style="margin-top: 40vh"
+                               @click="createTree">
+                        创建行为树&nbsp;&nbsp;&nbsp;&nbsp;
+                    </el-button>
                 </template>
                 <el-table-column #default="{row:tree}">
                     <div>
