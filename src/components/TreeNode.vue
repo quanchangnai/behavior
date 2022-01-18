@@ -103,15 +103,13 @@
                  @mousedown.stop
                  @click="foldSelf"
                  class="fold-self-icon"
-                 :class="node.folded?'el-icon-arrow-down':'el-icon-arrow-up'"
-                 :title="node.folded?'展开节点':'收起节点'"/>
+                 :class="node.folded?'el-icon-arrow-down':'el-icon-arrow-up'"/>
             <div v-if="node.children.length"
                  @mousedown.stop
                  @dblclick.stop
                  @click="foldChildren"
                  class="fold-children-icon"
-                 :class="node.childrenFolded?'el-icon-circle-plus-outline':'el-icon-remove-outline'"
-                 :title="node.childrenFolded?'展开子树':'收起子树'"/>
+                 :class="node.childrenFolded?'el-icon-circle-plus-outline':'el-icon-remove-outline'"/>
             <context-menu ref="menu" :items="menuItems" @hide="node.z = 1"/>
         </template>
     </draggable>
@@ -462,7 +460,7 @@ export default {
     position: absolute;
     top: calc(50% - 7px);
     left: calc(100% - 1px);
-    cursor: pointer;
+    cursor: default;
 }
 
 .el-form {
@@ -532,5 +530,6 @@ export default {
 
 .node-param-tooltip {
     min-width: 120px;
+    transform: translateY(-8px);
 }
 </style>

@@ -1,12 +1,12 @@
 # behavior
 
-behavior是一款可配置的可视化行为树编辑器。
+behavior是一款可自由定制的可视化行为树编辑器。
 
 ## 启动
 
 点击程序目录下的behavior.exe启动，或者通过命令行执行"behavior.exe aaa"启动，<br>
-参数aaa是要打开的工作区，后续编辑的行为树都会以json文件的形式保存在工作区，<br>
-可以在程序目录下创建文件behavior.json，内容如下：
+参数aaa是要打开的工作区，后续编辑的行为树都会以json文件格式保存在该工作区中，<br>
+还可以在程序目录下创建文件behavior.json，内容如下：
 
 ```json
 {

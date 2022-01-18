@@ -26,7 +26,7 @@
                       :show-header="false"
                       :data="visibleTemplates"
                       :row-key="templateKey"
-                      :expand-row-keys="expandTemplates"
+                      :expand-row-keys="expandedTemplates"
                       @expand-change="onExpandChange"
                       tooltip-effect="light"
                       :cell-style="{padding:0}">
@@ -35,9 +35,10 @@
                                  #default="{row:template}">
                     <div class="template-expand">
                         <el-tooltip effect="light"
-                                    :hide-after="1000"
+                                    :arrowOffset="1"
+                                    :hide-after="600"
                                     popper-class="tooltip"
-                                    :arrowOffset="15"
+                                    placement="bottom-start"
                                     content="模板ID">
                             <el-tag size="small" class="template-tag">
                                 {{ template.id }}
@@ -45,9 +46,10 @@
                         </el-tooltip>
                         <el-tooltip v-if="template.type"
                                     effect="light"
-                                    :hide-after="1000"
-                                    :arrowOffset="15"
+                                    :arrowOffset="1"
+                                    :hide-after="600"
                                     popper-class="tooltip"
+                                    placement="bottom-start"
                                     content="模板类型">
                             <el-tag size="small" class="template-tag">
                                 {{ template.type.name }}
@@ -55,15 +57,16 @@
                         </el-tooltip>
                         <el-tooltip v-if="template.group"
                                     effect="light"
-                                    :hide-after="1000"
-                                    :arrowOffset="15"
+                                    :arrowOffset="1"
+                                    :hide-after="600"
+                                    placement="bottom-start"
                                     popper-class="tooltip"
                                     content="模板组">
                             <el-tag size="small" class="template-tag">
                                 {{ mappedTemplateGroups.get(template.group).name }}
                             </el-tag>
                         </el-tooltip>
-                        <div style="margin-top: 8px">
+                        <div style="margin-top: 8px;user-select: text">
                             {{ template.desc }}
                         </div>
                     </div>
@@ -99,7 +102,7 @@ export default {
             selectedGroup: -1,
             hasUngrouped: false,
             keyword: null,
-            expandTemplates: []
+            expandedTemplates: []
         }
     },
     created() {
@@ -275,10 +278,15 @@ export default {
             return template.id;
         },
         onExpandChange(template) {
-            if (this.expandTemplates.length > 0) {
-                this.expandTemplates.pop();
+            if (this.expandedTemplates.length > 0) {
+                if (this.expandedTemplates.includes(template.id)) {
+                    this.expandedTemplates.pop();
+                } else {
+                    this.expandedTemplates.pop();
+                    this.expandedTemplates.push(template.id);
+                }
             } else {
-                this.expandTemplates.push(template.id);
+                this.expandedTemplates.push(template.id);
             }
         },
     }
@@ -331,15 +339,17 @@ export default {
 
 >>> .el-table__expand-icon--expanded {
     transform: rotate(-90deg);
+    cursor: default;
 }
 
 >>> .el-table__expand-icon:not(.el-table__expand-icon--expanded) {
     transform: rotate(90deg);
+    cursor: default;
 }
 
 .template-expand {
     padding: 2px 10px 0 26px;
-    line-height: 22px
+    line-height: 22px;
 }
 
 

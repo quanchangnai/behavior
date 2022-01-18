@@ -29,7 +29,7 @@
 import {ipcRenderer} from "electron";
 
 export default {
-    name: "ManageWorkspaces",
+    name: "WorkspacesDialog",
     props: {
         data: Array
     },
