@@ -6,7 +6,9 @@
                        :archetypes="config.archetypes"
                        @select-tree="onSelectTree"/>
         </div>
-        <div id="center" :style="{left:(leftWidth+2)+'px',right:rightWidth+'px'}">
+        <div id="center"
+             @wheel="onCenterWheel"
+             :style="{left:(leftWidth+2)+'px',right:rightWidth+'px'}">
             <draggable id="board"
                        :freeze="boardFreeze"
                        :x="boardX"
@@ -15,7 +17,8 @@
                        @drag-end="onBoardDragEnd"
                        @dblclick.native="resetBoardPosition"
                        @contextmenu.native="onBoardContextMenu"
-                       @mouseup.native="onBoardMouseUp">
+                       @mouseup.native="onBoardMouseUp"
+                       :style="{width:boardWidth+'px',height:boardHeight+'px'}">
                 <canvas id="canvas" @contextmenu.prevent/>
                 <tree-node v-for="node in visibleNodes"
                            :key="node.id"
@@ -24,11 +27,11 @@
                            @drag-start="onNodeDragStart"
                            @dragging="onNodeDragging"
                            @drag-end="onNodeDragEnd"
-                           @param-select-show="onParamSelectShow"
+                           @delete="drawTree"
                            @resize="drawTree"
                            @fold="onNodeFold"
                            @children-fold="onNodeChildrenFold"
-                           @delete="drawTree"/>
+                           @param-select-show="onParamSelectShow"/>
             </draggable>
         </div>
         <div id="right" :style="{width:rightWidth+'px'}">
@@ -76,6 +79,8 @@ export default {
             boardFreeze: false,
             boardX: 0,
             boardY: 0,
+            boardWidth: 0,
+            boardHeight: 0,
             leftWidth,
             rightWidth
         }
@@ -163,13 +168,11 @@ export default {
                 this.calcNodeBounds(this.tree.root);
 
                 const board = document.querySelector("#board");
-                let boardWidth = Math.max(board.parentElement.offsetWidth, this.tree.root.treeWidth + boardEdgeSpace * 2);
-                let boardHeight = Math.max(board.parentElement.offsetHeight, this.tree.root.treeHeight + boardEdgeSpace * 2);
-                if (this.boardX + boardWidth < boardEdgeSpace || this.boardY + boardHeight < boardEdgeSpace) {
+                this.boardWidth = Math.max(board.parentElement.offsetWidth, this.tree.root.treeWidth + boardEdgeSpace * 2);
+                this.boardHeight = Math.max(board.parentElement.offsetHeight, this.tree.root.treeHeight + boardEdgeSpace * 2);
+                if (this.boardX + this.boardWidth < boardEdgeSpace || this.boardY + this.boardHeight < boardEdgeSpace) {
                     this.resetBoardPosition();
                 }
-                board.style.width = boardWidth + "px";
-                board.style.height = boardHeight + "px";
 
                 this.calcNodePosition(this.tree.root, boardEdgeSpace);
                 this.drawLinkLines();
@@ -443,12 +446,19 @@ export default {
             //如果拖出界了就拉回到初始位置
             let board = document.querySelector("#board");
             let center = document.querySelector("#center");
-            if (event.x < -board.offsetWidth + boardEdgeSpace || event.x > center.offsetWidth - boardEdgeSpace) {
+            if (this.boardX < -board.offsetWidth + boardEdgeSpace || this.boardX > center.offsetWidth - boardEdgeSpace) {
                 this.resetBoardPosition();
             }
-            if (event.y < -board.offsetHeight + boardEdgeSpace || event.y > center.offsetHeight - boardEdgeSpace) {
+            if (this.boardY < -board.offsetHeight + boardEdgeSpace || this.boardY > center.offsetHeight - boardEdgeSpace) {
                 this.resetBoardPosition();
             }
+        },
+        onCenterWheel(event) {
+            this.boardY += event.deltaY / 2;
+            let board = document.querySelector("#board");
+            let center = document.querySelector("#center");
+            this.boardY = Math.max(this.boardY, -board.offsetHeight + boardEdgeSpace);
+            this.boardY = Math.min(this.boardY, center.offsetHeight - boardEdgeSpace);
         },
         async onBoardMouseUp() {
             if (this.creatingNode == null) {
