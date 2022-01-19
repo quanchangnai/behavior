@@ -61,8 +61,18 @@ import ContextMenu from "./ContextMenu";
 
 import {ipcRenderer} from 'electron'
 
-const nodeSpaceX = 50;//节点x轴间隔空间
-const nodeSpaceY = 30;//节点y轴间隔空间
+//节点x轴间隔空间
+function nodeSpaceX(node) {
+    if (node.children.length <= 3) {
+        return 30;
+    } else if (node.children.length <= 8) {
+        return 50;
+    } else {
+        return 70;
+    }
+}
+
+const nodeSpaceY = 20;//节点y轴间隔空间
 const boardEdgeSpace = 100;//画板边缘空间
 
 const leftWidth = 220;
@@ -117,10 +127,10 @@ export default {
             if (!this.tree) {
                 return items;
             }
-            if ((this.tree.folded & 1) === 1) {//至少有一个节点时收起的
+            if ((this.tree.folded & 1) === 1) {//至少有一个节点是收起的
                 items.push({title: '展开全部节点', handler: () => this.foldAllNode(false)});
             }
-            if ((this.tree.folded & 2) === 2) {//至少有一个节点时展开的
+            if ((this.tree.folded & 2) === 2) {//至少有一个节点是展开的
                 items.push({title: '收起全部节点', handler: () => this.foldAllNode(true)});
             }
             if (this.tree.childrenFolded) {
@@ -200,7 +210,7 @@ export default {
             }
 
             //界面渲染完成之后才能取到元素大小
-            node.selfWidth = nodeContent.offsetWidth + nodeSpaceX;
+            node.selfWidth = nodeContent.offsetWidth + nodeSpaceX(node);
             node.selfHeight = nodeContent.offsetHeight + nodeSpaceY;
 
             if (!node.children.length || node.childrenFolded) {
@@ -287,7 +297,7 @@ export default {
                     return;
                 }
 
-                let x1 = node.x + node.selfWidth - nodeSpaceX + nodeFoldChildrenIconWidth;
+                let x1 = node.x + node.selfWidth - nodeSpaceX(node) + nodeFoldChildrenIconWidth;
                 let y1 = node.y + (node.selfHeight - nodeSpaceY) / 2;
 
                 for (let child of node.children) {
@@ -308,7 +318,7 @@ export default {
             if (this.creatingNode && this.creatingNode.parent) {
                 context.strokeStyle = "#b32de0";
                 let creatingNodeParent = this.creatingNode.parent;
-                let x1 = creatingNodeParent.x + creatingNodeParent.selfWidth - nodeSpaceX;
+                let x1 = creatingNodeParent.x + creatingNodeParent.selfWidth - nodeSpaceX(creatingNodeParent);
                 if (creatingNodeParent.children && creatingNodeParent.children.length) {
                     x1 += nodeFoldChildrenIconWidth;
                 }
@@ -415,11 +425,11 @@ export default {
                 }
 
                 if (canLink) {
-                    let x2 = deltaX + targetNode.x + targetNode.selfWidth - nodeSpaceX;
+                    let x2 = deltaX + targetNode.x + targetNode.selfWidth - nodeSpaceX(targetNode);
                     let y2 = deltaY + targetNode.y + (targetNode.selfHeight - nodeSpaceY) / 2;
 
                     let distance2 = (x1 - x2) ** 2 + (y1 - y2) ** 2;
-                    if (minDistance2 < 0 || distance2 < minDistance2) {
+                    if (!parentNode || x1 > x2 && distance2 < minDistance2) {
                         minDistance2 = distance2;
                         parentNode = targetNode;
                     }
