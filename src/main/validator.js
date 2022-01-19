@@ -137,10 +137,13 @@ let templateGroups = {
 
 //模板参数格式
 let templateParams = {
-    type: "object",
-    additionalProperties: {
+    type: "array",
+    items: {
         type: "object",
         properties: {
+            name: {
+                type: "string"
+            },
             label: {
                 type: "string"
             },
@@ -580,10 +583,15 @@ function validateConfigLogic(config) {
 
     for (const template of config.templates) {
         if (template.params) {
-            for (let paramName of Object.keys(template.params)) {
-                let options = template.params[paramName].options;
+            let paramNames = new Set();
+            for (let param of template.params) {
+                if (paramNames.has(param.name)) {
+                    errors.push(`节点模板(${template.id})的参数名(${param.name})重复`);
+                }
+                paramNames.add(param.name);
+                let options = param.options;
                 if (typeof options === "object" && options.refType === "node" && !mappedTemplates.has(options.refId)) {
-                    errors.push(`节点模板(${template.id})的参数(${paramName})选项引用的模板(${options.refId})不存在`);
+                    errors.push(`节点模板(${template.id})的参数(${param.name})选项引用的模板(${options.refId})不存在`);
                 }
             }
         }

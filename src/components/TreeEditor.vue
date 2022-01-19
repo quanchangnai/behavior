@@ -352,7 +352,7 @@ export default {
         onNodeFold() {
             this.tree.folded = 0;
             this.$utils.visitNodes(this.tree.root, node => {
-                if (node.template.comment  || Object.keys(node.params).length > 0) {
+                if (node.template.comment || Object.keys(node.params).length > 0) {
                     this.tree.folded |= node.folded ? 1 : 2;
                 }
                 return !node.childrenFolded;
@@ -510,12 +510,12 @@ export default {
             };
 
             if (template.params) {
-                for (let paramName of Object.keys(template.params)) {
-                    let defaultValue = template.params[paramName].default;
+                for (let param of template.params) {
+                    let defaultValue = param.default;
                     if (Array.isArray(defaultValue)) {
-                        node.params[paramName] = [...defaultValue];
+                        node.params[param.name] = [...defaultValue];
                     } else {
-                        node.params[paramName] = defaultValue;
+                        node.params[param.name] = defaultValue;
                     }
                 }
             }

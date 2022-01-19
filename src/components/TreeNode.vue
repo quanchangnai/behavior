@@ -39,48 +39,48 @@
                             </template>
                             <el-input v-model="node.comment"/>
                         </el-form-item>
-                        <el-form-item v-for="(param,paramName) in node.template.params"
-                                      :key="paramName"
+                        <el-form-item v-for="param in node.template.params"
+                                      :key="param.name"
                                       :required="param.required"
                                       :rules="paramRules(param)"
                                       :show-message="false"
-                                      :prop="'params.'+paramName">
+                                      :prop="'params.'+param.name">
                             <template #label>
                                 <el-tooltip effect="light"
-                                            :disabled="labelTips[paramName]!==true"
+                                            :disabled="labelTips[param.name]!==true"
                                             :arrowOffset="15"
                                             :hide-after="1000"
                                             :content="param.label"
                                             popper-class="tooltip"
                                             placement="bottom-start">
-                                    <span :ref="'paramLabel-'+paramName"
+                                    <span :ref="'paramLabel-'+param.name"
                                           class="paramLabel">
-                                        {{ param.label || paramName }}
+                                        {{ param.label || param.name }}
                                     </span>
                                 </el-tooltip>
                             </template>
                             <el-radio-group v-if="param.type==='boolean' && !param.options"
-                                            v-model="node.params[paramName]">
+                                            v-model="node.params[param.name]">
                                 <el-radio :label="true">是</el-radio>
                                 <el-radio :label="false">否</el-radio>
                             </el-radio-group>
                             <!--suppress JSUnresolvedVariable -->
                             <el-select v-else-if="param.options"
-                                       :ref="'paramSelect-'+paramName"
-                                       v-model="node.params[paramName]"
+                                       :ref="'paramSelect-'+param.name"
+                                       v-model="node.params[param.name]"
                                        :multiple="Array.isArray(param.default)"
-                                       :class="paramSelectClass(paramName)"
+                                       :class="paramSelectClass(param.name)"
                                        @remove-tag="calcContentBodyHeight"
-                                       @visible-change="onParamSelectVisibleChange('paramSelect-'+paramName,$event)"
+                                       @visible-change="onParamSelectVisibleChange('paramSelect-'+param.name,$event)"
                                        popper-class="node-param-select-dropdown">
                                 <el-option v-for="(option,i) in paramOptions(param.options)"
-                                           :key="paramName+'-option-'+i"
+                                           :key="param.name+'-option-'+i"
                                            :label="option.label"
                                            :value="option.value"/>
                             </el-select>
                             <!--suppress JSUnresolvedVariable -->
                             <el-input-number v-else-if="param.type==='int' || param.type==='float'"
-                                             v-model="node.params[paramName]"
+                                             v-model="node.params[param.name]"
                                              :precision="param.type==='float'?2:0"
                                              :min="typeof param.min==='number'?param.min:-Infinity"
                                              :max="typeof param.max==='number'?param.max:Infinity"/>
@@ -92,9 +92,9 @@
                                         :hide-after="1000"
                                         popper-class="tooltip node-param-tooltip"
                                         placement="bottom-start">
-                                <el-input v-model="node.params[paramName]"
-                                          @focusin.native="onParamFocusIn(paramName)"
-                                          @focusout.native="onParamFocusOut(paramName)"/>
+                                <el-input v-model="node.params[param.name]"
+                                          @focusin.native="onParamFocusIn(param.name)"
+                                          @focusout.native="onParamFocusOut(param.name)"/>
                             </el-tooltip>
                         </el-form-item>
                     </el-form>
@@ -227,7 +227,7 @@ export default {
             if (template.comment) {
                 return true;
             }
-            return template.params && Object.keys(template.params).length > 0;
+            return template.params && template.params.length > 0;
         },
         select() {
             this.selected = true;
@@ -290,13 +290,13 @@ export default {
                 if (!params) {
                     return;
                 }
-                for (let paramName of Object.keys(params)) {
-                    let options = params[paramName].options;
+                for (let param of params) {
+                    let options = param.options;
                     if (!options || Array.isArray(options) || options.refType !== "node") {
                         continue;
                     }
-                    if (deletedNodeIds.has(node.params[paramName])) {
-                        node.params[paramName] = null;
+                    if (deletedNodeIds.has(node.params[param.name])) {
+                        node.params[param.name] = null;
                     }
                 }
             });
@@ -340,8 +340,8 @@ export default {
             let error = Object.keys(this.validations).length > 0;
             let params = this.node.template.params;
             if (params && !this.creating) {
-                for (let paramName of Object.keys(params)) {
-                    if (params[paramName].required && this.node.params[paramName] === undefined) {
+                for (let param of params) {
+                    if (param.required && this.node.params[param.name] === undefined) {
                         error = true;
                         break;
                     }
@@ -393,13 +393,11 @@ export default {
 
             //等待参数渲染出来
             await this.$nextTick();
-
-            for (let paramName of Object.keys(this.node.template.params)) {
-                let param = this.node.template.params[paramName];
-                let paramLabel = this.$refs["paramLabel-" + paramName];
+            for (let param of this.node.template.params) {
+                let paramLabel = this.$refs["paramLabel-" + param.name];
                 //required参数标签前的红色星号不知道什么原因导致clone.scrollWidth多了一个像素
                 if (this.$utils.checkOverflow(paramLabel[0], "x", param.required ? 1 : 0)) {
-                    this.labelTips[paramName] = true;
+                    this.labelTips[param.name] = true;
                 }
             }
         },

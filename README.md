@@ -104,25 +104,27 @@ params:可选字段，节点模板参数，详情看下面示例。
 ```js
 //节点模板参数示例
 //动作节点1参数
-templates[6].params = {
-    p1: {label: '参数1', type: "int", required: true},
-    p2: {label: '参数2', type: "string", pattern: '^[abc]*$', required: true},
-    p3: {label: '参数3', type: "boolean", default: true},
-    p4: {label: '参数4', type: "float", default: 2, min: 0, max: 100},
-};
+templates[6].params = [
+    {name: "p1", label: '参数1', type: "int", required: true},
+    {name: "p2", label: '参数2', type: "string", pattern: '^[abc]*$', required: true},
+    {name: "p3", label: '参数3', type: "boolean", default: true},
+    {name: "p4", label: '参数4', type: "float", default: 2, min: 0, max: 100},
+];
+
 //动作节点2参数
-templates[7].params = {
-    p1: {label: '参数1', type: "int", default: 1, options: [{label: '选项1-1', value: 1}, {label: '选项1-2', value: 2}]},
-    p2: {label: '参数2', type: "string", default: 'aaa', options: [{label: '选项2-1', value: 'aaa'}, {label: '选项2-2', value: 'bbb'}]},//单选
-    p3: {label: '参数3', type: "string", default: ['aaa'], options: [{label: '选项3-1', value: 'aaa'}, {label: '选项3-2', value: 'bbb'}]},//多选
-};
+templates[7].params = [
+    {name: "p1", label: '参数1', type: "int", default: 1, options: [{label: '选项1-1', value: 1}, {label: '选项1-2', value: 2}]},
+    {name: "p2", label: '参数2', type: "string", default: 'aaa', options: [{label: '选项2-1', value: 'aaa'}, {label: '选项2-2', value: 'bbb'}]},//单选
+    {name: "p3", label: '参数3', type: "string", default: ['aaa'], options: [{label: '选项3-1', value: 'aaa'}, {label: '选项3-2', value: 'bbb'}]},//多选
+];
+
 //切换状态节点
-templates[12].params = {
-    p1: {label: '状态', type: "int", options: {refType: "node", refId: 2}}
-};
+templates[12].params = [
+    {name: "p1", label: '状态', type: "int", options: {refType: "node", refId: 2}}
+];
 ```
 
-p1-p4:参数名<br>
+name:参数名，不能重复。<br>
 label:参数标签，用于显示。<br>
 type:参数类型,合法值为boolean、int、float、string。<br>
 default:可选字段，参数默认值，类型可以是参数类型、参数类型的数组、空数组。<br>

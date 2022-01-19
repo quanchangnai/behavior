@@ -176,11 +176,11 @@ export default {
                     template.childrenNum = template.type.childrenNum;
                 }
 
-                if (template.comment  === undefined) {
-                    if (template.type.comment  === undefined) {
-                        template.comment  = true;
+                if (template.comment === undefined) {
+                    if (template.type.comment === undefined) {
+                        template.comment = true;
                     } else {
-                        template.comment  = template.type.comment ;
+                        template.comment = template.type.comment;
                     }
                 }
             }
@@ -194,7 +194,6 @@ export default {
                     }
                 }
             }
-
             for (let template of this.templates) {
                 template.visible = true;
                 if (template.type) {
