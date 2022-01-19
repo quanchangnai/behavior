@@ -406,7 +406,7 @@ export default {
             let minDistance2 = -1;
 
             this.$utils.visitNodes(this.tree.root, targetNode => {
-                if (!targetNode || targetNode === node || targetNode.collapsed) {
+                if (!targetNode || targetNode === node || targetNode.childrenFolded) {
                     return false;
                 }
 
