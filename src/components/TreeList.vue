@@ -17,9 +17,7 @@
                       @row-dblclick="showEditTreeNameInput"
                       @row-contextmenu="(r,c,e)=>onContextMenu(e,r)">
                 <template #empty>
-                    <el-button type="text"
-                               style="margin-top: 40vh"
-                               @click="createTree">
+                    <el-button type="text" @click="createTree">
                         创建行为树&nbsp;&nbsp;&nbsp;&nbsp;
                     </el-button>
                 </template>
@@ -209,7 +207,6 @@ export default {
 }
 </script>
 
-<!--suppress CssUnusedSymbol -->
 <style scoped>
 #body {
     --border: solid #ebeef5 1px;
@@ -229,6 +226,10 @@ export default {
 
 .el-table:before {
     content: none;
+}
+
+>>> .el-table__empty-block {
+    margin-top: 40vh;
 }
 
 </style>

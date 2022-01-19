@@ -16,8 +16,8 @@
                  :class="{'no-fold-operation-content': !hasFoldOperation()}">
                 <div class="content-header">
                     {{ node.template.name }}
-                    <template v-if="node.folded && node.name">
-                        : {{ node.name }}
+                    <template v-if="node.folded && node.comment">
+                        : {{ node.comment }}
                     </template>
                 </div>
                 <div class="content-body"
@@ -33,11 +33,11 @@
                              @validate="onFormValidate"
                              @mousedown.native.stop
                              @dblclick.native.stop>
-                        <el-form-item v-if="node.template.nodeName" prop="name">
+                        <el-form-item v-if="node.template.comment" prop="comment">
                             <template #label>
-                                <span class="paramLabel">节点名称</span>
+                                <span class="paramLabel">节点备注</span>
                             </template>
-                            <el-input v-model="node.name"/>
+                            <el-input v-model="node.comment"/>
                         </el-form-item>
                         <el-form-item v-for="(param,paramName) in node.template.params"
                                       :key="paramName"
@@ -224,7 +224,7 @@ export default {
                 return false;
             }
             let template = this.node.template;
-            if (template.nodeName) {
+            if (template.comment) {
                 return true;
             }
             return template.params && Object.keys(template.params).length > 0;
@@ -311,7 +311,7 @@ export default {
             let _options = [];
             this.$utils.visitNodes(this.node.tree.root, node => {
                 if (node.tid === options.refId) {
-                    _options.push({label: node.name || node.template.name + "-" + node.id, value: node.id});
+                    _options.push({label: node.comment || node.template.name + "-" + node.id, value: node.id});
                 }
             });
 

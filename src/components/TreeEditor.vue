@@ -352,7 +352,7 @@ export default {
         onNodeFold() {
             this.tree.folded = 0;
             this.$utils.visitNodes(this.tree.root, node => {
-                if (node.template.nodeName || Object.keys(node.params).length > 0) {
+                if (node.template.comment  || Object.keys(node.params).length > 0) {
                     this.tree.folded |= node.folded ? 1 : 2;
                 }
                 return !node.childrenFolded;
@@ -464,7 +464,7 @@ export default {
             }
         },
         onCenterWheel(event) {
-            this.boardY += event.deltaY / 2;
+            this.boardY -= event.deltaY / 2;
             let board = document.querySelector("#board");
             let center = document.querySelector("#center");
             this.boardY = Math.max(this.boardY, -board.offsetHeight + boardEdgeSpace);
@@ -497,7 +497,7 @@ export default {
 
             let node = {
                 id: ++this.tree.maxNodeId,
-                name: "",
+                comment: "",
                 tid: template.id,
                 template,
                 x: event.x - this.$utils.getClientX(this.$refs.body),

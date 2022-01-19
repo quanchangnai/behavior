@@ -176,11 +176,11 @@ export default {
                     template.childrenNum = template.type.childrenNum;
                 }
 
-                if (template.nodeName === undefined) {
-                    if (template.type.nodeName === undefined) {
-                        template.nodeName = true;
+                if (template.comment  === undefined) {
+                    if (template.type.comment  === undefined) {
+                        template.comment  = true;
                     } else {
-                        template.nodeName = template.type.nodeName;
+                        template.comment  = template.type.comment ;
                     }
                 }
             }
@@ -335,6 +335,14 @@ export default {
 .el-table >>> .cell {
     padding-left: 0;
     padding-right: 0;
+}
+
+.el-table:before {
+    content: none;
+}
+
+>>> .el-table__empty-block {
+    margin-top: 40vh;
 }
 
 >>> .el-table__expand-icon--expanded {

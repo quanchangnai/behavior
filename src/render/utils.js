@@ -99,8 +99,8 @@ export default {
 
         let build = node => {
             let result = {id: node.id, tid: node.tid};
-            if (node.template.nodeName) {
-                result.name = node.name;
+            if (node.template.comment) {
+                result.comment = node.comment;
             }
 
             let params = Object.keys(node.params);

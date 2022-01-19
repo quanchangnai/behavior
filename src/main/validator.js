@@ -11,13 +11,12 @@ let node = {
             type: "integer",
             minimum: 1
         },
-        name: {
-            type: "string",
-            maxLength: 10
-        },
         tid: {
             type: "integer",
             minimum: 1,
+        },
+        comment: {
+            type: "string"
         },
         params: {
             type: "object",
@@ -103,7 +102,7 @@ let templateTypes = {
                 type: "integer",
                 minimum: -1
             },
-            nodeName: {
+            comment: {
                 type: "boolean"
             }
         },
@@ -482,7 +481,7 @@ let templates = {
                 type: "integer",
                 minimum: -1
             },
-            nodeName: {
+            comment: {
                 type: "boolean"
             }
         },
