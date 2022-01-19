@@ -21,6 +21,7 @@
                     </template>
                 </div>
                 <div class="content-body"
+                     @wheel="onContentBodyWheel"
                      :style="{'height':contentBodyHeight+'px'}"
                      v-if="hasFoldOperation()&&!node.folded">
                     <el-form size="mini"
@@ -136,6 +137,7 @@ export default {
             backupParams: {},//备份的参数值，输入无效参数后回滚用
             validations: {},//参数校验状态
             labelTips: {},//参数标签提示状态，文本太长加提示
+            contentStyle: {},
             contentBodyHeight: 0
         };
     },
@@ -146,6 +148,7 @@ export default {
             this.$emit("resize");
         });
         this.resizeObserver.observe(this.$refs.content);
+        this.calcContentStyle();
     },
     destroyed() {
         this.resizeObserver.disconnect();
@@ -169,26 +172,6 @@ export default {
                 'pointer-events': this.creating ? 'none' : 'auto',
                 'z-index': this.node.z
             };
-        },
-        contentStyle() {
-            let error = Object.keys(this.validations).length > 0;
-            let params = this.node.template.params;
-            if (params && !this.creating) {
-                for (let paramName of Object.keys(params)) {
-                    if (params[paramName].required && this.node.params[paramName] === undefined) {
-                        error = true;
-                        break;
-                    }
-                }
-            }
-
-            return {
-                'background-color': this.selected || this.creating ? '#c0acf8' : '#99ccff',
-                'border-color': this.selected || this.creating ? '#b69ffa' : '#84bcf6',
-                'box-shadow': error ? '0 0 0 1px #fd7f5a' : '',
-                '--scrollbar-thumb-color': this.selected ? '#c9b7fc' : '#a2caf6',
-                '--scrollbar-thumb-shadow-color': this.selected ? '#916cf6' : '#776eee',
-            }
         }
     },
     watch: {
@@ -205,7 +188,10 @@ export default {
                     this.checkParamLabelsOverflow();
                 });
             }
-        }
+        },
+        selected() {
+            this.calcContentStyle();
+        },
     },
     methods: {
         content() {
@@ -242,6 +228,9 @@ export default {
                 return true;
             }
             return template.params && Object.keys(template.params).length > 0;
+        },
+        select() {
+            this.selected = true;
         },
         foldSelf() {
             if (this.hasFoldOperation()) {
@@ -337,6 +326,7 @@ export default {
                 this.node.params[paramName] = this.backupParams[paramName];
                 this.validations['params.' + paramName] = true;
             }
+            this.calcContentStyle();
         },
         onFormValidate(prop, pass) {
             if (!pass) {
@@ -344,9 +334,33 @@ export default {
             } else {
                 delete this.validations[prop];
             }
+            this.calcContentStyle();
+        },
+        calcContentStyle() {
+            let error = Object.keys(this.validations).length > 0;
+            let params = this.node.template.params;
+            if (params && !this.creating) {
+                for (let paramName of Object.keys(params)) {
+                    if (params[paramName].required && this.node.params[paramName] === undefined) {
+                        error = true;
+                        break;
+                    }
+                }
+            }
+
+            this.contentStyle = {
+                'background-color': this.selected || this.creating ? '#c0acf8' : '#99ccff',
+                'border-color': this.selected || this.creating ? '#b69ffa' : '#84bcf6',
+                'box-shadow': error ? '0 0 0 1px #fd7f5a' : '',
+                '--scrollbar-thumb-color': this.selected ? '#c9b7fc' : '#a2caf6',
+                '--scrollbar-thumb-shadow-color': this.selected ? '#916cf6' : '#776eee',
+            }
         },
         async calcContentBodyHeight() {
             await this.$nextTick();
+
+            this.contentBodyOverflow = false;
+
             let form = this.$refs.form;
             if (!form) {
                 return;
@@ -367,6 +381,10 @@ export default {
                 // noinspection JSUnresolvedVariable
                 this.contentBodyHeight += formItem.$el.offsetHeight;
             }
+
+            if (form.$children.length > maxItems) {
+                this.contentBodyOverflow = true;
+            }
         },
         async checkParamLabelsOverflow() {
             if (!this.node.template.params) {
@@ -384,7 +402,12 @@ export default {
                     this.labelTips[paramName] = true;
                 }
             }
-        }
+        },
+        onContentBodyWheel(event) {
+            if (this.contentBodyOverflow) {
+                event.stopPropagation();
+            }
+        },
     }
 
 }
@@ -422,18 +445,18 @@ export default {
 }
 
 .content-body::-webkit-scrollbar {
-    width: 13px;
+    width: 7px;
 }
 
 /*noinspection CssUnresolvedCustomProperty*/
 .content-body::-webkit-scrollbar-thumb {
-    border-radius: 8px;
+    border-radius: 5px;
     background-color: var(--scrollbar-thumb-color);
-    box-shadow: inset 0 0 5px var(--scrollbar-thumb-shadow-color);
+    box-shadow: inset 0 0 3px var(--scrollbar-thumb-shadow-color);
 }
 
 .content-body::-webkit-scrollbar-track {
-    border-radius: 8px;
+    border-radius: 5px;
     background: #ededed;
 }
 
