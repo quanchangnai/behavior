@@ -1,4 +1,5 @@
 import {ipcRenderer} from "electron";
+import Vue from "vue";
 
 /**
  * @param el {Element|String} 元素或者选择器
@@ -82,48 +83,64 @@ export default {
         if (visit(node, parent) === false) {
             return;
         }
-        for (let child of node.children) {
-            this.visitNodes(child, visit, node);
+        if (node.children) {
+            for (let child of node.children) {
+                this.visitNodes(child, visit, node);
+            }
         }
     },
+    initNode(tree, node, parent) {
+        tree.maxNodeId = Math.max(tree.maxNodeId, node.id);
+        Vue.set(tree, "childrenFolded", tree.childrenFolded || node.childrenFolded);
+        node.tree = tree;
+        node.parent = parent;
+        Vue.set(node, "x", 0);
+        Vue.set(node, "y", 0);
+        Vue.set(node, "z", 1);
+        Vue.set(node, "folded", true);
+        if (!node.params) {
+            Vue.set(node, "params", []);
+        }
+        if (!node.children) {
+            Vue.set(node, "children", []);
+        }
+        if (!node.childrenFolded) {
+            Vue.set(node, "childrenFolded", false);
+        }
+    },
+    buildNodes(node) {
+        let result = {id: node.id, tid: node.tid};
+        if (node.template.comment) {
+            result.comment = node.comment;
+        }
 
+        if (node.template.params) {
+            result.params = {};
+            for (let param of node.template.params) {
+                result.params[param.name] = node.params[param.name];
+            }
+        }
+
+        if (node.children && node.children.length) {
+            result.children = [];
+            result.childrenFolded = node.childrenFolded;
+            for (let child of node.children) {
+                result.children.push(this.buildNodes(child))
+            }
+        }
+
+        return result;
+    },
     /**
      * 保存行为树
      * @param tree
      * @returns {Promise<void>}
      */
     async saveTree(tree) {
-        if (!tree) {
-            return;
+        if (tree) {
+            let root = this.buildNodes(tree.root);
+            let result = {id: tree.id, name: tree.name, root};
+            await ipcRenderer.invoke("save-tree", result);
         }
-
-        let build = node => {
-            let result = {id: node.id, tid: node.tid};
-            if (node.template.comment) {
-                result.comment = node.comment;
-            }
-
-            let params = Object.keys(node.params);
-            if (params.length) {
-                result.params = {};
-                for (let paramName of params) {
-                    result.params[paramName] = node.params[paramName];
-                }
-            }
-
-            if (node.children.length) {
-                result.children = [];
-                result.childrenFolded = node.childrenFolded;
-                for (let child of node.children) {
-                    result.children.push(build(child))
-                }
-            }
-
-            return result;
-        };
-
-        let result = {id: tree.id, name: tree.name, root: build(tree.root)};
-
-        await ipcRenderer.invoke("save-tree", result);
     }
 }

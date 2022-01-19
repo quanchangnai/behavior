@@ -61,10 +61,10 @@ let archetypes = [
         name: "新建行为树",
         root: {
             id: 1,
-            name: "",
+            comment: "",
             tid: 1,
             children: [
-                {id: 2, name: "", tid: 2}
+                {id: 2, comment: "", tid: 2}
             ],
             childrenFolded: false
         }

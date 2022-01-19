@@ -28,6 +28,7 @@
                            @dragging="onNodeDragging"
                            @drag-end="onNodeDragEnd"
                            @delete="drawTree"
+                           @paste="onNodePaste(node)"
                            @resize="drawTree"
                            @fold="onNodeFold"
                            @children-fold="onNodeChildrenFold"
@@ -340,6 +341,30 @@ export default {
             this.boardFreeze = false;
             this.drawTree();
         },
+        onNodePaste(targetNode) {
+            if (!this.$store.node) {
+                return;
+            }
+
+            let pasteNode = JSON.parse(JSON.stringify(this.$store.node));
+
+            if (!this.nodeCanLink(pasteNode, targetNode)) {
+                return;
+            }
+
+            this.$utils.visitNodes(pasteNode, (node, parent) => {
+                node.id = ++this.tree.maxNodeId;
+                this.$utils.initNode(this.tree, node, parent);
+            });
+
+            if (targetNode.children.length) {
+                pasteNode.y = targetNode.children[targetNode.children.length - 1].y + 1;
+            }
+            this.linkParentNode(pasteNode, targetNode);
+
+            this.drawTree();
+
+        },
         onParamSelectShow(selectRef) {
             this.selectRef = selectRef;
         },
@@ -390,6 +415,25 @@ export default {
             //按y轴排序兄弟节点
             parentNode.children.sort((n1, n2) => n1.y - n2.y);
         },
+        nodeCanLink(node, targetNode) {
+            if (!targetNode || targetNode === node || targetNode.childrenFolded) {
+                return false;
+            }
+
+            //目标节点限制子节点模板类型或者模板ID
+            if (node.template.type && targetNode.template.childrenTypes.indexOf(node.template.type.id) < 0 &&
+                    (!targetNode.template.childrenIds || targetNode.template.childrenIds.indexOf(node.template.id) < 0)) {
+                return false;
+            }
+            //目标节点限制子节点数量
+            if (targetNode.children.indexOf(node) < 0
+                    && targetNode.template.childrenNum >= 0
+                    && targetNode.children.length >= targetNode.template.childrenNum) {
+                return false;
+            }
+
+            return true;
+        },
         findParentNode(node) {
             let deltaX = 0;
             let deltaY = 0;
@@ -410,21 +454,7 @@ export default {
                     return false;
                 }
 
-                let canLink = true;
-
-                //目标节点限制子节点模板类型或者模板ID
-                if (node.template.type && targetNode.template.childrenTypes.indexOf(node.template.type.id) < 0 &&
-                        (!targetNode.template.childrenIds || targetNode.template.childrenIds.indexOf(node.template.id) < 0)) {
-                    canLink = false;
-                }
-                //目标节点限制子节点数量
-                if (targetNode.children.indexOf(node) < 0
-                        && targetNode.template.childrenNum >= 0
-                        && targetNode.children.length >= targetNode.template.childrenNum) {
-                    canLink = false;
-                }
-
-                if (canLink) {
+                if (this.nodeCanLink(node, targetNode)) {
                     let x2 = deltaX + targetNode.x + targetNode.selfWidth - nodeSpaceX(targetNode);
                     let y2 = deltaY + targetNode.y + (targetNode.selfHeight - nodeSpaceY) / 2;
 

@@ -163,8 +163,10 @@ export default {
                 items.push({title: this.node.childrenFolded ? '展开子树' : '收起子树', handler: this.foldChildren});
             }
             if (this.node.parent) {
-                items.push({title: '删除节点', handler: this.delete});
+                items.push({title: '删除', handler: this.delete});
             }
+            items.push({title: '复制', handler: this.copy});
+            items.push({title: '粘贴', handler: () => this.$emit("paste")});
             return items;
         },
         nodeStyle() {
@@ -232,6 +234,10 @@ export default {
         select() {
             this.selected = true;
         },
+        onContextMenu(event) {
+            this.node.z = 30;
+            this.$refs.menu.show(event.clientX, event.clientY);
+        },
         foldSelf() {
             if (this.hasFoldOperation()) {
                 this.node.folded = !this.node.folded;
@@ -258,9 +264,9 @@ export default {
 
             this.$emit("delete", this.node);
         },
-        onContextMenu(event) {
-            this.node.z = 30;
-            this.$refs.menu.show(event.clientX, event.clientY);
+        copy() {
+            this.$store.node = this.$utils.buildNodes(this.node)
+            this.$events.$emit("init-tree", this.$store.node);
         },
         onParamSelectVisibleChange(ref, visible) {
             this.node.z = visible ? 200 : 1;

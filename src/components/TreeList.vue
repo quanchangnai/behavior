@@ -113,26 +113,10 @@ export default {
             this.$set(tree, "folded", 1);
 
             this.$utils.visitNodes(tree.root, (node, parent) => {
-                tree.maxNodeId = Math.max(tree.maxNodeId, node.id);
-                this.$set(tree, "childrenFolded", tree.childrenFolded || node.childrenFolded);
-                node.tree = tree;
-                node.parent = parent;
-                this.$set(node, "x", 0);
-                this.$set(node, "y", 0);
-                this.$set(node, "z", 1);
-                this.$set(node, "folded", true);
-                if (!node.params) {
-                    this.$set(node, "params", []);
-                }
-                if (!node.children) {
-                    this.$set(node, "children", []);
-                }
-                if (!node.childrenFolded) {
-                    this.$set(node, "childrenFolded", false);
-                }
+                this.$utils.initNode(tree, node, parent);
             });
 
-            this.$events.$emit("init-tree", tree);
+            this.$events.$emit("init-tree", tree.root);
         },
         onContextMenu(event, tree) {
             event.stopPropagation();

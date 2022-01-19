@@ -9,6 +9,7 @@ Vue.use(ElementUI);
 Vue.config.productionTip = false;
 Vue.prototype.$events = new Vue();
 Vue.prototype.$utils = utils;
+Vue.prototype.$store = {};
 
 new Vue({
     render: h => h(IndexPage),
