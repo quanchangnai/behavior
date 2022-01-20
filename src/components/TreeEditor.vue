@@ -363,7 +363,6 @@ export default {
             this.linkParentNode(pasteNode, targetNode);
 
             this.drawTree();
-
         },
         onParamSelectShow(selectRef) {
             this.selectRef = selectRef;
@@ -426,13 +425,9 @@ export default {
                 return false;
             }
             //目标节点限制子节点数量
-            if (targetNode.children.indexOf(node) < 0
+            return !(targetNode.children.indexOf(node) < 0
                     && targetNode.template.childrenNum >= 0
-                    && targetNode.children.length >= targetNode.template.childrenNum) {
-                return false;
-            }
-
-            return true;
+                    && targetNode.children.length >= targetNode.template.childrenNum);
         },
         findParentNode(node) {
             let deltaX = 0;

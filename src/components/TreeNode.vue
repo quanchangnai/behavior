@@ -3,11 +3,16 @@
                :y="node.y"
                :ready="creating"
                :style="nodeStyle"
+               tabindex="0"
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
                @mousedown.native="selected=true"
+               @focusin.native="selected=true"
+               @focusout.native="selected=false"
                @dblclick.native.stop="foldSelf"
+               @keyup.native.ctrl.67="copy"
+               @keyup.native.ctrl.86="$emit('paste')"
                @contextmenu.native.stop="onContextMenu">
         <template>
             <div ref="content"
@@ -142,7 +147,6 @@ export default {
         };
     },
     mounted() {
-        window.addEventListener('mousedown', () => this.selected = false, {capture: true});
         this.resizeObserver = new ResizeObserver(async () => {
             await this.calcContentBodyHeight();
             this.$emit("resize");
@@ -265,7 +269,7 @@ export default {
             this.$emit("delete", this.node);
         },
         copy() {
-            this.$store.node = this.$utils.buildNodes(this.node)
+            this.$store.node = this.$utils.buildNodes(this.node);
             this.$events.$emit("init-tree", this.$store.node);
         },
         onParamSelectVisibleChange(ref, visible) {
@@ -417,8 +421,11 @@ export default {
 }
 </script>
 
-<!--suppress CssUnusedSymbol -->
 <style scoped>
+:focus {
+    outline: none;
+}
+
 .content {
     min-width: 60px;
     max-width: 250px;
@@ -499,6 +506,10 @@ export default {
     margin-bottom: 0;
 }
 
+.paramLabel:focus {
+    color: #409eff;
+}
+
 .paramLabel {
     display: inline-block;
     max-width: 72px;
@@ -542,8 +553,20 @@ export default {
 </style>
 <!--suppress CssUnusedSymbol -->
 <style>
-.node-param-select-dropdown {
+[x-placement^="bottom"].node-param-select-dropdown {
+    transform: translateY(-8px);
+}
+
+[x-placement^="top"].node-param-select-dropdown {
+    transform: translateY(10px);
+}
+
+[x-placement^="bottom"].node-param-select-dropdown.is-multiple {
     transform: translateY(-7px);
+}
+
+[x-placement^="top"].node-param-select-dropdown.is-multiple {
+    transform: translateY(7px);
 }
 
 .node-param-select-dropdown .el-select-dropdown__item {
@@ -557,6 +580,13 @@ export default {
 
 .node-param-tooltip {
     min-width: 120px;
+}
+
+[x-placement^="bottom"].node-param-tooltip {
     transform: translateY(-8px);
+}
+
+[x-placement^="top"].node-param-tooltip {
+    transform: translateY(8px);
 }
 </style>

@@ -69,7 +69,6 @@ export default {
 }
 </script>
 
-<!--suppress CssUnusedSymbol -->
 <style scoped>
 >>> .el-dialog {
     padding: 0 30px;

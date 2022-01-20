@@ -92,12 +92,15 @@ export default {
     initNode(tree, node, parent) {
         tree.maxNodeId = Math.max(tree.maxNodeId, node.id);
         Vue.set(tree, "childrenFolded", tree.childrenFolded || node.childrenFolded);
+
         node.tree = tree;
         node.parent = parent;
+
         Vue.set(node, "x", 0);
         Vue.set(node, "y", 0);
         Vue.set(node, "z", 1);
         Vue.set(node, "folded", true);
+
         if (!node.params) {
             Vue.set(node, "params", []);
         }

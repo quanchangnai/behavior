@@ -51,8 +51,8 @@ templateTypes = [
 ```
 
 childrenTypes:限制子节点的模板类型,类型不合法的节点不允许作为子节点挂载<br>
-childrenNum:限制子节点的数量，-1:不限制,0:不允许挂子节点...<br>
-comment:可选字段，该模板类型下的节点是否可以添加备注。
+childrenNum:限制子节点的数量，-1:不限制,0:不允许挂子节点，大于0:最多能挂的子节点数量。<br>
+comment:可选字段，节点是否支持添加备注。
 
 ### templateGroups
 
@@ -98,7 +98,7 @@ group:可选字段，节点模板所属的模板组。<br>
 childrenTypes:可选字段，限制子节点的模板类型，覆盖模板类型的childrenTypes字段。<br>
 childrenIds:可选字段，限制子节点的模板ID，补充childrenTypes字段，按类型限制有时会比较宽泛。<br>
 childrenNum:可选字段，限制子节点的数量，覆盖模板类型的childrenNum字段。<br>
-comment:可选字段，该模板的节点是否可以添加备注，覆盖模板类型的comment字段。<br>
+comment:可选字段，节点是否支持添加备注，覆盖模板类型的comment字段。<br>
 params:可选字段，节点模板参数，详情看下面示例。
 
 ```js

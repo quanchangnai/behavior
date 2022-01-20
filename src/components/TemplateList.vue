@@ -292,7 +292,6 @@ export default {
 }
 </script>
 
-<!--suppress CssUnusedSymbol -->
 <style scoped>
 #body {
     --border: solid #ebeef5 1px;
