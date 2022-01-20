@@ -21,7 +21,7 @@
                        :style="{width:boardWidth+'px',height:boardHeight+'px'}">
                 <canvas id="canvas" @contextmenu.prevent/>
                 <tree-node v-for="node in visibleNodes"
-                           :key="node.id"
+                           :key="tree.id+'-'+node.id"
                            :ref="'node-'+node.id"
                            :node="node"
                            @drag-start="onNodeDragStart"

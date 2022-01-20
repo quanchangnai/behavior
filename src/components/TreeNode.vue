@@ -34,7 +34,7 @@
                              ref="form"
                              label-width="auto"
                              label-position="left"
-                             :hide-required-asterisk="false"
+                             :hide-required-asterisk="true"
                              @validate="onFormValidate"
                              @mousedown.native.stop
                              @dblclick.native.stop>
@@ -59,7 +59,8 @@
                                             popper-class="tooltip"
                                             placement="bottom-start">
                                     <span :ref="'paramLabel-'+param.name"
-                                          class="paramLabel">
+                                          class="paramLabel"
+                                          :style="paramLabelStyle(param.name)">
                                         {{ param.label || param.name }}
                                     </span>
                                 </el-tooltip>
@@ -97,9 +98,7 @@
                                         :hide-after="1000"
                                         popper-class="tooltip node-param-tooltip"
                                         placement="bottom-start">
-                                <el-input v-model="node.params[param.name]"
-                                          @focusin.native="onParamFocusIn(param.name)"
-                                          @focusout.native="onParamFocusOut(param.name)"/>
+                                <el-input v-model="node.params[param.name]"/>
                             </el-tooltip>
                         </el-form-item>
                     </el-form>
@@ -139,7 +138,6 @@ export default {
     data() {
         return {
             selected: false,
-            backupParams: {},//备份的参数值，输入无效参数后回滚用
             validations: {},//参数校验状态
             labelTips: {},//参数标签提示状态，文本太长加提示
             contentStyle: {},
@@ -328,19 +326,9 @@ export default {
             return _options;
 
         },
-        onParamFocusIn(paramName) {
-            this.backupParams[paramName] = this.node.params[paramName];
-        },
-        onParamFocusOut(paramName) {
-            if (this.validations['params.' + paramName] === false) {
-                this.node.params[paramName] = this.backupParams[paramName];
-                this.validations['params.' + paramName] = true;
-            }
-            this.calcContentStyle();
-        },
         onFormValidate(prop, pass) {
             if (!pass) {
-                this.validations[prop] = false;
+                this.validations[prop] = pass;
             } else {
                 delete this.validations[prop];
             }
@@ -351,9 +339,10 @@ export default {
             let params = this.node.template.params;
             if (params && !this.creating) {
                 for (let param of params) {
-                    if (param.required && this.node.params[param.name] === undefined) {
+                    let paramValue = this.node.params[param.name];
+                    if (param.required && (paramValue === undefined || Array.isArray(paramValue) && paramValue.length === 0)) {
                         error = true;
-                        break;
+                        this.validations['params.' + param.name] = false;
                     }
                 }
             }
@@ -365,6 +354,13 @@ export default {
                 '--scrollbar-thumb-color': this.selected ? '#c9b7fc' : '#a2caf6',
                 '--scrollbar-thumb-shadow-color': this.selected ? '#916cf6' : '#776eee',
             }
+        },
+        paramLabelStyle(paramName) {
+            let style = {};
+            if (this.validations['params.' + paramName] === false) {
+                style.color = "#fd7f5a";
+            }
+            return style
         },
         async calcContentBodyHeight() {
             await this.$nextTick();
@@ -504,10 +500,6 @@ export default {
 
 .el-form-item {
     margin-bottom: 0;
-}
-
-.paramLabel:focus {
-    color: #409eff;
 }
 
 .paramLabel {
