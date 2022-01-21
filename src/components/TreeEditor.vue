@@ -137,6 +137,8 @@ export default {
             if (this.tree.childrenFolded) {
                 items.push({title: '展开全部子树', handler: this.unfoldAllNodeChildren});
             }
+            let nodeIdShown = this.tree.nodeIdShown;
+            items.push({title: (nodeIdShown ? '隐藏' : '显示') + '节点ID', handler: () => this.tree.nodeIdShown = !nodeIdShown});
             items.push({
                 title: '删除行为树', handler: () => {
                     this.$events.$emit("delete-tree", this.tree);

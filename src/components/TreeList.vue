@@ -111,6 +111,7 @@ export default {
         initTree(tree) {
             tree.maxNodeId = 0;
             this.$set(tree, "folded", 1);
+            this.$set(tree, "nodeIdShown", false);
 
             this.$utils.visitNodes(tree.root, (node, parent) => {
                 this.$utils.initNode(tree, node, parent);
