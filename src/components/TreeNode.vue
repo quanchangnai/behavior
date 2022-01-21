@@ -19,11 +19,21 @@
                  :style="contentStyle"
                  class="content"
                  :class="{'no-fold-operation-content': !hasFoldOperation()}">
-                <div class="content-header">
+                <div class="content-header" ref="contentHeader">
                     {{ node.template.name }}
-                    <template v-if="node.folded && node.comment">
-                        : {{ node.comment }}
-                    </template>
+                    <span v-if="node.tree&&node.tree.nodeIdShown">
+                        ({{ node.id }})
+                    </span>
+                    <el-tooltip v-if="node.folded && node.comment"
+                                effect="light"
+                                :disabled="!contentHeaderOverflow"
+                                :arrowOffset="15"
+                                :hide-after="1000"
+                                :content="node.comment"
+                                popper-class="tooltip"
+                                placement="bottom-start">
+                        <span>: {{ node.comment }}</span>
+                    </el-tooltip>
                 </div>
                 <div class="content-body"
                      @wheel="onContentBodyWheel"
@@ -141,11 +151,13 @@ export default {
             validations: {},//参数校验状态
             labelTips: {},//参数标签提示状态，文本太长加提示
             contentStyle: {},
-            contentBodyHeight: 0
+            contentBodyHeight: 0,
+            contentHeaderOverflow: false,
         };
     },
     mounted() {
         this.resizeObserver = new ResizeObserver(async () => {
+            await this.checkContentHeaderOverflow();
             await this.calcContentBodyHeight();
             this.$emit("resize");
         });
@@ -392,16 +404,24 @@ export default {
                 this.contentBodyOverflow = true;
             }
         },
+        async checkContentHeaderOverflow() {
+            if (this.creating || !this.node.comment) {
+                return;
+            }
+            //等待渲染出来后再检测
+            await this.$nextTick();
+            this.contentHeaderOverflow = this.$utils.checkOverflow(this.$refs.contentHeader);
+        },
         async checkParamLabelsOverflow() {
             if (!this.node.template.params) {
                 return;
             }
 
-            //等待参数渲染出来
+            //等待渲染出来后再检测
             await this.$nextTick();
             for (let param of this.node.template.params) {
                 let paramLabel = this.$refs["paramLabel-" + param.name];
-                //required参数标签前的红色星号不知道什么原因导致clone.scrollWidth多了一个像素
+                //required参数标签不知道什么原因导致checkOverflow的clone.scrollWidth多了一个像素
                 if (this.$utils.checkOverflow(paramLabel[0], "x", param.required ? 1 : 0)) {
                     this.labelTips[param.name] = true;
                 }

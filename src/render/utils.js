@@ -49,11 +49,7 @@ export default {
      */
     checkOverflow(el, axis = "x", d = 0) {
         let element = getElement(el);
-
         let clone = element.cloneNode();
-        clone.style.position = "absolute";
-        clone.style.width = element.offsetWidth + "px";
-        clone.style.height = element.offsetHeight + "px";
         clone.style.zIndex = -1;
         clone.style.overflow = "auto";
         clone.style.opacity = 0;
