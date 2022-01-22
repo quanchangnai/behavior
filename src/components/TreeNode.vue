@@ -13,6 +13,7 @@
                @dblclick.native.stop="foldSelf"
                @keyup.native.ctrl.67="copy"
                @keyup.native.ctrl.86="$emit('paste')"
+               @keyup.native.d.delete="remove"
                @contextmenu.native.stop="onContextMenu">
         <template>
             <div ref="content"
@@ -176,8 +177,11 @@ export default {
             if (this.node.children.length) {
                 items.push({title: this.node.childrenFolded ? '展开子树' : '收起子树', handler: this.foldChildren});
             }
+            if (this.node.template.visible) {
+                items.push({title: '定位模板', handler: () => this.$events.$emit("position-template", this.node.tid)});
+            }
             if (this.node.parent) {
-                items.push({title: '删除', handler: this.delete});
+                items.push({title: '删除', handler: this.remove});
             }
             items.push({title: '复制', handler: this.copy});
             items.push({title: '粘贴', handler: () => this.$emit("paste")});
@@ -262,7 +266,10 @@ export default {
             this.node.childrenFolded = !this.node.childrenFolded;
             this.$emit("children-fold", this.node);
         },
-        async delete() {
+        async remove() {
+            if (!this.node.parent) {
+                return;
+            }
             if (this.node.children.length) {
                 try {
                     await this.$confirm("确定删除该节点及其所有子孙节点？", {type: "warning"});
@@ -276,7 +283,7 @@ export default {
 
             this.deleteParamOptionRefNode();
 
-            this.$emit("delete", this.node);
+            this.$emit("remove", this.node);
         },
         copy() {
             this.$store.node = this.$utils.buildNodes(this.node);

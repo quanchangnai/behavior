@@ -126,6 +126,7 @@ export default {
             this.menuItems.push({title: '创建行为树', handler: this.createTree});
             if (tree != null) {
                 this.menuItems.push({title: '删除行为树', handler: () => this.deleteTree(tree)});
+                this.menuItems.push({title: '修改行为树名称', handler: this.showEditTreeNameInput});
             }
             this.menuItems.push({title: '打开工作目录', handler: () => ipcRenderer.invoke("open-workspace-path")});
 
@@ -155,6 +156,13 @@ export default {
             this.$refs.table.setCurrentRow(tree);
 
             this.$utils.saveTree(tree);
+            this.$nextTick(() => {
+                let treeIdTag = this.$refs['treeIdTag-' + tree.id];
+                let scrollbarWrap = this.$refs.scrollbar?.$refs.wrap;
+                if (scrollbarWrap) {
+                    scrollbarWrap.scrollTop = this.$utils.getClientY(treeIdTag) - 50;
+                }
+            });
         },
 
         async deleteTree(tree) {
@@ -163,11 +171,15 @@ export default {
             } catch {
                 return;
             }
+
             let index = this.allTrees.indexOf(tree);
             this.allTrees.splice(index, 1);
             if (this.selectedTree === tree && this.visibleTrees.length) {
                 this.$refs.table.setCurrentRow(this.visibleTrees[0]);
             }
+
+            this.$refs.scrollbar.$refs.wrap.scrollTop = 0;
+
             await ipcRenderer.invoke("delete-tree", tree.id);
         },
         editTreeNameInputStyle(treeId) {

@@ -73,7 +73,9 @@
                 </el-table-column>
                 <el-table-column :show-overflow-tooltip="true"
                                  #default="{row:template}">
-                    <div class="template-name" @mousedown.left="selectTemplate($event,template)">
+                    <div :ref="'templateName-'+template.id"
+                         class="template-name"
+                         @mousedown.left="selectTemplate($event,template)">
                         {{ template.name }}
                     </div>
                 </el-table-column>
@@ -113,6 +115,7 @@ export default {
         this.initSelectGroups();
 
         this.$events.$on("init-tree", this.onInitTree);
+        this.$events.$on("position-template", this.positionTemplate);
     },
     mounted() {
         this.resizeObserver = new ResizeObserver(this.doLayout);
@@ -286,6 +289,17 @@ export default {
                 }
             } else {
                 this.expandedTemplates.push(template.id);
+            }
+        },
+        async positionTemplate(tid) {
+            this.selectedGroup = -1;
+            this.expandedTemplates.pop();
+            this.expandedTemplates.push(tid);
+            await this.$nextTick();
+            let templateNameDiv = this.$refs["templateName-" + tid];
+            let scrollbarWrap = this.$refs.scrollbar?.$refs.wrap;
+            if (scrollbarWrap) {
+                scrollbarWrap.scrollTop = this.$utils.getClientY(templateNameDiv) - 50;
             }
         },
     }

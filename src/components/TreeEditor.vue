@@ -27,7 +27,7 @@
                            @drag-start="onNodeDragStart"
                            @dragging="onNodeDragging"
                            @drag-end="onNodeDragEnd"
-                           @delete="drawTree"
+                           @remove="drawTree"
                            @paste="onNodePaste(node)"
                            @resize="drawTree"
                            @fold="onNodeFold"
