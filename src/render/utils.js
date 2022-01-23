@@ -57,7 +57,6 @@ export default {
         clone.style.zIndex = -1;
         clone.style.overflow = "auto";
         clone.style.opacity = 0;
-        clone.style.whiteSpace = "nowrap";
         clone.innerHTML = element.innerHTML;
 
         element.parentNode.appendChild(clone);
@@ -120,7 +119,12 @@ export default {
         if (node.template.params) {
             result.params = {};
             for (let param of node.template.params) {
-                result.params[param.name] = node.params[param.name];
+                let paramValue = node.params[param.name];
+                if (Array.isArray(paramValue)) {
+                    result.params[param.name] = [...paramValue];
+                } else {
+                    result.params[param.name] = paramValue;
+                }
             }
         }
 

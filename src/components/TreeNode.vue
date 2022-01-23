@@ -7,7 +7,6 @@
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
-               @mousedown.native="selected=true"
                @focusin.native="selected=true"
                @focusout.native="selected=false"
                @dblclick.native.stop="foldSelf"
@@ -19,7 +18,7 @@
             <div ref="content"
                  :style="contentStyle"
                  class="content"
-                 :class="{'no-fold-operation-content': !hasFoldOperation()}">
+                 :class="{'no-fold-operation': !hasFoldOperation()}">
                 <div class="content-header" ref="contentHeader">
                     {{ node.template.name }}
                     <span v-if="node.tree&&node.tree.nodeIdShown">
@@ -214,9 +213,6 @@ export default {
         },
     },
     methods: {
-        content() {
-            return this.$refs.content;
-        },
         onDragStart() {
             this.node.dragging = true;
             this.$emit("drag-start", {node: this.node});
@@ -244,14 +240,9 @@ export default {
                 return false;
             }
             let template = this.node.template;
-            if (template.comment) {
-                return true;
-            }
-            return template.params && template.params.length > 0;
+            return template.comment || template.params?.length > 0;
         },
-        select() {
-            this.selected = true;
-        },
+
         onContextMenu(event) {
             this.node.z = 30;
             this.$refs.menu.show(event.clientX, event.clientY);
@@ -494,7 +485,7 @@ export default {
     background: #ededed;
 }
 
-.no-fold-operation-content > div {
+.no-fold-operation.content > div {
     padding: 0 12px 0 12px !important;
 }
 

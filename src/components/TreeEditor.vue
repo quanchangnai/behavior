@@ -203,18 +203,18 @@ export default {
             }
 
             //坑，v-for中的ref是个数组
-            let nodeContent;
+            let nodeElement;
             let nodeRef = this.$refs["node-" + node.id];
             if (Array.isArray(nodeRef)) {
-                nodeContent = nodeRef[0].content()
+                nodeElement = nodeRef[0].$el;
             } else {
                 // noinspection JSUnresolvedFunction
-                nodeContent = nodeRef.content()
+                nodeElement = nodeRef.$el;
             }
 
             //界面渲染完成之后才能取到元素大小
-            node.selfWidth = nodeContent.offsetWidth + nodeSpaceX(node);
-            node.selfHeight = nodeContent.offsetHeight + nodeSpaceY;
+            node.selfWidth = nodeElement.offsetWidth + nodeSpaceX(node);
+            node.selfHeight = nodeElement.offsetHeight + nodeSpaceY;
 
             if (!node.children.length || node.childrenFolded) {
                 node.treeWidth = node.selfWidth;
