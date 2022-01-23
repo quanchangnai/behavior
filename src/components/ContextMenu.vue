@@ -52,11 +52,10 @@ export default {
             window.addEventListener("scroll", this.hide);
             window.addEventListener("blur", this.hide);
 
-            if (!limits) {
-                return;
-            }
-
             this.$nextTick(() => {
+                if (!limits) {
+                    limits = {x: 0, y: 0, width: document.body.offsetWidth, height: document.body.offsetHeight}
+                }
                 let width = this.$refs.menu.offsetWidth;
                 let height = this.$refs.menu.offsetHeight;
                 if (x + width * 1.1 > limits.x + limits.width && limits.width > width) {

@@ -150,7 +150,7 @@ export default {
         return {
             selected: false,
             validations: {},//参数校验状态
-            labelTips: {},//参数标签提示状态，文本太长加提示
+            labelTips: {},//参数标签提示状态，文本太长时加提示
             contentStyle: {},
             contentBodyHeight: 0,
             contentHeaderOverflow: false,
@@ -308,7 +308,7 @@ export default {
             return null;
         },
         deleteParamOptionRefNode() {
-            //删除节点时检查其他节点的选项列表引用，删除无效引用
+            //删除节点的同时删除其他节点的选项列表引用
             let deletedNodeIds = new Set();
             this.$utils.visitNodes(this.node, node => deletedNodeIds.add(node.id));
 
