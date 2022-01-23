@@ -296,11 +296,10 @@ export default {
             this.expandedTemplates.pop();
             this.expandedTemplates.push(tid);
             await this.$nextTick();
-            let templateNameDiv = this.$refs["templateName-" + tid];
-            let scrollbarWrap = this.$refs.scrollbar?.$refs.wrap;
-            if (scrollbarWrap) {
-                scrollbarWrap.scrollTop = this.$utils.getClientY(templateNameDiv) - 50;
-            }
+            let templatePosition = this.$utils.getClientY(this.$refs["templateName-" + tid]);
+            let scrollbarWrap = this.$refs.scrollbar.$refs.wrap;
+            let searchHeight = document.querySelector("#search").offsetHeight;
+            scrollbarWrap.scrollTop = templatePosition - searchHeight;
         },
     }
 }

@@ -54,7 +54,7 @@ export default {
 
             this.$nextTick(() => {
                 if (!limits) {
-                    limits = {x: 0, y: 0, width: document.body.offsetWidth, height: document.body.offsetHeight}
+                    limits = {x: 0, y: 0, width: innerWidth, height: innerHeight}
                 }
                 let width = this.$refs.menu.offsetWidth;
                 let height = this.$refs.menu.offsetHeight;

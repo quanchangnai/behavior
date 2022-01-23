@@ -21,7 +21,9 @@ export default {
      */
     getClientX(el) {
         let element = getElement(el);
-        if (element.offsetParent) {
+        if (!element) {
+            return 0;
+        } else if (element.offsetParent) {
             return this.getClientX(element.offsetParent) + element.offsetLeft;
         } else {
             return element.offsetLeft;
@@ -34,7 +36,9 @@ export default {
      */
     getClientY(el) {
         let element = getElement(el);
-        if (element.offsetParent) {
+        if (!element) {
+            return 0;
+        } else if (element.offsetParent) {
             return this.getClientY(element.offsetParent) + element.offsetTop;
         } else {
             return element.offsetTop;
