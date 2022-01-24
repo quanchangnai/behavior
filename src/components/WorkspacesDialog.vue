@@ -4,24 +4,25 @@
                title="管理工作区"
                tooltip-effect="light"
                :visible.sync="visible">
-        <el-table ref="table"
-                  size="small"
-                  :data="workspaces"
-                  max-height="201px"
-                  :show-header="false"
-                  :show-overflow-tooltip="true"
-                  highlight-current-row>
-            <el-table-column #default="{row}">
-                <span> {{ row.path }}</span>
-            </el-table-column>
-            <el-table-column width="80" #default="{row,$index}">
-                <el-button type="text"
-                           size="small"
-                           :disabled="!row.deletable"
-                           @click="_delete(row,$index)">删除
-                </el-button>
-            </el-table-column>
-        </el-table>
+        <el-scrollbar ref="scrollbar" :style="{'height': height()}">
+            <el-table ref="table"
+                      size="small"
+                      :data="workspaces"
+                      :show-header="false"
+                      :show-overflow-tooltip="true"
+                      highlight-current-row>
+                <el-table-column #default="{row}">
+                    <span> {{ row.path }}</span>
+                </el-table-column>
+                <el-table-column width="80" #default="{row,$index}">
+                    <el-button type="text"
+                               size="small"
+                               :disabled="!row.deletable"
+                               @click="_delete(row,$index)">删除
+                    </el-button>
+                </el-table-column>
+            </el-table>
+        </el-scrollbar>
     </el-dialog>
 </template>
 
@@ -30,9 +31,6 @@ import {ipcRenderer} from "electron";
 
 export default {
     name: "WorkspacesDialog",
-    props: {
-        data: Array
-    },
     data() {
         return {
             workspaces: [],
@@ -40,6 +38,9 @@ export default {
         }
     },
     methods: {
+        height() {
+            return Math.min(50 * this.workspaces.length, 197) + "px";
+        },
         open(workspaces) {
             this.workspaces = workspaces;
             this.visible = true;
@@ -59,6 +60,10 @@ export default {
 
 >>> .el-dialog__body {
     padding: 12px 22px
+}
+
+.el-scrollbar >>> .el-scrollbar__wrap {
+    overflow-x: hidden;
 }
 
 .el-table {
