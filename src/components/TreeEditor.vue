@@ -551,10 +551,11 @@ export default {
 
             await this.$nextTick();
 
-            // noinspection JSUnresolvedFunction
-            let creatingNodeContent = this.$refs["node-" + this.creatingNode.id].content();
-            this.creatingNode.x -= creatingNodeContent.offsetWidth / 2;
-            this.creatingNode.y -= creatingNodeContent.offsetHeight / 2;
+            let creatingNodeElement = this.$refs["node-" + this.creatingNode.id].$el;
+            // noinspection JSUnresolvedVariable
+            this.creatingNode.x -= creatingNodeElement.offsetWidth / 2;
+            // noinspection JSUnresolvedVariable
+            this.creatingNode.y -= creatingNodeElement.offsetHeight / 2;
             this.calcNodeBounds(this.creatingNode);
             this.linkParentNode(this.creatingNode);
             this.drawLinkLines();
