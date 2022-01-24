@@ -18,7 +18,7 @@
                 <el-table-column width="100" #default="{row,$index}">
                     <el-button type="text"
                                size="small"
-                               @click="openWorkspace(row,$index)">打开
+                               @click="openWorkspace(row)">打开
                     </el-button>
                     <el-button type="text"
                                size="small"

@@ -38,7 +38,7 @@ let behavior = {
             workspaces.splice(0, 0, workspace);
         }
 
-        if (workspaces === homeWorkspaces && workspaces.length > 5) {
+        if (workspaces === homeWorkspaces && workspaces.length > 10) {
             homeWorkspaces.pop();
         }
 
@@ -142,17 +142,18 @@ async function save() {
 
 async function load() {
     //程序目录
-    let exeBehaviorFile = path.resolve(path.dirname(app.getPath("exe")), "behavior.json");
+    let exePath = path.dirname(app.getPath("exe"));
+    let exeBehaviorFile = path.resolve(exePath, "behavior.json");
     if (fs.existsSync(exeBehaviorFile)) {
         let json = (await fs.promises.readFile(exeBehaviorFile)).toString();
         let exeBehavior = JSON.parse(json);
         if (validateBehavior(exeBehavior)) {
             for (let workspace of exeBehavior.workspaces) {
-                workspace = path.resolve(".", workspace);
-                await behavior.addWorkspace(exeWorkspaces, path.resolve(".", workspace), true);
+                workspace = path.resolve(exePath, workspace);
+                await behavior.addWorkspace(exeWorkspaces, path.resolve(exePath, workspace), true);
             }
         } else {
-            logger.error("app behavior error\n", validateBehavior.errors);
+            logger.error("exe behavior error\n", validateBehavior.errors);
         }
     }
 
