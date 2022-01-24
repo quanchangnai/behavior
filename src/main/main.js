@@ -41,12 +41,11 @@ async function createWindow() {
     }
 }
 
-
 if (!app.requestSingleInstanceLock()) {
     app.quit();
 } else {
-    app.on("second-instance", async (e, args) => {
-        let workspace = behavior.parseWorkspace(args);
+    app.on("second-instance", async (e, args, workingDirectory) => {
+        let workspace = behavior.parseWorkspace(args, workingDirectory);
         if (workspace) {
             await behavior.openWorkspace(workspace);
             return;

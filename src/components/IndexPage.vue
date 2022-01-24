@@ -1,31 +1,32 @@
 <template>
     <div>
         <tree-editor/>
-        <workspaces-dialog ref="workspacesDialog"/>
+        <recent-workspaces ref="recentWorkspaces"/>
     </div>
 </template>
 
 <script>
 import TreeEditor from './TreeEditor.vue'
-import WorkspacesDialog from './WorkspacesDialog.vue'
+import RecentWorkspaces from './RecentWorkspaces.vue'
 import {ipcRenderer} from "electron";
 
 export default {
     name: 'IndexPage',
     components: {
         TreeEditor,
-        WorkspacesDialog
+        RecentWorkspaces
     },
     created() {
         ipcRenderer.on("msg", (event, msg, type) => {
             this.$message({message: msg, type: type || "info", center: true, offset: 200});
         });
-        ipcRenderer.on("manage-workspaces", (event, workspaces) => {
-            this.$refs.workspacesDialog.open(workspaces);
+        ipcRenderer.on("recent-workspaces", (event, workspaces) => {
+            this.$refs.recentWorkspaces.openDialog(workspaces);
         })
     },
     async mounted() {
-        document.title = await ipcRenderer.invoke("title");
+        ipcRenderer.on("title", (event, title) => document.title = title);
+        ipcRenderer.send("title")
     }
 }
 </script>

@@ -4,13 +4,12 @@ import {app, dialog, shell, BrowserWindow, webContents} from 'electron'
 import logger from "electron-log";
 import config from "./config";
 import {validateBehavior} from "./validator";
-import {resetMenus} from "./menu";
 
 logger.catchErrors();
 
 //程序目录下配置的工作区
-let appWorkspaces = [];
-//系统用户目录下记录用户手动打开的工作区
+let exeWorkspaces = [];
+//用户主目录下记录的手动打开的工作区
 let homeWorkspaces = [];
 //用户正在打开的工作区，此时窗口还未创建成功
 let openingWorkspace = null;
@@ -18,8 +17,6 @@ let openingWorkspace = null;
 let webContentsWorkspaces = new Map();
 //workspace:webContents.id
 let workspacesWebContents = new Map();
-//窗口标题是否使用工作区全路径
-let titleUseFullPath = false;
 //工作区对应的窗口标题
 let workspacesTitles = new Map();
 
@@ -27,7 +24,7 @@ let behavior = {
     async addWorkspace(workspaces, workspace, loading) {
         await this.createWorkspace(workspace);
 
-        if (appWorkspaces.indexOf(workspace) >= 0) {
+        if (exeWorkspaces.indexOf(workspace) >= 0) {
             return;
         }
 
@@ -63,18 +60,11 @@ let behavior = {
         return webContentsWorkspaces.get(webContents.id);
     },
     getAllWorkspaces() {
-        return [...appWorkspaces, ...homeWorkspaces];
+        return [...exeWorkspaces, ...homeWorkspaces];
     },
-    getTitle(webContents) {
-        let workspace = this.getWorkspace(webContents);
-        if (titleUseFullPath) {
-            return workspace;
-        } else {
-            return workspacesTitles.get(workspace)
-        }
-    },
-    getWorkspacesTitles() {
-        return workspacesTitles;
+    sendTitle(webContents) {
+        let title = "behavior - " + workspacesTitles.get(this.getWorkspace(webContents));
+        webContents.send("title", title);
     },
     async openWorkspacePath(webContents) {
         await shell.openPath(this.getWorkspace(webContents));
@@ -113,21 +103,22 @@ let behavior = {
     /**
      * 从命令行参数中解析要打开的工作区
      * @param args {string[]}
+     * @param basePath {string}
      * @returns {string|undefined}
      */
-    parseWorkspace(args) {
-        if (!app.isPackaged) {
-            return;
-        }
+    parseWorkspace(args, basePath = ".") {
         for (let i = 1; i < args.length; i++) {
-            if (!args[i].startsWith("-")) {
-                return path.resolve(".", args[i]);
+            if (args[i].startsWith("-w=")) {
+                let workspace = args[i].substr(args[i].indexOf("=") + 1);
+                if (workspace && workspace.trim() !== "") {
+                    return path.resolve(basePath, workspace.trim());
+                }
             }
         }
     },
-    manageWorkspaces() {
+    recentWorkspaces() {
         let workspaces = [];
-        for (let appWorkspace of appWorkspaces) {
+        for (let appWorkspace of exeWorkspaces) {
             workspaces.push({path: appWorkspace, deletable: false})
         }
         for (let homeWorkspace of homeWorkspaces) {
@@ -138,7 +129,6 @@ let behavior = {
     deleteWorkspace(workspace) {
         homeWorkspaces.splice(homeWorkspaces.indexOf(workspace), 1);
         workspacesTitles.delete(workspace);
-        resetMenus();
         // noinspection JSIgnoredPromiseFromCall
         save();
     }
@@ -152,15 +142,14 @@ async function save() {
 
 async function load() {
     //程序目录
-    let appBehaviorFile = path.resolve(".", "behavior.json");
-    if (fs.existsSync(appBehaviorFile)) {
-        let json = (await fs.promises.readFile(appBehaviorFile)).toString();
-        let appBehavior = JSON.parse(json);
-        if (validateBehavior(appBehavior)) {
-            titleUseFullPath = titleUseFullPath || appBehavior.titleUseFullPath;
-            for (let workspace of appBehavior.workspaces) {
+    let exeBehaviorFile = path.resolve(path.dirname(app.getPath("exe")), "behavior.json");
+    if (fs.existsSync(exeBehaviorFile)) {
+        let json = (await fs.promises.readFile(exeBehaviorFile)).toString();
+        let exeBehavior = JSON.parse(json);
+        if (validateBehavior(exeBehavior)) {
+            for (let workspace of exeBehavior.workspaces) {
                 workspace = path.resolve(".", workspace);
-                await behavior.addWorkspace(appWorkspaces, path.resolve(".", workspace), true);
+                await behavior.addWorkspace(exeWorkspaces, path.resolve(".", workspace), true);
             }
         } else {
             logger.error("app behavior error\n", validateBehavior.errors);
@@ -228,29 +217,16 @@ function buildWorkspacesTitles() {
 
     for (let workspace of workspaces) {
         let basename = path.basename(workspace);
-        let dirname = path.dirname(workspace);
-
-        if (basename2Workspaces.get(basename).length < 2) {
+        if (basename2Workspaces.get(basename).length <= 1) {
             workspacesTitles.set(workspace, basename);
-            continue
+        } else {
+            workspacesTitles.set(workspace, workspace);
         }
-
-        if (Buffer.byteLength(dirname) > 14) {
-            let removedCount = 0;
-            let removePos = -1;
-            while (Buffer.byteLength(dirname) > 8) {
-                removePos = dirname.length / 2;
-                dirname = dirname.substr(0, removePos) + dirname.substr(removePos + 1, dirname.length - 1);
-                removedCount++;
-            }
-            if (removePos > 0) {
-                dirname = dirname.substr(0, removePos) + ".." + removedCount + ".." + dirname.substr(removePos, dirname.length - 1);
-            }
+        let webContentsId = workspacesWebContents.get(workspace);
+        if (webContentsId) {
+            behavior.sendTitle(webContents.fromId(webContentsId));
         }
-
-        workspacesTitles.set(workspace, path.resolve(dirname, basename));
     }
-
 }
 
 export default behavior

@@ -5,10 +5,7 @@ import path from 'path'
 import {validateConfig} from "./validator";
 
 
-ipcMain.handle("title", event => {
-    let title = behavior.getTitle(event.sender);
-    return "behavior - " + title;
-});
+ipcMain.on("title", event => behavior.sendTitle(event.sender));
 
 ipcMain.handle("load-config", async event => {
     let configFile = behavior.getConfigFile(event.sender);
@@ -82,7 +79,11 @@ ipcMain.handle("open-workspace-path", async (event) => {
     await behavior.openWorkspacePath(event.sender);
 });
 
+ipcMain.handle("open-workspace", async (event, workspace) => {
+    await behavior.openWorkspace(workspace);
+});
+
 ipcMain.handle("delete-workspace", (event, workspace) => {
     behavior.deleteWorkspace(workspace);
-})
+});
 

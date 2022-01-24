@@ -1,7 +1,7 @@
 <template>
     <el-dialog top="25vh"
                width="520px"
-               title="管理工作区"
+               title="最近工作区"
                tooltip-effect="light"
                :visible.sync="visible">
         <el-scrollbar ref="scrollbar" :style="{'height': height()}">
@@ -10,15 +10,20 @@
                       :data="workspaces"
                       :show-header="false"
                       :show-overflow-tooltip="true"
-                      highlight-current-row>
+                      highlight-current-row
+                      @cell-dblclick="openWorkspace">
                 <el-table-column #default="{row}">
                     <span> {{ row.path }}</span>
                 </el-table-column>
-                <el-table-column width="80" #default="{row,$index}">
+                <el-table-column width="100" #default="{row,$index}">
+                    <el-button type="text"
+                               size="small"
+                               @click="openWorkspace(row,$index)">打开
+                    </el-button>
                     <el-button type="text"
                                size="small"
                                :disabled="!row.deletable"
-                               @click="_delete(row,$index)">删除
+                               @click="deleteWorkspace(row,$index)">删除
                     </el-button>
                 </el-table-column>
             </el-table>
@@ -30,7 +35,7 @@
 import {ipcRenderer} from "electron";
 
 export default {
-    name: "WorkspacesDialog",
+    name: "RecentWorkspaces",
     data() {
         return {
             workspaces: [],
@@ -41,11 +46,15 @@ export default {
         height() {
             return Math.min(50 * this.workspaces.length, 197) + "px";
         },
-        open(workspaces) {
+        openDialog(workspaces) {
             this.workspaces = workspaces;
             this.visible = true;
         },
-        async _delete(workspace, index) {
+        async openWorkspace(workspace) {
+            await ipcRenderer.invoke("open-workspace", workspace.path);
+            workspace.deletable = false;
+        },
+        async deleteWorkspace(workspace, index) {
             await ipcRenderer.invoke("delete-workspace", workspace.path);
             this.workspaces.splice(index, 1)
         }
