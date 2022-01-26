@@ -7,7 +7,8 @@
                        @select-tree="onSelectTree"/>
         </div>
         <div id="center"
-             @wheel="onCenterWheel"
+             @wheel.exact="onCenterWheel"
+             @dblclick="resetBoard"
              :style="{left:(leftWidth+2)+'px',right:rightWidth+'px'}">
             <draggable id="board"
                        :freeze="boardFreeze"
@@ -15,10 +16,10 @@
                        :y="boardY"
                        @drag-start="onBoardDragStart"
                        @drag-end="onBoardDragEnd"
-                       @dblclick.native="resetBoardPosition"
                        @contextmenu.native="onBoardContextMenu"
                        @mouseup.native="onBoardMouseUp"
-                       :style="{width:boardWidth+'px',height:boardHeight+'px'}">
+                       @wheel.ctrl.exact.native="scaleBoard"
+                       :style="{width:boardWidth+'px',height:boardHeight+'px',transform:`scale(${boardScale},${boardScale})`}">
                 <canvas id="canvas" @contextmenu.prevent/>
                 <tree-node v-for="node in visibleNodes"
                            :key="tree.id+'-'+node.id"
@@ -73,11 +74,11 @@ function nodeSpaceX(node) {
     }
 }
 
-const nodeSpaceY = 20;//节点y轴间隔空间
-const boardEdgeSpace = 100;//画板边缘空间
+const node_space_y = 20;//节点y轴间隔空间
+const board_edge_space = 100;//画板边缘空间
 
-const leftWidth = 220;
-const rightWidth = 250;
+const left_width = 220;
+const right_width = 250;
 
 export default {
     name: "TreeEditor",
@@ -92,8 +93,9 @@ export default {
             boardY: 0,
             boardWidth: 0,
             boardHeight: 0,
-            leftWidth,
-            rightWidth
+            boardScale: 1,
+            leftWidth: left_width,
+            rightWidth: right_width
         }
     },
     async created() {
@@ -106,11 +108,11 @@ export default {
         }
 
         ipcRenderer.on("left-visible", () => {
-            this.leftWidth = this.leftWidth === leftWidth ? 0 : leftWidth;
+            this.leftWidth = this.leftWidth === left_width ? 0 : left_width;
             this.resetBoardPosition();
         });
         ipcRenderer.on("right-visible", () => {
-            this.rightWidth = this.rightWidth === rightWidth ? 0 : rightWidth;
+            this.rightWidth = this.rightWidth === right_width ? 0 : right_width;
             this.resetBoardPosition();
         });
         ipcRenderer.on("fold-all-node", (e, fold) => this.foldAllNode(fold));
@@ -181,13 +183,14 @@ export default {
                 this.calcNodeBounds(this.tree.root);
 
                 const board = document.querySelector("#board");
-                this.boardWidth = Math.max(board.parentElement.offsetWidth, this.tree.root.treeWidth + boardEdgeSpace * 2);
-                this.boardHeight = Math.max(board.parentElement.offsetHeight, this.tree.root.treeHeight + boardEdgeSpace * 2);
-                if (this.boardX + this.boardWidth < boardEdgeSpace || this.boardY + this.boardHeight < boardEdgeSpace) {
+                this.boardWidth = Math.max(board.parentElement.offsetWidth, this.tree.root.treeWidth + board_edge_space * 2);
+                this.boardHeight = Math.max(board.parentElement.offsetHeight, this.tree.root.treeHeight + board_edge_space * 2);
+                if (this.boardX < (-this.boardWidth + board_edge_space) * this.boardScale
+                        || this.boardY < -(this.boardHeight + board_edge_space) * this.boardScale) {
                     this.resetBoardPosition();
                 }
 
-                this.calcNodePosition(this.tree.root, boardEdgeSpace);
+                this.calcNodePosition(this.tree.root, board_edge_space);
                 this.drawLinkLines();
             };
 
@@ -214,7 +217,7 @@ export default {
 
             //界面渲染完成之后才能取到元素大小
             node.selfWidth = nodeElement.offsetWidth + nodeSpaceX(node);
-            node.selfHeight = nodeElement.offsetHeight + nodeSpaceY;
+            node.selfHeight = nodeElement.offsetHeight + node_space_y;
 
             if (!node.children.length || node.childrenFolded) {
                 node.treeWidth = node.selfWidth;
@@ -244,7 +247,7 @@ export default {
             if (node.parent) {
                 node.x = node.parent.x + node.parent.selfWidth;
             } else {
-                node.x = boardEdgeSpace;
+                node.x = board_edge_space;
             }
 
             if (!node.children.length || node.childrenFolded) {
@@ -301,11 +304,11 @@ export default {
                 }
 
                 let x1 = node.x + node.selfWidth - nodeSpaceX(node) + nodeFoldChildrenIconWidth;
-                let y1 = node.y + (node.selfHeight - nodeSpaceY) / 2;
+                let y1 = node.y + (node.selfHeight - node_space_y) / 2;
 
                 for (let child of node.children) {
                     let x2 = child.x;
-                    let y2 = child.y + (child.selfHeight - nodeSpaceY) / 2;
+                    let y2 = child.y + (child.selfHeight - node_space_y) / 2;
                     if (child.dragging) {
                         context.strokeStyle = "#b32de0"
                     } else {
@@ -325,9 +328,11 @@ export default {
                 if (creatingNodeParent.children && creatingNodeParent.children.length) {
                     x1 += nodeFoldChildrenIconWidth;
                 }
-                let y1 = creatingNodeParent.y + (creatingNodeParent.selfHeight - nodeSpaceY) / 2;
+                let y1 = creatingNodeParent.y + (creatingNodeParent.selfHeight - node_space_y) / 2;
                 let x2 = this.creatingNode.x - document.querySelector("#left").offsetWidth - this.boardX;
-                let y2 = this.creatingNode.y + (this.creatingNode.selfHeight - nodeSpaceY) / 2 - this.boardY;
+                let y2 = this.creatingNode.y + (this.creatingNode.selfHeight - node_space_y) / 2 - this.boardY;
+                x2 /= this.boardScale;
+                y2 /= this.boardScale;
                 drawLine(x1, y1, x2, y2);
             }
         },
@@ -440,7 +445,7 @@ export default {
             }
 
             let x1 = node.x;
-            let y1 = node.y + (node.selfHeight - nodeSpaceY) / 2;
+            let y1 = node.y + (node.selfHeight - node_space_y) / 2;
 
             //寻找最近的的节点作为父节点
             let parentNode = null;
@@ -453,7 +458,7 @@ export default {
 
                 if (this.nodeCanLink(node, targetNode)) {
                     let x2 = deltaX + targetNode.x + targetNode.selfWidth - nodeSpaceX(targetNode);
-                    let y2 = deltaY + targetNode.y + (targetNode.selfHeight - nodeSpaceY) / 2;
+                    let y2 = deltaY + targetNode.y + (targetNode.selfHeight - node_space_y) / 2;
 
                     let distance2 = (x1 - x2) ** 2 + (y1 - y2) ** 2;
                     if (!parentNode || x1 > x2 && distance2 < minDistance2) {
@@ -465,10 +470,27 @@ export default {
 
             return parentNode;
         },
+        resetBoard() {
+            this.resetBoardPosition();
+            this.boardScale = 1;
+        },
         resetBoardPosition() {
             this.boardX = 0;
             this.boardY = 0;
             this.hideNodeParamDropdown();
+            console.trace("resetBoardPosition")
+        },
+        scaleBoard(event) {
+            let board = document.querySelector("#board");
+            let offsetX = this.$utils.getOffsetX(event.target, board) + event.offsetX;
+            let offsetY = this.$utils.getOffsetY(event.target, board) + event.offsetY;
+
+            let boardScale = this.boardScale + (event.deltaY > 0 ? -0.1 : 0.1);
+            boardScale = Math.min(3, Math.max(0.3, boardScale));
+
+            this.boardX -= offsetX * (boardScale - this.boardScale);
+            this.boardY -= offsetY * (boardScale - this.boardScale);
+            this.boardScale = boardScale;
         },
         onBoardDragStart() {
             this.hideNodeParamDropdown();
@@ -483,19 +505,23 @@ export default {
             //如果拖出界了就拉回到初始位置
             let board = document.querySelector("#board");
             let center = document.querySelector("#center");
-            if (this.boardX < -board.offsetWidth + boardEdgeSpace || this.boardX > center.offsetWidth - boardEdgeSpace) {
-                this.resetBoardPosition();
-            }
-            if (this.boardY < -board.offsetHeight + boardEdgeSpace || this.boardY > center.offsetHeight - boardEdgeSpace) {
+
+            if (this.boardX < (-board.offsetWidth + board_edge_space) * this.boardScale
+                    || this.boardX > center.offsetWidth - board_edge_space * this.boardScale
+                    || this.boardY < (-board.offsetHeight + board_edge_space) * this.boardScale
+                    || this.boardY > center.offsetHeight - board_edge_space * this.boardScale) {
                 this.resetBoardPosition();
             }
         },
         onCenterWheel(event) {
             this.boardY -= event.deltaY / 2;
+            this.boardX -= event.deltaX / 2;
             let board = document.querySelector("#board");
             let center = document.querySelector("#center");
-            this.boardY = Math.max(this.boardY, -board.offsetHeight + boardEdgeSpace);
-            this.boardY = Math.min(this.boardY, center.offsetHeight - boardEdgeSpace);
+            this.boardY = Math.max(this.boardY, -board.offsetHeight + board_edge_space);
+            this.boardY = Math.min(this.boardY, center.offsetHeight - board_edge_space);
+            this.boardX = Math.max(this.boardX, -board.offsetWidth + board_edge_space);
+            this.boardX = Math.min(this.boardX, center.offsetWidth - board_edge_space);
         },
         async onBoardMouseUp() {
             if (this.creatingNode == null) {
@@ -527,8 +553,8 @@ export default {
                 comment: "",
                 tid: template.id,
                 template,
-                x: event.x - this.$utils.getClientX(this.$refs.body),
-                y: event.y - this.$utils.getClientY(this.$refs.body),
+                x: event.x - this.$utils.getOffsetX(this.$refs.body),
+                y: event.y - this.$utils.getOffsetY(this.$refs.body),
                 z: 1,
                 folded: true,
                 params: {},
@@ -568,8 +594,8 @@ export default {
         onBoardContextMenu(event) {
             let center = document.querySelector("#center");
             let limits = {
-                x: this.$utils.getClientX(center),
-                y: this.$utils.getClientY(center),
+                x: this.$utils.getOffsetX(center),
+                y: this.$utils.getOffsetY(center),
                 width: center.offsetWidth,
                 height: center.offsetHeight,
             };
@@ -629,7 +655,7 @@ export default {
     height: 100%;
     overflow: hidden;
     background-color: aliceblue;
-
+    transform-origin: 0 0;
 }
 
 #canvas {
