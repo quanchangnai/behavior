@@ -358,12 +358,10 @@ export default {
 
 >>> .el-table__expand-icon--expanded {
     transform: rotate(-90deg);
-    cursor: default;
 }
 
 >>> .el-table__expand-icon:not(.el-table__expand-icon--expanded) {
     transform: rotate(90deg);
-    cursor: default;
 }
 
 .template-expand {
@@ -373,13 +371,11 @@ export default {
 
 
 .template-tag {
-    cursor: default;
     margin-right: 5px;
 }
 
 .template-name {
     padding: 10px 0;
-    cursor: pointer;
     margin-right: 5px;
     user-select: none;
     overflow-x: hidden;

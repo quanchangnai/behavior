@@ -434,10 +434,6 @@ export default {
     outline: none;
 }
 
-.draggable:hover {
-    cursor: pointer;
-}
-
 .content {
     min-width: 60px;
     max-width: 250px;
@@ -495,18 +491,17 @@ export default {
     height: 24px;
     padding-top: 7px;
     padding-left: 4px;
-    cursor: default;
+    cursor: pointer;
 }
 
 .fold-children-icon {
     position: absolute;
     top: calc(50% - 7px);
     left: calc(100% - 1px);
-    cursor: default;
+    cursor: pointer;
 }
 
 .el-form {
-    cursor: default;
     margin: 4px 12px 4px 0;
 }
 
