@@ -66,9 +66,6 @@ let behavior = {
         let title = "behavior - " + workspacesTitles.get(this.getWorkspace(webContents));
         webContents.send("title", title);
     },
-    async openWorkspacePath(webContents) {
-        await shell.openPath(this.getWorkspace(webContents));
-    },
     getConfigFile(webContents) {
         return path.resolve(this.getWorkspace(webContents), "_config.json");
     },

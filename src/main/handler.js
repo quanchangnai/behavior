@@ -1,4 +1,4 @@
-import {ipcMain} from 'electron'
+import {ipcMain, shell} from 'electron'
 import behavior from "./behavior";
 import fs from 'fs'
 import path from 'path'
@@ -75,8 +75,13 @@ ipcMain.handle("delete-tree", async (event, treeId) => {
     await fs.promises.unlink(treeFile);
 });
 
-ipcMain.handle("open-workspace-path", async (event) => {
-    await behavior.openWorkspacePath(event.sender);
+ipcMain.handle("open-workspace-path", async (event,treeId) => {
+    let workspace = behavior.getWorkspace(event.sender);
+    if (treeId) {
+        shell.showItemInFolder(path.resolve(workspace, treeId + ".json"));
+    } else {
+        await shell.openPath(workspace);
+    }
 });
 
 ipcMain.handle("open-workspace", async (event, workspace) => {

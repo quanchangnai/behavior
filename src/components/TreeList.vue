@@ -71,6 +71,7 @@ export default {
     async created() {
         await this.loadTrees();
         ipcRenderer.on("create-tree", this.createTree);
+        ipcRenderer.on("open-workspace-path", this.openWorkspacePath);
         this.$events.$on("delete-tree", this.deleteTree);
     },
     mounted() {
@@ -130,7 +131,7 @@ export default {
                 this.menuItems.push({title: '删除行为树', handler: () => this.deleteTree(tree)});
                 this.menuItems.push({title: '修改行为树名称', handler: this.showEditTreeNameInput});
             }
-            this.menuItems.push({title: '打开工作目录', handler: () => ipcRenderer.invoke("open-workspace-path")});
+            this.menuItems.push({title: '打开工作目录', handler: () => this.openWorkspacePath(tree?.id)});
 
             let body = this.$refs.body;
             let limits = {
@@ -140,6 +141,12 @@ export default {
                 height: body.offsetHeight,
             };
             this.$refs.menu.show(event.clientX, event.clientY, limits);
+        },
+        openWorkspacePath(treeId) {
+            if (typeof treeId !== "number") {
+                treeId = this.selectedTree?.id;
+            }
+            ipcRenderer.invoke("open-workspace-path", treeId);
         },
         createTree() {
             if (this.archetypes.length > 1) {
