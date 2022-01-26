@@ -52,10 +52,9 @@ export default {
      * 判断元素内容有没有溢出
      * @param el {Element|String} 元素或者选择器
      * @param axis {"x"|"y"} x轴或者y轴
-     * @param d {number} 决定是否溢出的差值
      * @returns {boolean}
      */
-    checkOverflow(el, axis = "x", d = 0) {
+    checkOverflow(el, axis = "x") {
         let element = getElement(el);
         let clone = element.cloneNode();
         clone.style.zIndex = -1;
@@ -67,9 +66,9 @@ export default {
 
         let overflow;
         if (axis === "x") {
-            overflow = clone.scrollWidth > element.offsetWidth + d;
+            overflow = clone.scrollWidth > clone.clientWidth;
         } else if (axis === "y") {
-            overflow = clone.scrollHeight > element.offsetHeight + d;
+            overflow = clone.scrollHeight > clone.clientHeight;
         }
 
         element.parentNode.removeChild(clone);

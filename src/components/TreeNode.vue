@@ -62,7 +62,7 @@
                                       :prop="'params.'+param.name">
                             <template #label>
                                 <el-tooltip effect="light"
-                                            :disabled="labelTips[param.name]!==true"
+                                            :disabled="!paramLabelTips[param.name]"
                                             :arrowOffset="15"
                                             :hide-after="1000"
                                             :content="param.label"
@@ -76,18 +76,19 @@
                                 </el-tooltip>
                             </template>
                             <el-radio-group v-if="param.type==='boolean' && !param.options"
+                                            :ref="'paramValue-'+param.name"
                                             v-model="node.params[param.name]">
                                 <el-radio :label="true">是</el-radio>
                                 <el-radio :label="false">否</el-radio>
                             </el-radio-group>
                             <!--suppress JSUnresolvedVariable -->
                             <el-select v-else-if="param.options"
-                                       :ref="'paramSelect-'+param.name"
+                                       :ref="'paramValue-'+param.name"
                                        v-model="node.params[param.name]"
                                        :multiple="Array.isArray(param.default)"
                                        :class="paramSelectClass(param.name)"
                                        @remove-tag="calcContentBodyHeight"
-                                       @visible-change="onParamSelectVisibleChange('paramSelect-'+param.name,$event)"
+                                       @visible-change="onParamSelectVisibleChange('paramValue-'+param.name,$event)"
                                        popper-class="node-param-select-dropdown">
                                 <el-option v-for="(option,i) in paramOptions(param.options)"
                                            :key="param.name+'-option-'+i"
@@ -96,19 +97,23 @@
                             </el-select>
                             <!--suppress JSUnresolvedVariable -->
                             <el-input-number v-else-if="param.type==='int' || param.type==='float'"
+                                             :ref="'paramValue-'+param.name"
                                              v-model="node.params[param.name]"
                                              :precision="param.type==='float'?2:0"
                                              :min="typeof param.min==='number'?param.min:-Infinity"
                                              :max="typeof param.max==='number'?param.max:Infinity"/>
                             <el-tooltip v-else-if="param.type==='string'"
                                         effect="light"
-                                        :disabled="!param.pattern||param.pattern.length===0"
-                                        :content="'格式:'+param.pattern"
+                                        :disabled="!paramValueTips[param.name]"
                                         :arrowOffset="15"
                                         :hide-after="1000"
                                         popper-class="tooltip node-param-tooltip"
                                         placement="bottom-start">
-                                <el-input v-model="node.params[param.name]"/>
+                                <div slot="content">
+                                    <span v-if="(paramValueTips[param.name]&2)===2">{{ node.params[param.name] }}<br></span>
+                                    <span v-if="(paramValueTips[param.name]&1)===1">格式:{{ param.pattern }}</span>
+                                </div>
+                                <el-input :ref="'paramValue-'+param.name" v-model="node.params[param.name]"/>
                             </el-tooltip>
                         </el-form-item>
                     </el-form>
@@ -146,11 +151,12 @@ export default {
     data() {
         return {
             selected: false,
-            validations: {},//参数校验状态
-            labelTips: {},//参数标签提示状态，文本太长时加提示
             contentStyle: {},
             contentBodyHeight: 0,
             contentHeaderOverflow: false,
+            paramValidations: {},//参数校验状态
+            paramLabelTips: {},//参数标签提示状态，文本太长时加提示
+            paramValueTips: {},//参数值示状态
         };
     },
     mounted() {
@@ -195,11 +201,11 @@ export default {
             }
             if (folded) {
                 this.resizeObserver.unobserve(this.$refs.form.$el);
-                this.labelTips = {};
             } else {
                 this.$nextTick(() => {
                     this.resizeObserver.observe(this.$refs.form.$el);
-                    this.checkParamLabelsOverflow();
+                    this.checkParamLabelTips();
+                    this.checkParamValueTips();
                 });
             }
         },
@@ -332,21 +338,22 @@ export default {
         },
         onFormValidate(prop, pass) {
             if (!pass) {
-                this.validations[prop] = pass;
+                this.paramValidations[prop] = pass;
             } else {
-                delete this.validations[prop];
+                delete this.paramValidations[prop];
             }
             this.calcContentStyle();
+            this.checkParamValueTips();
         },
         calcContentStyle() {
-            let error = Object.keys(this.validations).length > 0;
+            let error = Object.keys(this.paramValidations).length > 0;
             let params = this.node.template.params;
             if (params && !this.creating) {
                 for (let param of params) {
                     let paramValue = this.node.params[param.name];
                     if (param.required && (paramValue === undefined || Array.isArray(paramValue) && paramValue.length === 0)) {
                         error = true;
-                        this.validations['params.' + param.name] = false;
+                        this.paramValidations['params.' + param.name] = false;
                     }
                 }
             }
@@ -361,7 +368,7 @@ export default {
         },
         paramLabelStyle(paramName) {
             let style = {};
-            if (this.validations['params.' + paramName] === false) {
+            if (this.paramValidations['params.' + paramName] === false) {
                 style.color = "#fd7f5a";
             }
             return style
@@ -404,18 +411,36 @@ export default {
             await this.$nextTick();
             this.contentHeaderOverflow = this.$utils.checkOverflow(this.$refs.contentHeader);
         },
-        async checkParamLabelsOverflow() {
+        async checkParamLabelTips() {
             if (!this.node.template.params) {
                 return;
             }
-
+            this.paramLabelTips = {};
             //等待渲染出来后再检测
             await this.$nextTick();
             for (let param of this.node.template.params) {
-                let paramLabel = this.$refs["paramLabel-" + param.name];
-                //required参数标签不知道什么原因导致checkOverflow的clone.scrollWidth多了一个像素
-                if (this.$utils.checkOverflow(paramLabel[0], "x", param.required ? 1 : 0)) {
-                    this.labelTips[param.name] = true;
+                let paramLabel = this.$refs["paramLabel-" + param.name][0];
+                if (this.$utils.checkOverflow(paramLabel)) {
+                    this.paramLabelTips[param.name] = true;
+                }
+            }
+        },
+        async checkParamValueTips() {
+            if (!this.node.template.params) {
+                return;
+            }
+            this.paramValueTips = {};
+            //等待渲染出来后再检测
+            await this.$nextTick();
+            for (let param of this.node.template.params) {
+                this.paramValueTips[param.name] = 0;
+                if (param.pattern && param.pattern.length > 0) {
+                    this.paramValueTips[param.name] |= 1;
+                }
+                let paramValue = this.$refs["paramValue-" + param.name][0];
+                let paramValueInner = paramValue.$el.querySelector(".el-input__inner");
+                if (paramValueInner && this.$utils.checkOverflow(paramValueInner)) {
+                    this.paramValueTips[param.name] |= 2;
                 }
             }
         },
@@ -532,6 +557,12 @@ export default {
 .el-input >>> input, .el-input-number >>> input, .el-select-normal >>> input {
     height: 24px !important;
     line-height: 24px;
+}
+
+.el-input >>> .el-input__inner {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .el-select-multiple {

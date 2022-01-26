@@ -94,7 +94,7 @@ export default {
 
             try {
                 window.removeEventListener("mousemove", this.onMouseMove);
-                if (this.cursor) {
+                if (this.cursor && this.$refs.draggable) {
                     this.$refs.draggable.style.cursor = this.cursor;
                     this.cursor = null;
                 }

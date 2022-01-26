@@ -50,6 +50,7 @@ export default {
 .tooltip {
     padding: 5px 10px;
     box-sizing: border-box;
+    line-height: 20px;
 }
 
 [x-placement^="bottom"].tooltip {
