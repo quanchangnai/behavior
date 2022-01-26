@@ -185,10 +185,7 @@ export default {
             return items;
         },
         nodeStyle() {
-            return {
-                'pointer-events': this.creating ? 'none' : 'auto',
-                'z-index': this.node.z
-            };
+            return {'z-index': this.node.z};
         }
     },
     watch: {
@@ -437,6 +434,10 @@ export default {
     outline: none;
 }
 
+.draggable:hover {
+    cursor: pointer;
+}
+
 .content {
     min-width: 60px;
     max-width: 250px;
@@ -484,10 +485,6 @@ export default {
 
 .no-fold-operation.content > div {
     padding: 0 12px 0 12px !important;
-}
-
-.content:hover {
-    cursor: pointer;
 }
 
 .fold-self-icon {

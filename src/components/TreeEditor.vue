@@ -49,6 +49,7 @@
                    :ref="'node-'+creatingNode.id"
                    :node="creatingNode"
                    :creating="true"
+                   style="pointer-events:none"
                    @dragging="onNodeDragging"
                    @drag-end="onNodeDragEnd"/>
         <context-menu ref="boardMenu" :items="boardMenuItems"/>
