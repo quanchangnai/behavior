@@ -6,7 +6,7 @@
          @mouseover="mouseover=true"
          @mouseout="mouseover=false"
          @mousedown.stop>
-        <div v-for="(item,index) in items"
+        <div v-for="(item,index) in items2"
              :key="'item-'+index"
              class="context-menu-item"
              @click="onItemClick(item)">
@@ -34,12 +34,14 @@ export default {
             visible: false,
             x: 0,
             y: 0,
-            mouseover: false
+            mouseover: false,
+            items2: []
         }
     },
     methods: {
-        show(x, y, limits) {
-            if (!this.items.length) {
+        show(x, y, limits, items) {
+            this.items2 = items ? items : this.items;
+            if (!this.items2.length) {
                 return;
             }
 
@@ -51,11 +53,20 @@ export default {
             window.addEventListener("resize", this.hide);
             window.addEventListener("scroll", this.hide);
             window.addEventListener("blur", this.hide);
+            window.addEventListener("wheel", this.hide);
 
             this.$nextTick(() => {
-                if (!limits) {
-                    limits = {x: 0, y: 0, width: innerWidth, height: innerHeight}
+                if (limits instanceof Element) {
+                    limits = {
+                        x: this.$utils.getOffsetX(limits),
+                        y: this.$utils.getOffsetY(limits),
+                        width: limits.offsetWidth,
+                        height: limits.offsetHeight,
+                    };
+                } else if (!limits) {
+                    limits = {x: 0, y: 0, width: innerWidth, height: innerHeight};
                 }
+
                 let width = this.$refs.menu.offsetWidth;
                 let height = this.$refs.menu.offsetHeight;
                 if (x + width * 1.1 > limits.x + limits.width && limits.width > width) {
@@ -72,11 +83,15 @@ export default {
             }
         },
         hide() {
+            if (!this.visible) {
+                return;
+            }
             this.visible = false;
             window.removeEventListener("mousedown", this.tryHide);
             window.removeEventListener("resize", this.hide);
             window.removeEventListener("scroll", this.hide);
             window.removeEventListener("blur", this.hide);
+            window.removeEventListener("wheel", this.hide);
             this.$emit("hide");
         },
         onItemClick(item) {

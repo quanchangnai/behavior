@@ -133,14 +133,7 @@ export default {
             }
             this.menuItems.push({title: '打开工作目录', handler: () => this.openWorkspacePath(tree?.id)});
 
-            let body = this.$refs.body;
-            let limits = {
-                x: this.$utils.getOffsetX(body),
-                y: this.$utils.getOffsetY(body),
-                width: body.offsetWidth,
-                height: body.offsetHeight,
-            };
-            this.$refs.menu.show(event.clientX, event.clientY, limits);
+            this.$refs.menu.show(event.clientX, event.clientY, this.$refs.body);
         },
         openWorkspacePath(treeId) {
             if (typeof treeId !== "number") {

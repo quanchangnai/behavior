@@ -16,7 +16,7 @@
                        :y="boardY"
                        @drag-start="onBoardDragStart"
                        @drag-end="onBoardDragEnd"
-                       @contextmenu.native="onBoardContextMenu"
+                       @contextmenu.native="showBoardMenu"
                        @mouseup.native="onBoardMouseUp"
                        @wheel.ctrl.exact.native="scaleBoard"
                        :style="{width:boardWidth+'px',height:boardHeight+'px',transform:`scale(${boardScale},${boardScale})`}">
@@ -28,6 +28,7 @@
                            @drag-start="onNodeDragStart"
                            @dragging="onNodeDragging"
                            @drag-end="onNodeDragEnd"
+                           @menu="showNodeMenu"
                            @remove="drawTree"
                            @paste="onNodePaste(node)"
                            @resize="drawTree"
@@ -50,7 +51,8 @@
                    :creating="true"
                    @dragging="onNodeDragging"
                    @drag-end="onNodeDragEnd"/>
-        <context-menu ref="menu" :items="menuItems"/>
+        <context-menu ref="boardMenu" :items="boardMenuItems"/>
+        <context-menu ref="nodeMenu"/>
     </div>
 </template>
 
@@ -125,7 +127,7 @@ export default {
         this.resizeObserver.disconnect();
     },
     computed: {
-        menuItems() {
+        boardMenuItems() {
             let items = [];
             if (!this.tree) {
                 return items;
@@ -394,6 +396,10 @@ export default {
             this.tree.childrenFolded = this.tree.childrenFolded || node.childrenFolded;
             this.drawTree();
         },
+        showNodeMenu(x, y, items) {
+            let center = document.querySelector("#center");
+            this.$refs.nodeMenu.show(x, y, center, items);
+        },
         linkParentNode(node, parentNode) {
             if (parentNode == null) {
                 parentNode = this.findParentNode(node);
@@ -478,7 +484,6 @@ export default {
             this.boardX = 0;
             this.boardY = 0;
             this.hideNodeParamDropdown();
-            console.trace("resetBoardPosition")
         },
         scaleBoard(event) {
             let board = document.querySelector("#board");
@@ -591,15 +596,9 @@ export default {
                 this.drawLinkLines();
             }, {once: true});
         },
-        onBoardContextMenu(event) {
+        showBoardMenu(event) {
             let center = document.querySelector("#center");
-            let limits = {
-                x: this.$utils.getOffsetX(center),
-                y: this.$utils.getOffsetY(center),
-                width: center.offsetWidth,
-                height: center.offsetHeight,
-            };
-            this.$refs.menu.show(event.clientX, event.clientY, limits);
+            this.$refs.boardMenu.show(event.clientX, event.clientY, center);
         },
         foldAllNode(fold) {
             if (!this.tree) {

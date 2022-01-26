@@ -125,19 +125,17 @@
                  @click="foldChildren"
                  class="fold-children-icon"
                  :class="node.childrenFolded?'el-icon-circle-plus-outline':'el-icon-remove-outline'"/>
-            <context-menu ref="menu" :items="menuItems" @hide="node.z = 1"/>
         </template>
     </draggable>
 </template>
 
 <script>
 import Draggable from './Draggable'
-import ContextMenu from './ContextMenu'
 
 // noinspection JSUnresolvedVariable
 export default {
     name: "TreeNode",
-    components: {Draggable, ContextMenu},
+    components: {Draggable},
     props: {
         node: Object,
         creating: {
@@ -244,8 +242,7 @@ export default {
         },
 
         onContextMenu(event) {
-            this.node.z = 30;
-            this.$refs.menu.show(event.clientX, event.clientY);
+            this.$emit("menu", event.clientX, event.clientY, this.menuItems)
         },
         foldSelf() {
             if (this.hasFoldOperation()) {
