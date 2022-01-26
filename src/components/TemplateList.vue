@@ -296,7 +296,7 @@ export default {
             this.expandedTemplates.pop();
             this.expandedTemplates.push(tid);
             await this.$nextTick();
-            let templatePosition = this.$utils.getClientY(this.$refs["templateName-" + tid]);
+            let templatePosition = this.$utils.getOffsetY(this.$refs["templateName-" + tid]);
             let scrollbarWrap = this.$refs.scrollbar.$refs.wrap;
             let searchHeight = document.querySelector("#search").offsetHeight;
             scrollbarWrap.scrollTop = templatePosition - searchHeight;

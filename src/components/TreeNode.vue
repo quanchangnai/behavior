@@ -12,7 +12,7 @@
                @dblclick.native.stop="foldSelf"
                @keyup.native.ctrl.67="copy"
                @keyup.native.ctrl.86="$emit('paste')"
-               @keyup.native.d.delete="remove"
+               @keyup.native.46="remove"
                @contextmenu.native.stop="onContextMenu">
         <template>
             <div ref="content"

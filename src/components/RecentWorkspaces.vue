@@ -52,7 +52,7 @@ export default {
         },
         async openWorkspace(workspace) {
             await ipcRenderer.invoke("open-workspace", workspace.path);
-            workspace.deletable = false;
+            this.visible = false;
         },
         async deleteWorkspace(workspace, index) {
             await ipcRenderer.invoke("delete-workspace", workspace.path);

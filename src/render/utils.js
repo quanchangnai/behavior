@@ -15,33 +15,37 @@ function getElement(el) {
 
 export default {
     /**
-     *获取元素ClientX
-     * @param el {Element|String} 元素或者选择器
+     * 获取元素el1相对元素el2的OffsetX
+     * @param el1 {Element|String} 元素或者选择器
+     * @param el2 {Element|String} 元素或者选择器
      * @returns {number}
      */
-    getClientX(el) {
-        let element = getElement(el);
-        if (!element) {
+    getOffsetX(el1, el2 = null) {
+        let element1 = getElement(el1);
+        let element2 = getElement(el2);
+        if (!element1 || element1 === element2) {
             return 0;
-        } else if (element.offsetParent) {
-            return this.getClientX(element.offsetParent) + element.offsetLeft;
+        } else if (element1.offsetParent && element2 !== element1.offsetParent) {
+            return this.getOffsetX(element1.offsetParent, element2) + element1.offsetLeft;
         } else {
-            return element.offsetLeft;
+            return element1.offsetLeft;
         }
     },
     /**
-     * 获取元素ClientY
-     * @param el {Element|String} 元素或者选择器
+     * 获取元素el1相对元素el2的OffsetY
+     * @param el1 {Element|String} 元素或者选择器
+     * @param el2 {Element|String} 元素或者选择器
      * @returns {number}
      */
-    getClientY(el) {
-        let element = getElement(el);
-        if (!element) {
+    getOffsetY(el1, el2 = null) {
+        let element1 = getElement(el1);
+        let element2 = getElement(el2);
+        if (!element1 || element1 === element2) {
             return 0;
-        } else if (element.offsetParent) {
-            return this.getClientY(element.offsetParent) + element.offsetTop;
+        } else if (element1.offsetParent && element2 !== element1.offsetParent) {
+            return this.getOffsetY(element1.offsetParent, element2) + element1.offsetTop;
         } else {
-            return element.offsetTop;
+            return element1.offsetTop;
         }
     },
     /**

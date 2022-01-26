@@ -13,6 +13,7 @@
                       :show-header="false"
                       :data="visibleTrees"
                       highlight-current-row
+                      tooltip-effect="light"
                       @current-change="selectTree"
                       @row-dblclick="showEditTreeNameInput"
                       @row-contextmenu="(r,c,e)=>onContextMenu(e,r)">
@@ -21,7 +22,7 @@
                         创建行为树&nbsp;&nbsp;&nbsp;&nbsp;
                     </el-button>
                 </template>
-                <el-table-column #default="{row:tree}">
+                <el-table-column #default="{row:tree}" :show-overflow-tooltip="true">
                     <div>
                         <span :ref="'treeIdTag-'+tree.id">
                             <el-tag size="small" style="margin-right: 10px;">{{ tree.id }}</el-tag>
@@ -31,7 +32,6 @@
                                   size="mini"
                                   v-model="tree.name"
                                   :minlength="1"
-                                  :maxlength="10"
                                   @focusout.native="editTreeName=false"
                                   :style="editTreeNameInputStyle(tree.id)"/>
                         <span v-else>{{ tree.name }}</span>
@@ -61,9 +61,10 @@ export default {
             allTrees: null,
             visibleTrees: null,
             selectedTree: null,
-            editTreeName: false,
             maxTreeId: 0,
             keyword: "",
+            editTreeName: false,
+            treeNames: new Set(),
             menuItems: []
         }
     },
@@ -93,6 +94,7 @@ export default {
 
             for (const tree of this.allTrees) {
                 this.maxTreeId = Math.max(this.maxTreeId, tree.id);
+                this.treeNames.add(tree.name);
             }
 
             this.visibleTrees = this.allTrees;
@@ -132,8 +134,8 @@ export default {
 
             let body = this.$refs.body;
             let limits = {
-                x: this.$utils.getClientX(body),
-                y: this.$utils.getClientY(body),
+                x: this.$utils.getOffsetX(body),
+                y: this.$utils.getOffsetY(body),
                 width: body.offsetWidth,
                 height: body.offsetHeight,
             };
@@ -160,7 +162,7 @@ export default {
                 let treeIdTag = this.$refs['treeIdTag-' + tree.id];
                 let scrollbarWrap = this.$refs.scrollbar?.$refs.wrap;
                 if (scrollbarWrap) {
-                    scrollbarWrap.scrollTop = this.$utils.getClientY(treeIdTag) - 50;
+                    scrollbarWrap.scrollTop = this.$utils.getOffsetY(treeIdTag) - 50;
                 }
             });
         },
