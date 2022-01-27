@@ -3,6 +3,7 @@
                :y="node.y"
                :ready="creating"
                :style="{'z-index':node.z}"
+               :scale="node.tree&&node.tree.scale||1"
                tabindex="0"
                @drag-start="onDragStart"
                @dragging="onDragging"
@@ -73,10 +74,10 @@
                                             :hide-after="1000"
                                             popper-class="tooltip"
                                             placement="bottom-start">
-                                    <div slot="content">
+                                    <template #content>
                                         <span v-if="(paramLabelTips[param.name]&1)===1">{{ param.label }}<br></span>
                                         <span v-if="(paramLabelTips[param.name]&2)===2">格式：{{ param.pattern }}</span>
-                                    </div>
+                                    </template>
                                     <span :ref="'paramLabel-'+param.name"
                                           class="paramLabel"
                                           :style="paramLabelStyle(param.name)">
@@ -88,7 +89,7 @@
                                         :disabled="!paramValueTips[param.name]"
                                         popper-class="tooltip"
                                         placement="right">
-                                <div slot="content">{{ node.params[param.name] }}</div>
+                                <template #content>{{ node.params[param.name] }}</template>
                                 <el-radio-group v-if="param.type==='boolean' && !param.options"
                                                 :ref="'paramValue-'+param.name"
                                                 v-model="node.params[param.name]">
@@ -451,7 +452,7 @@ export default {
             }
         },
         onContentBodyWheel(event) {
-            if (this.contentBodyOverflow) {
+            if (this.contentBodyOverflow && !event.ctrlKey) {
                 event.stopPropagation();
             }
         },

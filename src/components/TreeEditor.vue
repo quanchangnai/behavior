@@ -481,6 +481,7 @@ export default {
         resetBoard() {
             this.resetBoardPosition();
             this.boardScale = 1;
+            this.tree.scale = 1;
         },
         resetBoardPosition() {
             this.boardX = 0;
@@ -498,6 +499,7 @@ export default {
             this.boardX -= offsetX * (boardScale - this.boardScale);
             this.boardY -= offsetY * (boardScale - this.boardScale);
             this.boardScale = boardScale;
+            this.tree.scale = boardScale;
         },
         onBoardDragStart() {
             this.hideNodeParamDropdown();

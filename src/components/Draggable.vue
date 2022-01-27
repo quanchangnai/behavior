@@ -31,6 +31,10 @@ export default {
             type: Boolean,
             default: false
         },
+        scale: {
+            type: Number,
+            default: 1
+        },
         payload: Object
     },
     data() {
@@ -86,8 +90,8 @@ export default {
             }
 
             //devicePixelRatio:屏幕缩放比例
-            this.left = this.left + event.movementX / devicePixelRatio;
-            this.top = this.top + event.movementY / devicePixelRatio;
+            this.left = this.left + event.movementX / (this.scale * devicePixelRatio);
+            this.top = this.top + event.movementY / (this.scale * devicePixelRatio);
             this.$emit("dragging", {x: this.left, y: this.top, payload: this.payload});
         },
         onMouseUp() {
