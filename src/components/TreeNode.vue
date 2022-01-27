@@ -2,7 +2,7 @@
     <draggable :x="node.x"
                :y="node.y"
                :ready="creating"
-               :style="nodeStyle"
+               :style="{'z-index':node.z}"
                tabindex="0"
                @drag-start="onDragStart"
                @dragging="onDragging"
@@ -27,7 +27,6 @@
                     <el-tooltip v-if="node.folded && node.comment"
                                 effect="light"
                                 :disabled="!contentHeaderOverflow"
-                                :arrowOffset="15"
                                 :hide-after="1000"
                                 :content="node.comment"
                                 popper-class="tooltip"
@@ -52,7 +51,14 @@
                             <template #label>
                                 <span class="paramLabel">节点备注</span>
                             </template>
-                            <el-input v-model="node.comment"/>
+                            <el-tooltip effect="light"
+                                        :disabled="!commentTips"
+                                        :arrowOffset="15"
+                                        :content="node.comment"
+                                        popper-class="tooltip"
+                                        placement="right">
+                                <el-input ref="comment" v-model="node.comment"/>
+                            </el-tooltip>
                         </el-form-item>
                         <el-form-item v-for="param in node.template.params"
                                       :key="param.name"
@@ -65,9 +71,12 @@
                                             :disabled="!paramLabelTips[param.name]"
                                             :arrowOffset="15"
                                             :hide-after="1000"
-                                            :content="param.label"
                                             popper-class="tooltip"
                                             placement="bottom-start">
+                                    <div slot="content">
+                                        <span v-if="(paramLabelTips[param.name]&1)===1">{{ param.label }}<br></span>
+                                        <span v-if="(paramLabelTips[param.name]&2)===2">格式：{{ param.pattern }}</span>
+                                    </div>
                                     <span :ref="'paramLabel-'+param.name"
                                           class="paramLabel"
                                           :style="paramLabelStyle(param.name)">
@@ -75,45 +84,41 @@
                                     </span>
                                 </el-tooltip>
                             </template>
-                            <el-radio-group v-if="param.type==='boolean' && !param.options"
-                                            :ref="'paramValue-'+param.name"
-                                            v-model="node.params[param.name]">
-                                <el-radio :label="true">是</el-radio>
-                                <el-radio :label="false">否</el-radio>
-                            </el-radio-group>
-                            <!--suppress JSUnresolvedVariable -->
-                            <el-select v-else-if="param.options"
-                                       :ref="'paramValue-'+param.name"
-                                       v-model="node.params[param.name]"
-                                       :multiple="Array.isArray(param.default)"
-                                       :class="paramSelectClass(param.name)"
-                                       @remove-tag="calcContentBodyHeight"
-                                       @visible-change="onParamSelectVisibleChange('paramValue-'+param.name,$event)"
-                                       popper-class="node-param-select-dropdown">
-                                <el-option v-for="(option,i) in paramOptions(param.options)"
-                                           :key="param.name+'-option-'+i"
-                                           :label="option.label"
-                                           :value="option.value"/>
-                            </el-select>
-                            <!--suppress JSUnresolvedVariable -->
-                            <el-input-number v-else-if="param.type==='int' || param.type==='float'"
-                                             :ref="'paramValue-'+param.name"
-                                             v-model="node.params[param.name]"
-                                             :precision="param.type==='float'?2:0"
-                                             :min="typeof param.min==='number'?param.min:-Infinity"
-                                             :max="typeof param.max==='number'?param.max:Infinity"/>
-                            <el-tooltip v-else-if="param.type==='string'"
-                                        effect="light"
+                            <el-tooltip effect="light"
                                         :disabled="!paramValueTips[param.name]"
-                                        :arrowOffset="15"
-                                        :hide-after="1000"
-                                        popper-class="tooltip node-param-tooltip"
-                                        placement="bottom-start">
-                                <div slot="content">
-                                    <span v-if="(paramValueTips[param.name]&2)===2">{{ node.params[param.name] }}<br></span>
-                                    <span v-if="(paramValueTips[param.name]&1)===1">格式:{{ param.pattern }}</span>
-                                </div>
-                                <el-input :ref="'paramValue-'+param.name" v-model="node.params[param.name]"/>
+                                        popper-class="tooltip"
+                                        placement="right">
+                                <div slot="content">{{ node.params[param.name] }}</div>
+                                <el-radio-group v-if="param.type==='boolean' && !param.options"
+                                                :ref="'paramValue-'+param.name"
+                                                v-model="node.params[param.name]">
+                                    <el-radio :label="true">是</el-radio>
+                                    <el-radio :label="false">否</el-radio>
+                                </el-radio-group>
+                                <!--suppress JSUnresolvedVariable -->
+                                <el-select v-else-if="param.options"
+                                           :ref="'paramValue-'+param.name"
+                                           v-model="node.params[param.name]"
+                                           :multiple="Array.isArray(param.default)"
+                                           :class="paramSelectClass(param.name)"
+                                           @remove-tag="calcContentBodyHeight"
+                                           @visible-change="onParamSelectVisibleChange('paramValue-'+param.name,$event)"
+                                           popper-class="node-param-select-dropdown">
+                                    <el-option v-for="(option,i) in paramOptions(param.options)"
+                                               :key="param.name+'-option-'+i"
+                                               :label="option.label"
+                                               :value="option.value"/>
+                                </el-select>
+                                <!--suppress JSUnresolvedVariable -->
+                                <el-input-number v-else-if="param.type==='int' || param.type==='float'"
+                                                 :ref="'paramValue-'+param.name"
+                                                 v-model="node.params[param.name]"
+                                                 :precision="param.type==='float'?2:0"
+                                                 :min="typeof param.min==='number'?param.min:-Infinity"
+                                                 :max="typeof param.max==='number'?param.max:Infinity"/>
+                                <el-input v-else-if="param.type==='string'"
+                                          :ref="'paramValue-'+param.name"
+                                          v-model="node.params[param.name]"/>
                             </el-tooltip>
                         </el-form-item>
                     </el-form>
@@ -157,6 +162,7 @@ export default {
             paramValidations: {},//参数校验状态
             paramLabelTips: {},//参数标签提示状态，文本太长时加提示
             paramValueTips: {},//参数值示状态
+            commentTips: false
         };
     },
     mounted() {
@@ -189,9 +195,6 @@ export default {
             items.push({title: '复制', handler: this.copy});
             items.push({title: '粘贴', handler: () => this.$emit("paste")});
             return items;
-        },
-        nodeStyle() {
-            return {'z-index': this.node.z};
         }
     },
     watch: {
@@ -419,28 +422,31 @@ export default {
             //等待渲染出来后再检测
             await this.$nextTick();
             for (let param of this.node.template.params) {
+                this.paramLabelTips[param.name] = 0;
                 let paramLabel = this.$refs["paramLabel-" + param.name][0];
                 if (this.$utils.checkOverflow(paramLabel)) {
-                    this.paramLabelTips[param.name] = true;
+                    this.paramLabelTips[param.name] |= 1;
+                }
+                if (param.pattern && param.pattern.length > 0) {
+                    this.paramLabelTips[param.name] |= 2;
                 }
             }
         },
         async checkParamValueTips() {
-            if (!this.node.template.params) {
-                return;
-            }
-            this.paramValueTips = {};
             //等待渲染出来后再检测
             await this.$nextTick();
-            for (let param of this.node.template.params) {
-                this.paramValueTips[param.name] = 0;
-                if (param.pattern && param.pattern.length > 0) {
-                    this.paramValueTips[param.name] |= 1;
-                }
-                let paramValue = this.$refs["paramValue-" + param.name][0];
-                let paramValueInner = paramValue.$el.querySelector(".el-input__inner");
-                if (paramValueInner && this.$utils.checkOverflow(paramValueInner)) {
-                    this.paramValueTips[param.name] |= 2;
+            if (this.node.template.comment) {
+                let commentInner = this.$refs.comment.$el.querySelector(".el-input__inner");
+                this.commentTips = commentInner && this.$utils.checkOverflow(commentInner);
+            }
+            if (this.node.template.params) {
+                this.paramValueTips = {};
+                for (let param of this.node.template.params) {
+                    let paramValue = this.$refs["paramValue-" + param.name][0];
+                    let paramValueInner = paramValue.$el.querySelector(".el-input__inner");
+                    if (paramValueInner && this.$utils.checkOverflow(paramValueInner)) {
+                        this.paramValueTips[param.name] = true;
+                    }
                 }
             }
         },
@@ -608,15 +614,4 @@ export default {
     left: 10px !important;
 }
 
-.node-param-tooltip {
-    min-width: 120px;
-}
-
-[x-placement^="bottom"].node-param-tooltip {
-    transform: translateY(-8px);
-}
-
-[x-placement^="top"].node-param-tooltip {
-    transform: translateY(8px);
-}
 </style>

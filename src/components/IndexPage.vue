@@ -60,4 +60,12 @@ export default {
 [x-placement^="top"].tooltip {
     transform: translateY(7px);
 }
+
+[x-placement^="right"].tooltip {
+    transform: translateX(-7px);
+}
+
+[x-placement^="left"].tooltip {
+    transform: translateX(7px);
+}
 </style>
