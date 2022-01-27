@@ -129,9 +129,8 @@ options为对象类型时，refType: "node"表示选项列表引用行为树节�
 ```js
  archetypes = [
     {
-        id: 1,
         name: "新建行为树",
-        root: {//行为树根节点
+        tree: {//行为树根节点
             id: 1,
             name: "",
             tid: 1,//节点模板ID
