@@ -11,7 +11,10 @@
 export default {
     name: "Draggable",
     props: {
-        ctrlKey: Boolean,//是否按下ctrl键才能拖拽
+        ctrlKey: {
+            type: Boolean,
+            default: false
+        },
         x: {
             type: Number,
             default: 0
@@ -53,7 +56,7 @@ export default {
     },
     methods: {
         checkCtrlKey(event) {
-            return !this.ctrlKey || event && event.ctrlKey;
+            return !event || this.ctrlKey === event.ctrlKey;
         },
         onMouseDown(event) {
             if (!this.checkCtrlKey(event)) {
