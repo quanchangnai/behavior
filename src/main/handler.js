@@ -1,9 +1,8 @@
-import {ipcMain, shell} from 'electron'
+import {ipcMain} from 'electron'
 import behavior from "./behavior";
 import fs from 'fs'
 import path from 'path'
 import {validateConfig} from "./validator";
-
 
 ipcMain.on("title", event => behavior.sendTitle(event.sender));
 
@@ -76,20 +75,23 @@ ipcMain.handle("delete-tree", async (event, treeName) => {
     let treeFile = path.resolve(workspace, treeName + ".json");
     await fs.promises.unlink(treeFile);
 });
+
 ipcMain.handle("rename-tree", async (event, oldTreeName, newTreeName) => {
     let workspace = behavior.getWorkspace(event.sender);
     let oldTreeFile = path.resolve(workspace, oldTreeName + ".json");
     let newTreeFile = path.resolve(workspace, newTreeName + ".json");
+    if (behavior.selectedTree === oldTreeName) {
+        behavior.selectedTree = newTreeName;
+    }
     await fs.promises.rename(oldTreeFile, newTreeFile);
 });
 
+ipcMain.on("select-tree", (event, treeName) => {
+    behavior.selectedTree = treeName;
+});
+
 ipcMain.handle("open-workspace-path", async (event, treeName) => {
-    let workspace = behavior.getWorkspace(event.sender);
-    if (treeName) {
-        shell.showItemInFolder(path.resolve(workspace, treeName + ".json"));
-    } else {
-        await shell.openPath(workspace);
-    }
+    await behavior.openWorkspacePath(event.sender, treeName)
 });
 
 ipcMain.handle("open-workspace", async (event, workspace) => {

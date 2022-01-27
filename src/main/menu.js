@@ -17,7 +17,7 @@ let menu = [
                 label: '打开工作目录',
                 accelerator: "Alt+E",
                 click: async (item, window) => {
-                    window.webContents.send("open-workspace-path");
+                    await behavior.openWorkspacePath(window.webContents)
                 }
             },
             {

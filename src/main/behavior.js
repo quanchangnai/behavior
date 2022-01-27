@@ -128,7 +128,16 @@ let behavior = {
         workspacesTitles.delete(workspace);
         // noinspection JSIgnoredPromiseFromCall
         save();
-    }
+    },
+    async openWorkspacePath(webContents, treeName) {
+        let workspace = this.getWorkspace(webContents);
+        treeName = treeName || this.selectedTree;
+        if (treeName) {
+            shell.showItemInFolder(path.resolve(workspace, treeName + ".json"));
+        } else {
+            await shell.openPath(workspace);
+        }
+    },
 };
 
 async function save() {
