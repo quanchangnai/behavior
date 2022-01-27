@@ -15,7 +15,7 @@
                       highlight-current-row
                       tooltip-effect="light"
                       @current-change="selectTree"
-                      @row-dblclick="showEditTreeNameInput"
+                      @row-dblclick="showRenameTreeInput"
                       @row-contextmenu="(r,c,e)=>onContextMenu(e,r)">
                 <template #empty>
                     <el-button type="text" @click="createTree">
@@ -27,13 +27,14 @@
                         <span :ref="'treeIdTag-'+tree.id">
                             <el-tag size="small" style="margin-right: 10px;">{{ tree.id }}</el-tag>
                         </span>
-                        <el-input v-if="editTreeName&&tree===selectedTree"
-                                  ref="editTreeNameInput"
+                        <el-input v-if="renameTree&&tree===selectedTree"
+                                  ref="renameTreeInput"
                                   size="mini"
                                   v-model="tree.name"
                                   :minlength="1"
-                                  @focusout.native="editTreeName=false"
-                                  :style="editTreeNameInputStyle(tree.id)"/>
+                                  @keyup.enter.native="doRenameTree"
+                                  @focusout.native="doRenameTree"
+                                  :style="renameTreeInputStyle(tree.id)"/>
                         <span v-else>{{ tree.name }}</span>
                     </div>
                 </el-table-column>
@@ -63,8 +64,8 @@ export default {
             selectedTree: null,
             maxTreeId: 0,
             keyword: "",
-            editTreeName: false,
-            treeNames: new Set(),
+            renameTree: false,
+            mappedTrees: new Map(),
             menuItems: []
         }
     },
@@ -94,8 +95,9 @@ export default {
             this.allTrees = await ipcRenderer.invoke("load-trees");
 
             for (const tree of this.allTrees) {
-                this.maxTreeId = Math.max(this.maxTreeId, tree.id);
-                this.treeNames.add(tree.name);
+                tree.id = ++this.maxTreeId;
+                tree.renaming = false;
+                this.mappedTrees.set(tree.name.toLowerCase(), tree);
             }
 
             this.visibleTrees = this.allTrees;
@@ -129,17 +131,17 @@ export default {
             this.menuItems.push({title: '创建行为树', handler: this.createTree});
             if (tree != null) {
                 this.menuItems.push({title: '删除行为树', handler: () => this.deleteTree(tree)});
-                this.menuItems.push({title: '修改行为树名称', handler: this.showEditTreeNameInput});
+                this.menuItems.push({title: '重命名行为树', handler: this.showRenameTreeInput});
             }
-            this.menuItems.push({title: '打开工作目录', handler: () => this.openWorkspacePath(tree?.id)});
+            this.menuItems.push({title: '打开工作目录', handler: () => this.openWorkspacePath(tree?.name)});
 
             this.$refs.menu.show(event.clientX, event.clientY, this.$refs.body);
         },
-        openWorkspacePath(treeId) {
-            if (typeof treeId !== "number") {
-                treeId = this.selectedTree?.id;
+        openWorkspacePath(treeName) {
+            if (typeof treeName !== "string") {
+                treeName = this.selectedTree?.name;
             }
-            ipcRenderer.invoke("open-workspace-path", treeId);
+            ipcRenderer.invoke("open-workspace-path", treeName);
         },
         createTree() {
             if (this.archetypes.length > 1) {
@@ -150,20 +152,27 @@ export default {
 
         },
         doCreateTree(archetype) {
-            let tree = JSON.parse(JSON.stringify(archetype));
-            tree.id = ++this.maxTreeId;
-            tree.name = "新建行为树-" + this.maxTreeId;
+            let tree = {};
+            tree.root = JSON.parse(JSON.stringify(archetype.tree));
 
+            do {
+                tree.id = ++this.maxTreeId;
+                tree.name = "新建行为树-" + this.maxTreeId;
+            } while (this.mappedTrees.has(tree.name.toLowerCase()))
+
+            this.mappedTrees.set(tree.name.toLowerCase(), tree);
             this.allTrees.push(tree);
-            this.$refs.table.setCurrentRow(tree);
 
+            this.$refs.table.setCurrentRow(tree);
             this.$utils.saveTree(tree);
+
             this.$nextTick(() => {
                 let treeIdTag = this.$refs['treeIdTag-' + tree.id];
                 let scrollbarWrap = this.$refs.scrollbar?.$refs.wrap;
                 if (scrollbarWrap) {
                     scrollbarWrap.scrollTop = this.$utils.getOffsetY(treeIdTag) - 50;
                 }
+                this.showRenameTreeInput();
             });
         },
 
@@ -182,17 +191,40 @@ export default {
 
             this.$refs.scrollbar.$refs.wrap.scrollTop = 0;
 
-            await ipcRenderer.invoke("delete-tree", tree.id);
+            await ipcRenderer.invoke("delete-tree", tree.name);
         },
-        editTreeNameInputStyle(treeId) {
+        renameTreeInputStyle(treeId) {
             // noinspection JSUnresolvedVariable
             let treeIdTagWidth = this.$refs['treeIdTag-' + treeId].offsetWidth;
             return {width: "calc(100% - " + (treeIdTagWidth + 2) + "px)"}
         },
-        async showEditTreeNameInput() {
-            this.editTreeName = true;
+        async showRenameTreeInput() {
+            this.renameTree = true;
+            this.selectedTree.renaming = true;
+            this.selectedTree.oldName = this.selectedTree.name;
             await this.$nextTick();
-            this.$refs.editTreeNameInput.focus();
+            this.$refs.renameTreeInput.focus();
+        },
+        async doRenameTree() {
+            this.renameTree = false;
+            let oldTreeName = this.selectedTree.oldName;
+            let newTreeName = this.selectedTree.name;
+            if (newTreeName.startsWith("_")) {
+                this.selectedTree.renaming = false;
+                return;
+            }
+            let sameNameTree = this.mappedTrees.get(newTreeName.toLocaleString());
+            if (sameNameTree && sameNameTree.id !== this.selectedTree.id) {
+                this.selectedTree.name = oldTreeName;
+                this.selectedTree.renaming = false;
+                return;
+            }
+            if (oldTreeName !== newTreeName) {
+                this.mappedTrees.delete(oldTreeName.toLocaleString());
+                this.mappedTrees.set(newTreeName.toLocaleString(), this.selectedTree);
+                await ipcRenderer.invoke("rename-tree", oldTreeName, newTreeName);
+                this.selectedTree.renaming = false;
+            }
         },
         async doLayout() {
             let body = document.querySelector("#body");

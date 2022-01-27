@@ -37,18 +37,19 @@ ipcMain.handle("load-trees", async event => {
             if (!fileName.endsWith(".json")) {
                 continue;
             }
-            let basename = path.basename(fileName, ".json");
-            if (!Number.isInteger(Number(basename))) {
-                continue;
-            }
             let fileStats = await fs.promises.stat(fileName);
             if (!fileStats.isFile()) {
+                continue;
+            }
+            let basename = path.basename(fileName, ".json");
+            if (basename.startsWith("_")) {
                 continue;
             }
 
             try {
                 let fileJson = (await fs.promises.readFile(fileName)).toString();
-                trees.push(JSON.parse(fileJson));
+                let root = JSON.parse(fileJson);
+                trees.push({name: basename, root});
             } catch (e) {
                 event.sender.send("msg", `加载行为树(${basename})失败.`, "error");
                 throw e;
@@ -63,22 +64,29 @@ ipcMain.handle("load-trees", async event => {
 
 
 ipcMain.handle("save-tree", async (event, tree) => {
+    console.log("save-tree", tree.name);
     let workspace = behavior.getWorkspace(event.sender);
-    let treeJson = JSON.stringify(tree, null, 4);
-    let treeFile = path.resolve(workspace, tree.id + ".json");
+    let treeJson = JSON.stringify(tree.root, null, 4);
+    let treeFile = path.resolve(workspace, tree.name + ".json");
     await fs.promises.writeFile(treeFile, treeJson, {encoding: "utf-8"});
 });
 
-ipcMain.handle("delete-tree", async (event, treeId) => {
+ipcMain.handle("delete-tree", async (event, treeName) => {
     let workspace = behavior.getWorkspace(event.sender);
-    let treeFile = path.resolve(workspace, treeId + ".json");
+    let treeFile = path.resolve(workspace, treeName + ".json");
     await fs.promises.unlink(treeFile);
 });
-
-ipcMain.handle("open-workspace-path", async (event,treeId) => {
+ipcMain.handle("rename-tree", async (event, oldTreeName, newTreeName) => {
     let workspace = behavior.getWorkspace(event.sender);
-    if (treeId) {
-        shell.showItemInFolder(path.resolve(workspace, treeId + ".json"));
+    let oldTreeFile = path.resolve(workspace, oldTreeName + ".json");
+    let newTreeFile = path.resolve(workspace, newTreeName + ".json");
+    await fs.promises.rename(oldTreeFile, newTreeFile);
+});
+
+ipcMain.handle("open-workspace-path", async (event, treeName) => {
+    let workspace = behavior.getWorkspace(event.sender);
+    if (treeName) {
+        shell.showItemInFolder(path.resolve(workspace, treeName + ".json"));
     } else {
         await shell.openPath(workspace);
     }

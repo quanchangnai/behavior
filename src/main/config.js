@@ -57,9 +57,8 @@ templates[12].params = [
 //创建行为树时的原型
 let archetypes = [
     {
-        id: 1,
         name: "新建行为树",
-        root: {
+        tree: {
             id: 1,
             comment: "",
             tid: 1,

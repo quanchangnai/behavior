@@ -147,7 +147,7 @@ export default {
      * @returns {Promise<void>}
      */
     async saveTree(tree) {
-        if (tree) {
+        if (tree && !tree.renaming) {
             let root = this.buildNodes(tree.root);
             let result = {id: tree.id, name: tree.name, root};
             await ipcRenderer.invoke("save-tree", result);

@@ -54,28 +54,6 @@ let node = {
     additionalProperties: false
 };
 
-//行为树格式
-let tree = {
-    $id: "tree",
-    type: "object",
-    properties: {
-        id: {
-            type: "integer",
-            minimum: 1
-        },
-        name: {
-            type: "string",
-            minLength: 1,
-            maxLength: 20
-        },
-        root: {
-            $ref: "node"
-        }
-    },
-    required: ["id", "name", "root"],
-    additionalProperties: false
-};
-
 //模板类型格式
 let templateTypes = {
     type: "array",
@@ -495,6 +473,24 @@ let templates = {
     uniqueItems: true
 };
 
+//创建行为树时的原型格式
+let archetype = {
+    $id: "archetype",
+    type: "object",
+    properties: {
+        name: {
+            type: "string",
+            minLength: 1,
+            maxLength: 20
+        },
+        tree: {
+            $ref: "node"
+        }
+    },
+    required: ["name", "tree"],
+    additionalProperties: false
+};
+
 //编辑器配置格式
 let config = {
     $id: "config",
@@ -505,7 +501,7 @@ let config = {
         templates,
         archetypes: {
             type: "array",
-            items: {$ref: "tree"},
+            items: {$ref: "archetype"},
             minItems: 1,
             uniqueItems: true
         },
@@ -603,17 +599,17 @@ function validateConfigLogic(config) {
 
     let mappedArchetypes = new Map();
     for (const archetype of config.archetypes) {
-        if (mappedArchetypes.has(archetype.id)) {
-            errors.push(`行为树原型ID(${archetype.id})有重复`);
+        if (mappedArchetypes.has(archetype.name)) {
+            errors.push(`行为树原型名称(${archetype.name})有重复`);
         }
-        mappedArchetypes.set(archetype.id, archetype);
+        mappedArchetypes.set(archetype.name, archetype);
         let nodeIds = new Set();
         let validateNode = node => {
             if (nodeIds.has(node.id)) {
-                errors.push(`行为树原型(${archetype.id})的节点ID(${node.id})有重复`);
+                errors.push(`行为树原型(${archetype.name})的节点ID(${node.id})有重复`);
             }
             if (!mappedTemplates.has(node.tid)) {
-                errors.push(`行为树原型(${archetype.id})节点(${node.id})的模板(${node.tid})不存在`);
+                errors.push(`行为树原型(${archetype.name})节点(${node.id})的模板(${node.tid})不存在`);
             }
             nodeIds.add(node.id);
             if (node.children) {
@@ -622,7 +618,7 @@ function validateConfigLogic(config) {
                 }
             }
         };
-        validateNode(archetype.root);
+        validateNode(archetype.tree);
     }
 
     return errors;
@@ -631,7 +627,7 @@ function validateConfigLogic(config) {
 let logicValidators = {config: validateConfigLogic};
 
 let ajv = addFormats(new Ajv({$data: true}));
-ajv.addSchema([node, tree, config, behavior]);
+ajv.addSchema([node, archetype, config, behavior]);
 
 function localizeProxy(validate) {
     return new Proxy(validate, {
@@ -655,6 +651,5 @@ function localizeProxy(validate) {
 }
 
 export let validateNode = localizeProxy(ajv.getSchema("node"));
-export let validateTree = localizeProxy(ajv.getSchema("tree"));
 export let validateConfig = localizeProxy(ajv.getSchema("config"));
 export let validateBehavior = localizeProxy(ajv.getSchema("behavior"));

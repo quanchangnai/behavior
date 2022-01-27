@@ -7,8 +7,8 @@
                        @select-tree="onSelectTree"/>
         </div>
         <div id="center"
-             @wheel.exact="onCenterWheel"
              @dblclick="resetBoard"
+             @wheel.exact="onCenterWheel"
              :style="{left:(leftWidth+2)+'px',right:rightWidth+'px'}">
             <draggable id="board"
                        :freeze="boardFreeze"
@@ -22,9 +22,9 @@
                        :style="{width:boardWidth+'px',height:boardHeight+'px',transform:`scale(${boardScale},${boardScale})`}">
                 <canvas id="canvas" @contextmenu.prevent/>
                 <tree-node v-for="node in visibleNodes"
+                           :node="node"
                            :key="tree.id+'-'+node.id"
                            :ref="'node-'+node.id"
-                           :node="node"
                            @drag-start="onNodeDragStart"
                            @dragging="onNodeDragging"
                            @drag-end="onNodeDragEnd"
@@ -171,6 +171,7 @@ export default {
     methods: {
         onSelectTree(tree) {
             this.tree = tree;
+            this.resetBoard();
             this.drawTree();
         },
         async drawTree() {
