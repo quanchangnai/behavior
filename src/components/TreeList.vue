@@ -219,12 +219,18 @@ export default {
                 invalidName = true;
             }
 
-            if (invalidName) {
-                this.selectedTree.name = oldTreeName;
+            if (!invalidName) {
+                try {
+                    await ipcRenderer.invoke("rename-tree", oldTreeName, newTreeName);
+                    this.mappedTrees.delete(oldTreeName.toLocaleString());
+                    this.mappedTrees.set(newTreeName.toLocaleString(), this.selectedTree);
+                } catch (e) {
+                    console.error(e);
+                    this.$message.error({message: "重命名行为树失败", center: true, offset: 200});
+                    this.selectedTree.name = oldTreeName;
+                }
             } else {
-                this.mappedTrees.delete(oldTreeName.toLocaleString());
-                this.mappedTrees.set(newTreeName.toLocaleString(), this.selectedTree);
-                await ipcRenderer.invoke("rename-tree", oldTreeName, newTreeName);
+                this.selectedTree.name = oldTreeName;
             }
             this.selectedTree.renaming = false;
         },

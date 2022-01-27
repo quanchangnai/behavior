@@ -114,10 +114,12 @@ export default {
             this.leftWidth = this.leftWidth === left_width ? 0 : left_width;
             this.resetBoardPosition();
         });
+
         ipcRenderer.on("right-visible", () => {
             this.rightWidth = this.rightWidth === right_width ? 0 : right_width;
             this.resetBoardPosition();
         });
+
         ipcRenderer.on("fold-all-node", (e, fold) => this.foldAllNode(fold));
     },
     mounted() {
