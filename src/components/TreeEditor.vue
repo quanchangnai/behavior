@@ -179,6 +179,10 @@ export default {
             await this.$nextTick();
 
             const draw = () => {
+                const board = document.querySelector("#board");
+                this.boardWidth = board.parentElement.offsetWidth;
+                this.boardHeight = board.parentElement.offsetHeight;
+
                 if (!this.tree) {
                     this.initCanvas();
                     return;
@@ -186,9 +190,8 @@ export default {
 
                 this.calcNodeBounds(this.tree.root);
 
-                const board = document.querySelector("#board");
-                this.boardWidth = Math.max(board.parentElement.offsetWidth, this.tree.root.treeWidth + board_edge_space * 2);
-                this.boardHeight = Math.max(board.parentElement.offsetHeight, this.tree.root.treeHeight + board_edge_space * 2);
+                this.boardWidth = Math.max(this.boardWidth, this.tree.root.treeWidth + board_edge_space * 2);
+                this.boardHeight = Math.max(this.boardHeight, this.tree.root.treeHeight + board_edge_space * 2);
                 if (this.boardX < (-this.boardWidth + board_edge_space) * this.boardScale
                         || this.boardY < -(this.boardHeight + board_edge_space) * this.boardScale) {
                     this.resetBoardPosition();
@@ -481,7 +484,9 @@ export default {
         resetBoard() {
             this.resetBoardPosition();
             this.boardScale = 1;
-            this.tree.scale = 1;
+            if (this.tree) {
+                this.tree.scale = 1;
+            }
         },
         resetBoardPosition() {
             this.boardX = 0;
@@ -499,7 +504,9 @@ export default {
             this.boardX -= offsetX * (boardScale - this.boardScale);
             this.boardY -= offsetY * (boardScale - this.boardScale);
             this.boardScale = boardScale;
-            this.tree.scale = boardScale;
+            if (this.tree) {
+                this.tree.scale = boardScale;
+            }
         },
         onBoardDragStart() {
             this.hideNodeParamDropdown();
