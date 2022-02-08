@@ -41,18 +41,18 @@
             </el-table>
         </el-scrollbar>
         <context-menu ref="menu" :items="menuItems"/>
-        <archetypes-dialog ref="dialog" :data="archetypes" @select="doCreateTree"/>
+        <tree-archetypes ref="dialog" :data="archetypes" @select="doCreateTree"/>
     </div>
 </template>
 
 <script>
 import {ipcRenderer} from 'electron'
 import ContextMenu from './ContextMenu'
-import ArchetypesDialog from "./ArchetypesDialog";
+import TreeArchetypes from "./TreeArchetypes";
 
 export default {
     name: "TreeList",
-    components: {ArchetypesDialog, ContextMenu},
+    components: {TreeArchetypes, ContextMenu},
     props: {
         archetypes: Array
     },
@@ -116,7 +116,7 @@ export default {
         initTree(tree) {
             tree.maxNodeId = 0;
             this.$set(tree, "folded", 1);
-            this.$set(tree, "nodeIdShown", false);
+            this.$set(tree, "showNodeId", false);
 
             this.$utils.visitNodes(tree.root, (node, parent) => {
                 this.$utils.initNode(tree, node, parent);
@@ -128,12 +128,12 @@ export default {
             event.stopPropagation();
 
             this.menuItems.splice(0, this.menuItems.length);
-            this.menuItems.push({title: '创建行为树', handler: this.createTree});
+            this.menuItems.push({label: '创建行为树', handler: this.createTree});
             if (tree != null) {
-                this.menuItems.push({title: '删除行为树', handler: () => this.deleteTree(tree)});
-                this.menuItems.push({title: '重命名行为树', handler: this.startRenameTree});
+                this.menuItems.push({label: '删除行为树', handler: () => this.deleteTree(tree)});
+                this.menuItems.push({label: '重命名行为树', handler: this.startRenameTree});
             }
-            this.menuItems.push({title: '打开工作目录', handler: () => this.openWorkspacePath(tree?.name)});
+            this.menuItems.push({label: '打开工作目录', handler: () => this.openWorkspacePath(tree?.name)});
 
             this.$refs.menu.show(event.clientX, event.clientY, this.$refs.body);
         },
@@ -149,7 +149,6 @@ export default {
             } else {
                 this.doCreateTree(this.archetypes[0]);
             }
-
         },
         doCreateTree(archetype) {
             let tree = {};

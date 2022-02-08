@@ -11,7 +11,6 @@
                @focusin.native="selected=true"
                @focusout.native="selected=false"
                @dblclick.native.stop="foldSelf"
-               @keyup.native.ctrl.67="copy"
                @keyup.native.ctrl.86="$emit('paste')"
                @keyup.native.46="remove"
                @contextmenu.native.stop="onContextMenu">
@@ -22,7 +21,7 @@
                  :class="{'no-fold-operation': !hasFoldOperation()}">
                 <div class="content-header" ref="contentHeader">
                     {{ node.template.name }}
-                    <span v-if="node.tree&&node.tree.nodeIdShown">
+                    <span v-if="node.tree&&node.tree.showNodeId">
                         ({{ node.id }})
                     </span>
                     <el-tooltip v-if="node.folded && node.comment"
@@ -178,26 +177,6 @@ export default {
     destroyed() {
         this.resizeObserver.disconnect();
     },
-    computed: {
-        menuItems() {
-            let items = [];
-            if (this.hasFoldOperation()) {
-                items.push({title: this.node.folded ? '展开节点' : '收起节点', handler: this.foldSelf});
-            }
-            if (this.node.children.length) {
-                items.push({title: this.node.childrenFolded ? '展开子树' : '收起子树', handler: this.foldChildren});
-            }
-            if (this.node.template.visible) {
-                items.push({title: '定位模板', handler: () => this.$events.$emit("position-template", this.node.tid)});
-            }
-            if (this.node.parent) {
-                items.push({title: '删除', handler: this.remove});
-            }
-            items.push({title: '复制', handler: this.copy});
-            items.push({title: '粘贴', handler: () => this.$emit("paste")});
-            return items;
-        }
-    },
     watch: {
         'node.folded': function (folded) {
             if (!this.hasFoldOperation()) {
@@ -215,13 +194,13 @@ export default {
         },
         selected() {
             this.calcContentStyle();
+            this.$emit("select", this.node, this.selected);
         },
     },
     methods: {
         onDragStart() {
             this.node.dragging = true;
             this.$emit("drag-start", {node: this.node});
-
         },
         onDragging(event) {
             const deltaX = event.x - this.node.x;
@@ -247,9 +226,23 @@ export default {
             let template = this.node.template;
             return template.comment || template.params?.length > 0;
         },
-
         onContextMenu(event) {
-            this.$emit("menu", event.clientX, event.clientY, this.menuItems)
+            let items = [];
+            if (this.hasFoldOperation()) {
+                items.push({label: this.node.folded ? '展开节点' : '收起节点', handler: this.foldSelf});
+            }
+            if (this.node.children.length) {
+                items.push({label: this.node.childrenFolded ? '展开子树' : '收起子树', handler: this.foldChildren});
+            }
+            if (this.node.template.visible) {
+                items.push({label: '定位模板', handler: () => this.$events.$emit("position-template", this.node.tid)});
+            }
+            if (this.node.parent) {
+                items.push({label: '删除', handler: this.remove});
+            }
+            items.push({label: '复制', handler: this.copy});
+            items.push({label: '粘贴', handler: () => this.$emit("paste")});
+            this.$emit("menu", event.clientX, event.clientY, items);
         },
         foldSelf() {
             if (this.hasFoldOperation()) {
@@ -279,10 +272,6 @@ export default {
             this.deleteParamOptionRefNode();
 
             this.$emit("remove", this.node);
-        },
-        copy() {
-            this.$store.node = this.$utils.buildNodes(this.node);
-            this.$events.$emit("init-tree", this.$store.node);
         },
         onParamSelectVisibleChange(ref, visible) {
             this.node.z = visible ? 200 : 1;

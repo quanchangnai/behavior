@@ -61,9 +61,7 @@ ipcMain.handle("load-trees", async event => {
     }
 );
 
-
 ipcMain.handle("save-tree", async (event, tree) => {
-    console.log("save-tree", tree.name);
     let workspace = behavior.getWorkspace(event.sender);
     let treeJson = JSON.stringify(tree.root, null, 4);
     let treeFile = path.resolve(workspace, tree.name + ".json");

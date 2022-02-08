@@ -1,7 +1,7 @@
 <template>
     <el-dialog top="25vh"
                :width="width()"
-               title="选择原型"
+               title="选择行为树原型"
                @opened="onOpened"
                :visible.sync="visible">
         <el-scrollbar ref="scrollbar" :style="{'height': height()}">
@@ -29,7 +29,7 @@
 
 <script>
 export default {
-    name: "ArchetypesDialog",
+    name: "TreeArchetypes",
     props: {
         data: Array
     },

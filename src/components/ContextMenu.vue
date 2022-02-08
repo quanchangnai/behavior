@@ -1,17 +1,17 @@
 <template>
-    <div v-if="visible"
+    <div v-if="visibleItems"
          ref="menu"
          class="context-menu"
          :style="{left:x+'px',top:y+'px'}"
          @mouseover="mouseover=true"
          @mouseout="mouseover=false"
          @mousedown.stop>
-        <div v-for="(item,index) in items2"
+        <div v-for="(item,index) in visibleItems"
              :key="'item-'+index"
              class="context-menu-item"
              @click="onItemClick(item)">
             <slot :item="item">
-                {{ item.title }}
+                {{ item.label }}
             </slot>
         </div>
     </div>
@@ -25,27 +25,25 @@ export default {
         items: {
             type: Array,
             default: function () {
-                return [{title: "测试1", handler: null}, {title: "测试2", handler: null}]
+                return [{label: "测试1", handler: null}, {label: "测试2", handler: null}]
             }
         }
     },
     data() {
         return {
-            visible: false,
             x: 0,
             y: 0,
             mouseover: false,
-            items2: []
+            visibleItems: null
         }
     },
     methods: {
         show(x, y, limits, items) {
-            this.items2 = items ? items : this.items;
-            if (!this.items2.length) {
+            this.visibleItems = items ? items : this.items;
+            if (!this.visibleItems?.length) {
                 return;
             }
 
-            this.visible = true;
             this.x = x;
             this.y = y;
 
@@ -83,10 +81,10 @@ export default {
             }
         },
         hide() {
-            if (!this.visible) {
+            if (!this.visibleItems) {
                 return;
             }
-            this.visible = false;
+            this.visibleItems = null;
             window.removeEventListener("mousedown", this.tryHide);
             window.removeEventListener("resize", this.hide);
             window.removeEventListener("scroll", this.hide);

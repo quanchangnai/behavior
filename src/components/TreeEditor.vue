@@ -16,6 +16,7 @@
                        :y="boardY"
                        @drag-start="onBoardDragStart"
                        @drag-end="onBoardDragEnd"
+                       @keyup.native.ctrl.67="copyNodes"
                        @contextmenu.native="showBoardMenu"
                        @mouseup.native="onBoardMouseUp"
                        @wheel.ctrl.exact.native="scaleBoard"
@@ -28,9 +29,10 @@
                            @drag-start="onNodeDragStart"
                            @dragging="onNodeDragging"
                            @drag-end="onNodeDragEnd"
+                           @select="onNodeSelect"
                            @menu="showNodeMenu"
                            @remove="drawTree"
-                           @paste="onNodePaste(node)"
+                           @paste="pasteNodes(node)"
                            @resize="drawTree"
                            @fold="onNodeFold"
                            @children-fold="onNodeChildrenFold"
@@ -98,7 +100,8 @@ export default {
             boardHeight: 0,
             boardScale: 1,
             leftWidth: left_width,
-            rightWidth: right_width
+            rightWidth: right_width,
+            selectedNodes: new Set()
         }
     },
     async created() {
@@ -136,18 +139,18 @@ export default {
                 return items;
             }
             if ((this.tree.folded & 1) === 1) {//至少有一个节点是收起的
-                items.push({title: '展开全部节点', handler: () => this.foldAllNode(false)});
+                items.push({label: '展开全部节点', handler: () => this.foldAllNode(false)});
             }
             if ((this.tree.folded & 2) === 2) {//至少有一个节点是展开的
-                items.push({title: '收起全部节点', handler: () => this.foldAllNode(true)});
+                items.push({label: '收起全部节点', handler: () => this.foldAllNode(true)});
             }
             if (this.tree.childrenFolded) {
-                items.push({title: '展开全部子树', handler: this.unfoldAllNodeChildren});
+                items.push({label: '展开全部子树', handler: this.unfoldAllNodeChildren});
             }
-            let nodeIdShown = this.tree.nodeIdShown;
-            items.push({title: (nodeIdShown ? '隐藏' : '显示') + '节点ID', handler: () => this.tree.nodeIdShown = !nodeIdShown});
+            let showNodeId = this.tree.showNodeId;
+            items.push({label: (showNodeId ? '隐藏' : '显示') + '节点ID', handler: () => this.tree.showNodeId = !showNodeId});
             items.push({
-                title: '删除行为树', handler: () => {
+                label: '删除行为树', handler: () => {
                     this.$events.$emit("delete-tree", this.tree);
                 }
             });
@@ -357,26 +360,43 @@ export default {
             this.boardFreeze = false;
             this.drawTree();
         },
-        onNodePaste(targetNode) {
-            if (!this.$store.node) {
+        onNodeSelect(node, selected) {
+            if (selected) {
+                this.selectedNodes.add(node);
+            } else {
+                this.selectedNodes.delete(node);
+            }
+        },
+        copyNodes() {
+            if (this.selectedNodes.size === 0) {
                 return;
             }
-
-            let pasteNode = JSON.parse(JSON.stringify(this.$store.node));
-
-            if (!this.nodeCanLink(pasteNode, targetNode)) {
+            this.$store.copyNodes = [];
+            for (let selectedNode of this.selectedNodes) {
+                let copyNode = this.$utils.buildNodes(selectedNode);
+                this.$store.copyNodes.push(copyNode);
+                this.$events.$emit("init-tree", copyNode);
+            }
+        },
+        pasteNodes(targetNode) {
+            if (!this.$store.copyNodes?.length) {
                 return;
             }
+            for (const copyNode of this.$store.copyNodes) {
+                let pasteNode = JSON.parse(JSON.stringify(copyNode));
+                if (!this.nodeCanLink(pasteNode, targetNode)) {
+                    continue;
+                }
+                this.$utils.visitNodes(pasteNode, (node, parent) => {
+                    node.id = ++this.tree.maxNodeId;
+                    this.$utils.initNode(this.tree, node, parent);
+                });
 
-            this.$utils.visitNodes(pasteNode, (node, parent) => {
-                node.id = ++this.tree.maxNodeId;
-                this.$utils.initNode(this.tree, node, parent);
-            });
-
-            if (targetNode.children.length) {
-                pasteNode.y = targetNode.children[targetNode.children.length - 1].y + 1;
+                if (targetNode.children.length) {
+                    pasteNode.y = targetNode.children[targetNode.children.length - 1].y + 1;
+                }
+                this.linkParentNode(pasteNode, targetNode);
             }
-            this.linkParentNode(pasteNode, targetNode);
 
             this.drawTree();
         },
