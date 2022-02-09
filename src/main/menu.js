@@ -51,10 +51,10 @@ let menu = [
             },
             {
                 label: "节点模板列表",
+                accelerator: "CommandOrControl+Right",
                 click(item, window) {
                     window.webContents.send("right-visible");
-                },
-                accelerator: "CommandOrControl+Right"
+                }
             },
             {
                 label: "展开全部节点",
@@ -65,10 +65,10 @@ let menu = [
             },
             {
                 label: "收起全部节点",
+                accelerator: "CommandOrControl+Up",
                 click(item, window) {
                     window.webContents.send("fold-all-node", true);
-                },
-                accelerator: "CommandOrControl+Up"
+                }
             },
             {
                 label: "开发者工具",

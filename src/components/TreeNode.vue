@@ -8,12 +8,11 @@
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
-               @focusin.native="selected=true"
-               @focusout.native="selected=false"
+               @mousedown.native="select"
                @dblclick.native.stop="foldSelf"
                @keyup.native.ctrl.86="$emit('paste')"
                @keyup.native.46="remove"
-               @contextmenu.native.stop="onContextMenu">
+               @contextmenu.native.stop="showMenu($event.clientX,$event.clientY)">
         <template>
             <div ref="content"
                  :style="contentStyle"
@@ -166,12 +165,19 @@ export default {
         };
     },
     mounted() {
+        window.addEventListener('mousedown', event => {
+            if (!event.ctrlKey) {
+                this.selected = false;
+            }
+        }, {capture: true});
+
         this.resizeObserver = new ResizeObserver(async () => {
             await this.checkContentHeaderOverflow();
             await this.calcContentBodyHeight();
             this.$emit("resize");
         });
         this.resizeObserver.observe(this.$refs.content);
+
         this.calcContentStyle();
     },
     destroyed() {
@@ -195,7 +201,7 @@ export default {
         selected() {
             this.calcContentStyle();
             this.$emit("select", this.node, this.selected);
-        },
+        }
     },
     methods: {
         onDragStart() {
@@ -206,7 +212,7 @@ export default {
             const deltaX = event.x - this.node.x;
             const deltaY = event.y - this.node.y;
 
-            this.$utils.visitNodes(this.node, node => {
+            this.$utils.visitSubtree(this.node, node => {
                 node.x += deltaX;
                 node.y += deltaY;
                 node.z = this.creating ? 30 : 10;
@@ -216,8 +222,15 @@ export default {
         },
         onDragEnd() {
             this.node.dragging = false;
-            this.$utils.visitNodes(this.node, node => node.z = 1);
+            this.$utils.visitSubtree(this.node, node => node.z = 1);
             this.$emit("drag-end", this.node);
+        },
+        select(event) {
+            if (event.button === 0 && event.ctrlKey) {
+                this.selected = !this.selected;
+            } else {
+                this.selected = true;
+            }
         },
         hasFoldOperation() {
             if (this.creating) {
@@ -226,7 +239,7 @@ export default {
             let template = this.node.template;
             return template.comment || template.params?.length > 0;
         },
-        onContextMenu(event) {
+        showMenu(x, y) {
             let items = [];
             if (this.hasFoldOperation()) {
                 items.push({label: this.node.folded ? '展开节点' : '收起节点', handler: this.foldSelf});
@@ -237,12 +250,13 @@ export default {
             if (this.node.template.visible) {
                 items.push({label: '定位模板', handler: () => this.$events.$emit("position-template", this.node.tid)});
             }
+            items.push({label: '复制子树', handler: () => this.$emit("copy", true)});
+            items.push({label: '复制节点', handler: () => this.$emit("copy", false)});
             if (this.node.parent) {
-                items.push({label: '删除', handler: this.remove});
+                items.push({label: '删除' + (this.node.children.length ? '子树' : '节点'), handler: this.remove});
             }
-            items.push({label: '复制', handler: this.copy});
             items.push({label: '粘贴', handler: () => this.$emit("paste")});
-            this.$emit("menu", event.clientX, event.clientY, items);
+            this.$emit("menu", x, y, items);
         },
         foldSelf() {
             if (this.hasFoldOperation()) {
@@ -294,9 +308,9 @@ export default {
         deleteParamOptionRefNode() {
             //删除节点的同时删除其他节点的选项列表引用
             let deletedNodeIds = new Set();
-            this.$utils.visitNodes(this.node, node => deletedNodeIds.add(node.id));
+            this.$utils.visitSubtree(this.node, node => deletedNodeIds.add(node.id));
 
-            this.$utils.visitNodes(this.node.tree.root, node => {
+            this.$utils.visitSubtree(this.node.tree.root, node => {
                 let params = node.template.params;
                 if (!params) {
                     return;
@@ -320,7 +334,7 @@ export default {
 
             //options.refType==="node",选项列表引用节点
             let _options = [];
-            this.$utils.visitNodes(this.node.tree.root, node => {
+            this.$utils.visitSubtree(this.node.tree.root, node => {
                 if (node.tid === options.refId) {
                     _options.push({label: node.comment || node.template.name + "-" + node.id, value: node.id});
                 }

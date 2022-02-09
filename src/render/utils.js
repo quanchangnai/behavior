@@ -76,27 +76,26 @@ export default {
         return overflow;
     },
     /**
-     * 访问节点及其所有子孙节点
-     * @param node {Object} 当前节点
+     * 访问子树的所有节点
+     * @param node {Object} 子树的根节点
      * @param visit {function} 访问函数
      * @param parent
      */
-    visitNodes(node, visit, parent = null) {
+    visitSubtree(node, visit, parent = null) {
         if (visit(node, parent) === false) {
             return;
         }
         if (node.children) {
             for (let child of node.children) {
-                this.visitNodes(child, visit, node);
+                this.visitSubtree(child, visit, node);
             }
         }
     },
-    initNode(tree, node, parent) {
+    initNode(node, parent, tree) {
+        node.parent = parent;
+        node.tree = tree;
         tree.maxNodeId = Math.max(tree.maxNodeId, node.id);
         Vue.set(tree, "childrenFolded", tree.childrenFolded || node.childrenFolded);
-
-        node.tree = tree;
-        node.parent = parent;
 
         Vue.set(node, "x", 0);
         Vue.set(node, "y", 0);
@@ -113,7 +112,7 @@ export default {
             Vue.set(node, "childrenFolded", false);
         }
     },
-    buildNodes(node) {
+    buildNode(node) {
         let result = {id: node.id, tid: node.tid};
         if (node.template.comment) {
             result.comment = node.comment;
@@ -131,11 +130,16 @@ export default {
             }
         }
 
+        return result;
+    },
+    buildSubtree(node) {
+        let result = this.buildNode(node);
+
         if (node.children && node.children.length) {
             result.children = [];
             result.childrenFolded = node.childrenFolded;
             for (let child of node.children) {
-                result.children.push(this.buildNodes(child))
+                result.children.push(this.buildSubtree(child))
             }
         }
 
@@ -148,7 +152,7 @@ export default {
      */
     async saveTree(tree) {
         if (tree && !tree.renaming) {
-            let root = this.buildNodes(tree.root);
+            let root = this.buildSubtree(tree.root);
             let result = {id: tree.id, name: tree.name, root};
             await ipcRenderer.invoke("save-tree", result);
         }

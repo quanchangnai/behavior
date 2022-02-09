@@ -233,7 +233,7 @@ export default {
             this.$emit("select-template", {x: event.clientX, y: event.clientY, template});
         },
         onInitTree(root) {
-            this.$utils.visitNodes(root, node => {
+            this.$utils.visitSubtree(root, node => {
                 this.$set(node, "template", this.mappedTemplates.get(node.tid));
             });
         },

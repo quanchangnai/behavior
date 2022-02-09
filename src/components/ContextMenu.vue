@@ -95,7 +95,7 @@ export default {
         onItemClick(item) {
             this.hide();
             if (item.handler != null) {
-                item.handler.call(item);
+                item.handler.call();
             }
         }
     }

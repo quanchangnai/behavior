@@ -16,7 +16,8 @@
                        :y="boardY"
                        @drag-start="onBoardDragStart"
                        @drag-end="onBoardDragEnd"
-                       @keyup.native.ctrl.67="copyNodes"
+                       @keyup.native.ctrl.67.exact="copyNodes(true)"
+                       @keyup.native.ctrl.shift.67.exact="copyNodes(false)"
                        @contextmenu.native="showBoardMenu"
                        @mouseup.native="onBoardMouseUp"
                        @wheel.ctrl.exact.native="scaleBoard"
@@ -32,6 +33,7 @@
                            @select="onNodeSelect"
                            @menu="showNodeMenu"
                            @remove="drawTree"
+                           @copy="copyNodes"
                            @paste="pasteNodes(node)"
                            @resize="drawTree"
                            @fold="onNodeFold"
@@ -162,7 +164,7 @@ export default {
                 return nodes;
             }
 
-            this.$utils.visitNodes(this.tree.root, node => {
+            this.$utils.visitSubtree(this.tree.root, node => {
                 nodes.push(node);
                 return !node.childrenFolded;
             });
@@ -308,7 +310,7 @@ export default {
                 context.stroke();
             };
 
-            const nodeFoldChildrenIconWidth = 14;//节点收起子树图标宽度
+            const nodeFoldChildrenIconWidth = 14;//节点的收起子树图标宽度
 
             const lineToChildren = node => {
                 if (!node || node.childrenFolded) {
@@ -361,35 +363,43 @@ export default {
             this.drawTree();
         },
         onNodeSelect(node, selected) {
+            console.log("onNodeSelect", selected);
             if (selected) {
                 this.selectedNodes.add(node);
             } else {
                 this.selectedNodes.delete(node);
             }
         },
-        copyNodes() {
+        copyNodes(subtree) {
+            console.log("copyNodes", subtree, this.selectedNodes.size);
             if (this.selectedNodes.size === 0) {
                 return;
             }
             this.$store.copyNodes = [];
             for (let selectedNode of this.selectedNodes) {
-                let copyNode = this.$utils.buildNodes(selectedNode);
+                let copyNode;
+                if (subtree) {
+                    copyNode = this.$utils.buildSubtree(selectedNode);
+                } else {
+                    copyNode = this.$utils.buildNode(selectedNode);
+                }
                 this.$store.copyNodes.push(copyNode);
                 this.$events.$emit("init-tree", copyNode);
             }
         },
         pasteNodes(targetNode) {
+            console.log("pasteNodes", this.$store.copyNodes?.length);
             if (!this.$store.copyNodes?.length) {
                 return;
             }
-            for (const copyNode of this.$store.copyNodes) {
+            for (let copyNode of this.$store.copyNodes) {
                 let pasteNode = JSON.parse(JSON.stringify(copyNode));
                 if (!this.nodeCanLink(pasteNode, targetNode)) {
                     continue;
                 }
-                this.$utils.visitNodes(pasteNode, (node, parent) => {
+                this.$utils.visitSubtree(pasteNode, (node, parent) => {
                     node.id = ++this.tree.maxNodeId;
-                    this.$utils.initNode(this.tree, node, parent);
+                    this.$utils.initNode(node, parent, this.tree);
                 });
 
                 if (targetNode.children.length) {
@@ -411,7 +421,7 @@ export default {
         },
         onNodeFold() {
             this.tree.folded = 0;
-            this.$utils.visitNodes(this.tree.root, node => {
+            this.$utils.visitSubtree(this.tree.root, node => {
                 if (node.template.comment || Object.keys(node.params).length > 0) {
                     this.tree.folded |= node.folded ? 1 : 2;
                 }
@@ -484,7 +494,7 @@ export default {
             let parentNode = null;
             let minDistance2 = -1;
 
-            this.$utils.visitNodes(this.tree.root, targetNode => {
+            this.$utils.visitSubtree(this.tree.root, targetNode => {
                 if (!targetNode || targetNode === node || targetNode.childrenFolded) {
                     return false;
                 }
@@ -639,7 +649,7 @@ export default {
             }
 
             this.tree.folded = fold ? 1 : 2;
-            this.$utils.visitNodes(this.tree.root, node => {
+            this.$utils.visitSubtree(this.tree.root, node => {
                 node.folded = fold;
             });
 
@@ -648,7 +658,7 @@ export default {
         },
         unfoldAllNodeChildren() {
             this.tree.childrenFolded = false;
-            this.$utils.visitNodes(this.tree.root, node => {
+            this.$utils.visitSubtree(this.tree.root, node => {
                 node.childrenFolded = false
             });
             this.drawTree();

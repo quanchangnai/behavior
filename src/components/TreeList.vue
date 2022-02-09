@@ -41,7 +41,7 @@
             </el-table>
         </el-scrollbar>
         <context-menu ref="menu" :items="menuItems"/>
-        <tree-archetypes ref="dialog" :data="archetypes" @select="doCreateTree"/>
+        <tree-archetypes ref="archetypes" :data="archetypes" @select="doCreateTree"/>
     </div>
 </template>
 
@@ -118,8 +118,8 @@ export default {
             this.$set(tree, "folded", 1);
             this.$set(tree, "showNodeId", false);
 
-            this.$utils.visitNodes(tree.root, (node, parent) => {
-                this.$utils.initNode(tree, node, parent);
+            this.$utils.visitSubtree(tree.root, (node, parent) => {
+                this.$utils.initNode(node, parent, tree);
             });
 
             this.$events.$emit("init-tree", tree.root);
@@ -145,7 +145,7 @@ export default {
         },
         createTree() {
             if (this.archetypes.length > 1) {
-                this.$refs.dialog.open();
+                this.$refs.archetypes.open();
             } else {
                 this.doCreateTree(this.archetypes[0]);
             }
