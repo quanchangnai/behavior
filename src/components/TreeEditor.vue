@@ -32,9 +32,9 @@
                            @drag-end="onNodeDragEnd"
                            @select="onNodeSelect"
                            @menu="showNodeMenu"
-                           @remove="drawTree"
                            @copy="copyNodes"
                            @paste="pasteNodes(node)"
+                           @delete="deleteNodes"
                            @resize="drawTree"
                            @fold="onNodeFold"
                            @children-fold="onNodeChildrenFold"
@@ -370,10 +370,6 @@ export default {
             }
         },
         copyNodes(subtree) {
-            if (this.selectedNodes.size === 0) {
-                return;
-            }
-
             this.$store.copyNodes = [];
             let build;
             if (subtree) {
@@ -411,6 +407,51 @@ export default {
             }
 
             this.drawTree();
+        },
+        async deleteNodes() {
+            let deletedNodeIds = new Set();
+            for (let selectedNode of this.selectedNodes) {
+                if (selectedNode.parent) {
+                    this.$utils.visitSubtree(selectedNode, node => deletedNodeIds.add(node.id));
+                }
+            }
+            let selectedNodes;
+            if (deletedNodeIds.size > 0) {
+                try {
+                    selectedNodes = [...this.selectedNodes];
+                    await this.$confirm("确定删除选择的节点及其所有子孙节点？", {type: "warning"});
+                } catch {
+                    return;
+                }
+            } else {
+                return;
+            }
+
+            for (let selectedNode of selectedNodes) {
+                if (selectedNode.parent) {
+                    let index = selectedNode.parent.children.indexOf(selectedNode);
+                    selectedNode.parent.children.splice(index, 1);
+                }
+            }
+
+            //被删除的节点有可能被其他节点的选项列表引用
+            this.$utils.visitSubtree(this.tree.root, node => {
+                let params = node.template.params;
+                if (!params) {
+                    return;
+                }
+                for (let param of params) {
+                    let options = param.options;
+                    if (!options || Array.isArray(options) || options.refType !== "node") {
+                        continue;
+                    }
+                    if (deletedNodeIds.has(node.params[param.name])) {
+                        node.params[param.name] = null;
+                    }
+                }
+            });
+
+            await this.drawTree();
         },
         onParamSelectShow(selectRef) {
             this.selectRef = selectRef;

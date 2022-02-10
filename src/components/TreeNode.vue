@@ -9,9 +9,9 @@
                @dragging="onDragging"
                @drag-end="onDragEnd"
                @mousedown.native="select"
-               @dblclick.native.stop="foldSelf"
+               @dblclick.native.exact.stop="foldSelf"
                @keyup.native.ctrl.86="$emit('paste')"
-               @keyup.native.46="remove"
+               @keyup.native.46="$emit('delete')"
                @contextmenu.native.stop="showMenu($event.clientX,$event.clientY)">
         <template>
             <div ref="content"
@@ -243,7 +243,7 @@ export default {
         showMenu(x, y) {
             let items = [];
             if (this.canFold()) {
-                items.push({label: this.node.folded ? '展开节点' : '收起节点', handler: this.foldSelf});
+                items.push({label: this.node.folded ? '展开节点' : '收起节点', shortcut: "双击", handler: this.foldSelf});
             }
             if (this.node.children.length) {
                 items.push({label: this.node.childrenFolded ? '展开子树' : '收起子树', handler: this.foldChildren});
@@ -255,7 +255,7 @@ export default {
                 items.push({label: pasteLabel, shortcut: "Ctrl+V", handler: () => this.$emit("paste")});
             }
             if (this.node.parent) {
-                items.push({label: '删除' + (this.node.children.length ? '子树' : '节点'), shortcut: "Delete", handler: this.remove});
+                items.push({label: '删除', shortcut: "Delete", handler: () => this.$emit("delete")});
             }
             if (this.node.template.visible) {
                 items.push({label: '定位模板', handler: () => this.$events.$emit("position-template", this.node.tid)});
@@ -274,25 +274,6 @@ export default {
             this.node.childrenFolded = !this.node.childrenFolded;
             this.$emit("children-fold", this.node);
         },
-        async remove() {
-            if (!this.node.parent) {
-                return;
-            }
-            if (this.node.children.length) {
-                try {
-                    await this.$confirm("确定删除该节点及其所有子孙节点？", {type: "warning"});
-                } catch {
-                    return;
-                }
-            }
-
-            let index = this.node.parent.children.indexOf(this.node);
-            this.node.parent.children.splice(index, 1);
-
-            this.deleteParamOptionRefNode();
-
-            this.$emit("remove", this.node);
-        },
         onParamSelectVisibleChange(ref, visible) {
             this.node.z = visible ? 200 : 1;
             if (visible) {
@@ -310,27 +291,6 @@ export default {
                 return {pattern: param.pattern};
             }
             return null;
-        },
-        deleteParamOptionRefNode() {
-            //删除节点的同时删除其他节点的选项列表引用
-            let deletedNodeIds = new Set();
-            this.$utils.visitSubtree(this.node, node => deletedNodeIds.add(node.id));
-
-            this.$utils.visitSubtree(this.node.tree.root, node => {
-                let params = node.template.params;
-                if (!params) {
-                    return;
-                }
-                for (let param of params) {
-                    let options = param.options;
-                    if (!options || Array.isArray(options) || options.refType !== "node") {
-                        continue;
-                    }
-                    if (deletedNodeIds.has(node.params[param.name])) {
-                        node.params[param.name] = null;
-                    }
-                }
-            });
         },
         paramOptions(options) {
             if (Array.isArray(options)) {
