@@ -27,7 +27,7 @@
                         <span :ref="'treeIdTag-'+tree.id">
                             <el-tag size="small" style="margin-right: 10px;">{{ tree.id }}</el-tag>
                         </span>
-                        <el-input v-if="renameTree&&tree===selectedTree"
+                        <el-input v-if="tree===renameTree"
                                   ref="renameTreeInput"
                                   size="mini"
                                   v-model="tree.name"
@@ -64,7 +64,7 @@ export default {
             selectedTree: null,
             maxTreeId: 0,
             keyword: "",
-            renameTree: false,
+            renameTree: null,
             mappedTrees: new Map(),
             menuItems: []
         }
@@ -131,7 +131,7 @@ export default {
             this.menuItems.push({label: '创建行为树', shortcut: "Alt+C", handler: this.createTree});
             if (tree != null) {
                 this.menuItems.push({label: '删除行为树', handler: () => this.deleteTree(tree)});
-                this.menuItems.push({label: '重命名行为树', handler: this.startRenameTree});
+                this.menuItems.push({label: '重命名行为树', handler: () => this.startRenameTree(tree)});
             }
             this.menuItems.push({label: '打开工作目录', shortcut: "Alt+E", handler: () => this.openWorkspacePath(tree?.name)});
 
@@ -196,17 +196,18 @@ export default {
             let treeIdTagWidth = this.$refs['treeIdTag-' + treeId].offsetWidth;
             return {width: "calc(100% - " + (treeIdTagWidth + 2) + "px)"}
         },
-        async startRenameTree() {
-            this.renameTree = true;
-            this.selectedTree.renaming = true;
-            this.selectedTree.oldName = this.selectedTree.name;
+        async startRenameTree(tree) {
+            this.renameTree = tree || this.selectedTree;
+            this.renameTree.renaming = true;
+            this.renameTree.oldName = this.renameTree.name;
             await this.$nextTick();
             this.$refs.renameTreeInput.focus();
         },
         async finishRenameTree() {
-            this.renameTree = false;
-            let oldTreeName = this.selectedTree.oldName;
-            let newTreeName = this.selectedTree.name;
+            let renameTree = this.renameTree;
+            this.renameTree = null;
+            let oldTreeName = renameTree.oldName;
+            let newTreeName = renameTree.name;
 
             let invalidName = false;
 
@@ -226,12 +227,12 @@ export default {
                 } catch (e) {
                     console.error(e);
                     this.$message.error({message: "重命名行为树失败", center: true, offset: 200});
-                    this.selectedTree.name = oldTreeName;
+                    renameTree.name = oldTreeName;
                 }
             } else {
-                this.selectedTree.name = oldTreeName;
+                renameTree.name = oldTreeName;
             }
-            this.selectedTree.renaming = false;
+            renameTree.renaming = false;
         },
         async doLayout() {
             let body = document.querySelector("#body");
