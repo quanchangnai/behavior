@@ -17,7 +17,7 @@
             <div ref="content"
                  :style="contentStyle"
                  class="content"
-                 :class="{'no-fold-operation': !hasFoldOperation()}">
+                 :class="{'can-fold': canFold()}">
                 <div class="content-header" ref="contentHeader">
                     {{ node.template.name }}
                     <span v-if="node.tree&&node.tree.showNodeId">
@@ -36,7 +36,7 @@
                 <div class="content-body"
                      @wheel="onContentBodyWheel"
                      :style="{'height':contentBodyHeight+'px'}"
-                     v-if="hasFoldOperation()&&!node.folded">
+                     v-if="canFold()&&!node.folded">
                     <el-form size="mini"
                              :model="node"
                              ref="form"
@@ -123,7 +123,7 @@
                     </el-form>
                 </div>
             </div>
-            <div v-if="hasFoldOperation()"
+            <div v-if="canFold()"
                  @mousedown.stop
                  @click="foldSelf"
                  class="fold-self-icon"
@@ -161,12 +161,13 @@ export default {
             paramValidations: {},//参数校验状态
             paramLabelTips: {},//参数标签提示状态，文本太长时加提示
             paramValueTips: {},//参数值示状态
-            commentTips: false
+            commentTips: false,
+            menuShown: false
         };
     },
     mounted() {
         window.addEventListener('mousedown', event => {
-            if (!event.ctrlKey) {
+            if (!event.ctrlKey && !this.menuShown) {
                 this.selected = false;
             }
         }, {capture: true});
@@ -185,7 +186,7 @@ export default {
     },
     watch: {
         'node.folded': function (folded) {
-            if (!this.hasFoldOperation()) {
+            if (!this.canFold()) {
                 return;
             }
             if (folded) {
@@ -232,7 +233,7 @@ export default {
                 this.selected = true;
             }
         },
-        hasFoldOperation() {
+        canFold() {
             if (this.creating) {
                 return false;
             }
@@ -241,25 +242,30 @@ export default {
         },
         showMenu(x, y) {
             let items = [];
-            if (this.hasFoldOperation()) {
+            if (this.canFold()) {
                 items.push({label: this.node.folded ? '展开节点' : '收起节点', handler: this.foldSelf});
             }
             if (this.node.children.length) {
                 items.push({label: this.node.childrenFolded ? '展开子树' : '收起子树', handler: this.foldChildren});
             }
+            items.push({label: '复制子树', shortcut: "Ctrl+C", handler: () => this.$emit("copy", true)});
+            items.push({label: '复制节点', shortcut: "Ctrl+Shift+C", handler: () => this.$emit("copy", false)});
+            if (this.$store.copyType) {
+                let pasteLabel = this.$store.copyType === "subtree" ? "粘贴子树" : "粘贴节点";
+                items.push({label: pasteLabel, shortcut: "Ctrl+V", handler: () => this.$emit("paste")});
+            }
+            if (this.node.parent) {
+                items.push({label: '删除' + (this.node.children.length ? '子树' : '节点'), shortcut: "Delete", handler: this.remove});
+            }
             if (this.node.template.visible) {
                 items.push({label: '定位模板', handler: () => this.$events.$emit("position-template", this.node.tid)});
             }
-            items.push({label: '复制子树', handler: () => this.$emit("copy", true)});
-            items.push({label: '复制节点', handler: () => this.$emit("copy", false)});
-            if (this.node.parent) {
-                items.push({label: '删除' + (this.node.children.length ? '子树' : '节点'), handler: this.remove});
-            }
-            items.push({label: '粘贴', handler: () => this.$emit("paste")});
-            this.$emit("menu", x, y, items);
+
+            this.$emit("menu", x, y, items, () => this.menuShown = false);
+            this.menuShown = true;
         },
         foldSelf() {
-            if (this.hasFoldOperation()) {
+            if (this.canFold()) {
                 this.node.folded = !this.node.folded;
                 this.$emit("fold");
             }
@@ -485,6 +491,10 @@ export default {
     margin-left: -1px;
 }
 
+:not(.can-fold).content > div {
+    padding: 0 12px 0 12px !important;
+}
+
 .content-header {
     color: #525456;
     line-height: 30px;
@@ -512,10 +522,6 @@ export default {
 .content-body::-webkit-scrollbar-track {
     border-radius: 5px;
     background: #ededed;
-}
-
-.no-fold-operation.content > div {
-    padding: 0 12px 0 12px !important;
 }
 
 .fold-self-icon {

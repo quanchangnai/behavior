@@ -128,12 +128,12 @@ export default {
             event.stopPropagation();
 
             this.menuItems.splice(0, this.menuItems.length);
-            this.menuItems.push({label: '创建行为树', handler: this.createTree});
+            this.menuItems.push({label: '创建行为树', shortcut: "Alt+C", handler: this.createTree});
             if (tree != null) {
                 this.menuItems.push({label: '删除行为树', handler: () => this.deleteTree(tree)});
                 this.menuItems.push({label: '重命名行为树', handler: this.startRenameTree});
             }
-            this.menuItems.push({label: '打开工作目录', handler: () => this.openWorkspacePath(tree?.name)});
+            this.menuItems.push({label: '打开工作目录', shortcut: "Alt+E", handler: () => this.openWorkspacePath(tree?.name)});
 
             this.$refs.menu.show(event.clientX, event.clientY, this.$refs.body);
         },

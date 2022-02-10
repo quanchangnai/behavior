@@ -11,7 +11,10 @@
              class="context-menu-item"
              @click="onItemClick(item)">
             <slot :item="item">
-                {{ item.label }}
+                <div class="context-menu-item_inner">
+                    <div style="float: left"> {{ item.label }}</div>
+                    <div v-if="item.shortcut" style="float: right;margin-left: 15px">{{ item.shortcut }}</div>
+                </div>
             </slot>
         </div>
     </div>
@@ -25,7 +28,7 @@ export default {
         items: {
             type: Array,
             default: function () {
-                return [{label: "测试1", handler: null}, {label: "测试2", handler: null}]
+                return [{label: "测试1", shortcut: "Alt+T", handler: null}, {label: "测试2", handler: null}]
             }
         }
     },
@@ -34,11 +37,20 @@ export default {
             x: 0,
             y: 0,
             mouseover: false,
-            visibleItems: null
+            visibleItems: null,
+            hideCallback: null
         }
     },
     methods: {
-        show(x, y, limits, items) {
+        /**
+         * 显示菜单
+         * @param x {Number} 坐标X
+         * @param y {Number} 坐标Y
+         * @param limits  {Object|null} 限制显示范围
+         * @param items  {Object|null} 菜单项，覆盖items属性
+         * @param hideCallback  {Function|null} 菜单隐藏时的回调函数
+         */
+        show(x, y, limits = null, items = null, hideCallback = null) {
             this.visibleItems = items ? items : this.items;
             if (!this.visibleItems?.length) {
                 return;
@@ -46,6 +58,7 @@ export default {
 
             this.x = x;
             this.y = y;
+            this.hideCallback = hideCallback;
 
             window.addEventListener("mousedown", this.tryHide, {capture: true});
             window.addEventListener("resize", this.hide);
@@ -91,11 +104,15 @@ export default {
             window.removeEventListener("blur", this.hide);
             window.removeEventListener("wheel", this.hide);
             this.$emit("hide");
+
+            if (this.hideCallback) {
+                this.hideCallback();
+            }
         },
         onItemClick(item) {
             this.hide();
             if (item.handler != null) {
-                item.handler.call();
+                item.handler.call(item);
             }
         }
     }
@@ -109,6 +126,7 @@ export default {
     min-width: 80px;
     min-height: 25px;
     line-height: 25px;
+    font-size: 13px;
     user-select: none;
     cursor: pointer;
     border: solid #e4e7ed 1px;
@@ -123,5 +141,11 @@ export default {
 
 .context-menu-item:hover {
     background-color: #f5f7fa;
+}
+
+.context-menu-item_inner:after {
+    content: "";
+    clear: both;
+    display: block;
 }
 </style>

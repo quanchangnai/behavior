@@ -363,7 +363,6 @@ export default {
             this.drawTree();
         },
         onNodeSelect(node, selected) {
-            console.log("onNodeSelect", selected);
             if (selected) {
                 this.selectedNodes.add(node);
             } else {
@@ -371,24 +370,27 @@ export default {
             }
         },
         copyNodes(subtree) {
-            console.log("copyNodes", subtree, this.selectedNodes.size);
             if (this.selectedNodes.size === 0) {
                 return;
             }
+
             this.$store.copyNodes = [];
+            let build;
+            if (subtree) {
+                this.$store.copyType = "subtree";
+                build = this.$utils.buildSubtree;
+            } else {
+                this.$store.copyType = "node";
+                build = this.$utils.buildNode;
+            }
+
             for (let selectedNode of this.selectedNodes) {
-                let copyNode;
-                if (subtree) {
-                    copyNode = this.$utils.buildSubtree(selectedNode);
-                } else {
-                    copyNode = this.$utils.buildNode(selectedNode);
-                }
+                let copyNode = build.call(this.$utils, selectedNode);
                 this.$store.copyNodes.push(copyNode);
                 this.$events.$emit("init-tree", copyNode);
             }
         },
         pasteNodes(targetNode) {
-            console.log("pasteNodes", this.$store.copyNodes?.length);
             if (!this.$store.copyNodes?.length) {
                 return;
             }
@@ -433,9 +435,9 @@ export default {
             this.tree.childrenFolded = this.tree.childrenFolded || node.childrenFolded;
             this.drawTree();
         },
-        showNodeMenu(x, y, items) {
+        showNodeMenu(x, y, items, hideCallback) {
             let center = document.querySelector("#center");
-            this.$refs.nodeMenu.show(x, y, center, items);
+            this.$refs.nodeMenu.show(x, y, center, items, hideCallback);
         },
         linkParentNode(node, parentNode) {
             if (parentNode == null) {
