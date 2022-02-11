@@ -16,7 +16,7 @@ protocol.registerSchemesAsPrivileged([
 
 async function createWindow() {
     // Create the browser window.
-    const window = new BrowserWindow({
+    const win = new BrowserWindow({
         show: false,
         width: 1800,
         height: 1000,
@@ -30,14 +30,15 @@ async function createWindow() {
         }
     });
 
-    window.once("ready-to-show", window.maximize);
+    win.once("ready-to-show", win.maximize);
 
     if (process.env.WEBPACK_DEV_SERVER_URL) {
         // Load the url of the dev server if in development mode
-        await window.loadURL(process.env.WEBPACK_DEV_SERVER_URL);
+        await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL);
+        if (!process.env.IS_TEST) win.webContents.openDevTools()
     } else {
         // Load the index.html when not in development
-        await window.loadURL('app://./index.html');
+        await win.loadURL('app://./index.html');
     }
 }
 

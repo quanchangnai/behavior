@@ -106,7 +106,7 @@ let behavior = {
     parseWorkspace(args, basePath = ".") {
         for (let i = 1; i < args.length; i++) {
             if (args[i].startsWith("-w=")) {
-                let workspace = args[i].substr(args[i].indexOf("=") + 1);
+                let workspace = args[i].substring(args[i].indexOf("=") + 1);
                 if (workspace && workspace.trim() !== "") {
                     return path.resolve(basePath, workspace.trim());
                 }

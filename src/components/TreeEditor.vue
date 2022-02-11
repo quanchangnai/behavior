@@ -16,8 +16,6 @@
                        :y="boardY"
                        @drag-start="onBoardDragStart"
                        @drag-end="onBoardDragEnd"
-                       @keyup.native.ctrl.67.exact="copyNodes(true)"
-                       @keyup.native.ctrl.shift.67.exact="copyNodes(false)"
                        @contextmenu.native="showBoardMenu"
                        @mouseup.native="onBoardMouseUp"
                        @wheel.ctrl.exact.native="scaleBoard"
@@ -126,6 +124,7 @@ export default {
         });
 
         ipcRenderer.on("fold-all-node", (e, fold) => this.foldAllNode(fold));
+        ipcRenderer.on("copy-nodes", (e, subtree) => this.copyNodes(subtree));
     },
     mounted() {
         this.resizeObserver = new ResizeObserver(this.drawTree);
@@ -370,6 +369,7 @@ export default {
             }
         },
         copyNodes(subtree) {
+            console.log("copyNodes", subtree);
             this.$store.copyNodes = [];
             let build;
             if (subtree) {

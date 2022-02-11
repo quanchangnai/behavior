@@ -9,29 +9,54 @@ let menu = [
             {
                 label: '创建行为树',
                 accelerator: "Alt+C",
-                click: (item, window) => {
-                    window.webContents.send("create-tree");
+                click: (item, win) => {
+                    win.webContents.send("create-tree");
                 }
             },
             {
                 label: '打开工作目录',
                 accelerator: "Alt+E",
-                click: async (item, window) => {
-                    await behavior.openWorkspacePath(window.webContents)
+                click: async (item, win) => {
+                    await behavior.openWorkspacePath(win.webContents)
                 }
             },
             {
                 label: '打开工作区',
-                click: async (item, window) => {
-                    await behavior.showOpenWorkspaceDialog(window);
+                click: async (item, win) => {
+                    await behavior.showOpenWorkspaceDialog(win);
                 }
             },
             {
                 label: '最近工作区',
-                click: (item, window) => {
-                    window.webContents.send("recent-workspaces", behavior.recentWorkspaces());
+                click: (item, win) => {
+                    win.webContents.send("recent-workspaces", behavior.recentWorkspaces());
                 }
             },
+        ]
+    },
+    {
+        label: "编辑",
+        submenu: [
+            {
+                label: "复制子树",
+                accelerator: "CmdOrCtrl+C",
+                click: (item, win) => {
+                    console.log("CmdOrCtrl+C")
+                    win.webContents.send("copy-nodes", true);
+                }
+            },
+            {
+                label: "复制节点",
+                accelerator: "CmdOrCtrl+Shift+C",
+                click: (item, win) => {
+                    console.log("CmdOrCtrl+Shift+C")
+                    win.webContents.send("copy-nodes", false);
+                }
+            },
+            {
+                label: "粘贴",
+                accelerator: "CmdOrCtrl+V"
+            }
         ]
     },
     {
@@ -44,30 +69,30 @@ let menu = [
             },
             {
                 label: "行为树列表",
-                click(item, window) {
-                    window.webContents.send("left-visible");
+                click(item, win) {
+                    win.webContents.send("left-visible");
                 },
-                accelerator: "CommandOrControl+Left"
+                accelerator: "CmdOrCtrl+Left"
             },
             {
                 label: "节点模板列表",
-                accelerator: "CommandOrControl+Right",
-                click(item, window) {
-                    window.webContents.send("right-visible");
+                accelerator: "CmdOrCtrl+Right",
+                click(item, win) {
+                    win.webContents.send("right-visible");
                 }
             },
             {
                 label: "展开全部节点",
-                click(item, window) {
-                    window.webContents.send("fold-all-node", false);
+                click(item, win) {
+                    win.webContents.send("fold-all-node", false);
                 },
-                accelerator: "CommandOrControl+Down"
+                accelerator: "CmdOrCtrl+Down"
             },
             {
                 label: "收起全部节点",
-                accelerator: "CommandOrControl+Up",
-                click(item, window) {
-                    window.webContents.send("fold-all-node", true);
+                accelerator: "CmdOrCtrl+Up",
+                click(item, win) {
+                    win.webContents.send("fold-all-node", true);
                 }
             },
             {
