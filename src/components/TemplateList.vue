@@ -357,11 +357,11 @@ export default {
 }
 
 >>> .el-table__expand-icon--expanded {
-    transform: rotate(-90deg);
+    transform: rotate(-90deg) translateY(2px);
 }
 
 >>> .el-table__expand-icon:not(.el-table__expand-icon--expanded) {
-    transform: rotate(90deg);
+    transform: rotate(90deg) translateY(-3px);
 }
 
 .template-expand {

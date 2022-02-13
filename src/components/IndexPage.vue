@@ -26,7 +26,7 @@ export default {
     },
     async mounted() {
         ipcRenderer.on("title", (event, title) => document.title = title);
-        ipcRenderer.send("title")
+        ipcRenderer.send("title");
     }
 }
 </script>

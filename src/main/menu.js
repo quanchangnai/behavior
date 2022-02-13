@@ -39,23 +39,25 @@ let menu = [
         submenu: [
             {
                 label: "复制子树",
-                accelerator: "CmdOrCtrl+C",
-                click: (item, win) => {
-                    console.log("CmdOrCtrl+C")
-                    win.webContents.send("copy-nodes", true);
-                }
+                role: "copy"
             },
             {
                 label: "复制节点",
                 accelerator: "CmdOrCtrl+Shift+C",
                 click: (item, win) => {
-                    console.log("CmdOrCtrl+Shift+C")
-                    win.webContents.send("copy-nodes", false);
+                    win.webContents.send("copy-nodes");
                 }
             },
             {
                 label: "粘贴",
-                accelerator: "CmdOrCtrl+V"
+                role: "paste"
+            },
+            {
+                label: "删除节点",
+                accelerator: "Delete",
+                click: (item, win) => {
+                    win.webContents.send("delete-nodes");
+                }
             }
         ]
     },
@@ -65,7 +67,7 @@ let menu = [
             {
                 label: "刷新",
                 role: "reload",
-                accelerator: "F5",
+                accelerator: "F5"
             },
             {
                 label: "行为树列表",

@@ -3,13 +3,13 @@
          ref="menu"
          class="context-menu"
          :style="{left:x+'px',top:y+'px'}"
-         @mouseover="mouseover=true"
-         @mouseout="mouseover=false"
+         @mouseenter="mouseover=true"
+         @mouseleave="mouseover=false"
          @mousedown.stop>
         <div v-for="(item,index) in visibleItems"
              :key="'item-'+index"
              class="context-menu-item"
-             @click="onItemClick(item)">
+             @click="onItemClick($event,item)">
             <slot :item="item">
                 <div class="context-menu-item_inner">
                     <div style="float: left"> {{ item.label }}</div>
@@ -38,7 +38,7 @@ export default {
             y: 0,
             mouseover: false,
             visibleItems: null,
-            hideCallback: null
+            onHide: null
         }
     },
     methods: {
@@ -46,11 +46,11 @@ export default {
          * 显示菜单
          * @param x {Number} 坐标X
          * @param y {Number} 坐标Y
-         * @param limits  {Object|null} 限制显示范围
+         * @param limits  {String|Object|null} 限制显示范围，元素选择器字符串、元素对象、指定的限制对象{x,y,width,height}
          * @param items  {Object|null} 菜单项，覆盖items属性
-         * @param hideCallback  {Function|null} 菜单隐藏时的回调函数
+         * @param onHide  {Function|null} 菜单隐藏时的回调函数
          */
-        show(x, y, limits = null, items = null, hideCallback = null) {
+        show(x, y, limits = null, items = null, onHide = null) {
             this.visibleItems = items ? items : this.items;
             if (!this.visibleItems?.length) {
                 return;
@@ -58,15 +58,18 @@ export default {
 
             this.x = x;
             this.y = y;
-            this.hideCallback = hideCallback;
+            this.onHide = onHide;
 
-            window.addEventListener("mousedown", this.tryHide, {capture: true});
+            window.addEventListener("mousedown", this.onMousedown, true);
             window.addEventListener("resize", this.hide);
             window.addEventListener("scroll", this.hide);
             window.addEventListener("blur", this.hide);
             window.addEventListener("wheel", this.hide);
 
             this.$nextTick(() => {
+                if (typeof limits === "string") {
+                    limits = document.querySelector(limits);
+                }
                 if (limits instanceof Element) {
                     limits = {
                         x: this.$utils.getOffsetX(limits),
@@ -88,29 +91,30 @@ export default {
                 }
             });
         },
-        tryHide() {
+        onMousedown(event) {
             if (!this.mouseover) {
-                this.hide();
+                this.hide(event);
             }
         },
-        hide() {
+        hide(domEvent, clickItem = false) {
             if (!this.visibleItems) {
                 return;
             }
             this.visibleItems = null;
-            window.removeEventListener("mousedown", this.tryHide);
+            window.removeEventListener("mousedown", this.onMousedown);
             window.removeEventListener("resize", this.hide);
             window.removeEventListener("scroll", this.hide);
             window.removeEventListener("blur", this.hide);
             window.removeEventListener("wheel", this.hide);
-            this.$emit("hide");
 
-            if (this.hideCallback) {
-                this.hideCallback();
+            let hideEvent = {ctrlKey: domEvent.ctrlKey || false, clickItem};
+            this.$emit("hide", hideEvent);
+            if (this.onHide) {
+                this.onHide(hideEvent);
             }
         },
-        onItemClick(item) {
-            this.hide();
+        onItemClick(event, item) {
+            this.hide(event, true);
             if (item.handler != null) {
                 item.handler.call(item);
             }
@@ -136,8 +140,17 @@ export default {
 }
 
 .context-menu-item {
-    padding: 1px 12px;
+    padding: 1px 20px;
 }
+
+.context-menu-item:first-child {
+    padding: 4px 20px 1px 20px !important;
+}
+
+.context-menu-item:last-child {
+    padding: 1px 20px 4px 20px !important;
+}
+
 
 .context-menu-item:hover {
     background-color: #f5f7fa;

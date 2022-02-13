@@ -8,18 +8,16 @@
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
-               @mousedown.native="select"
-               @dblclick.native.exact.stop="foldSelf"
-               @keyup.native.ctrl.86="$emit('paste')"
-               @keyup.native.46="$emit('delete')"
-               @contextmenu.native.stop="showMenu($event.clientX,$event.clientY)">
+               @mousedown.capture.native="onMousedown"
+               @dblclick.exact.stop.native="foldSelf"
+               @keyup.ctrl.86.exact.native="selected&&$emit('paste')"
+               @contextmenu.stop.native="showMenu($event.clientX,$event.clientY)">
         <template>
             <div ref="content"
-                 :style="contentStyle"
                  class="content"
-                 :class="{'can-fold': canFold()}">
+                 :class="contentClasses">
                 <div class="content-header" ref="contentHeader">
-                    {{ node.template.name }}
+                    <span> {{ node.template.name }}</span>
                     <span v-if="node.tree&&node.tree.showNodeId">
                         ({{ node.id }})
                     </span>
@@ -44,11 +42,13 @@
                              label-position="left"
                              :hide-required-asterisk="true"
                              @validate="onFormValidate"
-                             @mousedown.native.stop
-                             @dblclick.native.stop>
+                             @mousedown.stop.native
+                             @dblclick.stop.native>
                         <el-form-item v-if="node.template.comment" prop="comment">
                             <template #label>
-                                <span class="paramLabel">节点备注</span>
+                                <span class="paramLabel">
+                                    节点备注
+                                </span>
                             </template>
                             <el-tooltip effect="light"
                                         :disabled="!commentTips"
@@ -56,7 +56,10 @@
                                         :content="node.comment"
                                         popper-class="tooltip"
                                         placement="right">
-                                <el-input ref="comment" v-model="node.comment"/>
+                                <el-input ref="comment"
+                                          @copy.stop.native
+                                          @paste.stop.native
+                                          v-model="node.comment"/>
                             </el-tooltip>
                         </el-form-item>
                         <el-form-item v-for="param in node.template.params"
@@ -97,6 +100,8 @@
                                 <!--suppress JSUnresolvedVariable -->
                                 <el-select v-else-if="param.options"
                                            :ref="'paramValue-'+param.name"
+                                           @copy.stop.native
+                                           @paste.stop.native
                                            v-model="node.params[param.name]"
                                            :multiple="Array.isArray(param.default)"
                                            :class="paramSelectClass(param.name)"
@@ -111,12 +116,16 @@
                                 <!--suppress JSUnresolvedVariable -->
                                 <el-input-number v-else-if="param.type==='int' || param.type==='float'"
                                                  :ref="'paramValue-'+param.name"
+                                                 @copy.stop.native
+                                                 @paste.stop.native
                                                  v-model="node.params[param.name]"
                                                  :precision="param.type==='float'?2:0"
                                                  :min="typeof param.min==='number'?param.min:-Infinity"
                                                  :max="typeof param.max==='number'?param.max:Infinity"/>
                                 <el-input v-else-if="param.type==='string'"
                                           :ref="'paramValue-'+param.name"
+                                          @copy.stop.native
+                                          @paste.stop.native
                                           v-model="node.params[param.name]"/>
                             </el-tooltip>
                         </el-form-item>
@@ -155,7 +164,11 @@ export default {
     data() {
         return {
             selected: false,
-            contentStyle: {},
+            contentClasses: {
+                selected: false,
+                error: false,
+                'can-fold': false
+            },
             contentBodyHeight: 0,
             contentHeaderOverflow: false,
             paramValidations: {},//参数校验状态
@@ -170,7 +183,7 @@ export default {
             if (!event.ctrlKey && !this.menuShown) {
                 this.selected = false;
             }
-        }, {capture: true});
+        }, true);
 
         this.resizeObserver = new ResizeObserver(async () => {
             await this.checkContentHeaderOverflow();
@@ -179,10 +192,13 @@ export default {
         });
         this.resizeObserver.observe(this.$refs.content);
 
-        this.calcContentStyle();
+        this.contentClasses.selected = this.selected || this.creating;
+        this.contentClasses['can-fold'] = this.canFold();
+        this.checkParamsError();
     },
     destroyed() {
         this.resizeObserver.disconnect();
+        this.$store.selectedNodes.delete(this.node);
     },
     watch: {
         'node.folded': function (folded) {
@@ -200,8 +216,21 @@ export default {
             }
         },
         selected() {
-            this.calcContentStyle();
-            this.$emit("select", this.node, this.selected);
+            this.contentClasses.selected = this.selected || this.creating;
+
+            if (this.selected) {
+                this.$store.selectedNodes.add(this.node);
+            } else {
+                this.$store.selectedNodes.delete(this.node);
+            }
+
+            this.$store.selectedType = "allAreLeaves";
+            for (let selectedNode of this.$store.selectedNodes) {
+                if (selectedNode.children.length) {
+                    this.$store.selectedType = "subtree";
+                    break;
+                }
+            }
         }
     },
     methods: {
@@ -226,7 +255,10 @@ export default {
             this.$utils.visitSubtree(this.node, node => node.z = 1);
             this.$emit("drag-end", this.node);
         },
-        select(event) {
+        onPaste() {
+
+        },
+        onMousedown(event) {
             if (event.button === 0 && event.ctrlKey) {
                 this.selected = !this.selected;
             } else {
@@ -248,20 +280,26 @@ export default {
             if (this.node.children.length) {
                 items.push({label: this.node.childrenFolded ? '展开子树' : '收起子树', handler: this.foldChildren});
             }
-            items.push({label: '复制子树', shortcut: "Ctrl+C", handler: () => this.$emit("copy", true)});
-            items.push({label: '复制节点', shortcut: "Ctrl+Shift+C", handler: () => this.$emit("copy", false)});
+            items.push({label: '复制子树', shortcut: "Ctrl+C", handler: () => this.$emit("copy", false)});
+            items.push({label: '复制节点', shortcut: "Ctrl+Shift+C", handler: () => this.$emit("copy", true)});
             if (this.$store.copyType) {
-                let pasteLabel = this.$store.copyType === "subtree" ? "粘贴子树" : "粘贴节点";
-                items.push({label: pasteLabel, shortcut: "Ctrl+V", handler: () => this.$emit("paste")});
+                let label = this.$store.copyType === "subtree" ? "粘贴子树" : "粘贴节点";
+                items.push({label, shortcut: "Ctrl+V", handler: () => this.$emit("paste")});
             }
-            if (this.node.parent) {
-                items.push({label: '删除', shortcut: "Delete", handler: () => this.$emit("delete")});
+            if (this.node.parent && this.$store.selectedType) {
+                let label = this.$store.selectedType === "subtree" ? "删除子树" : "删除节点";
+                items.push({label, shortcut: "Del", handler: () => this.$emit("delete")});
             }
             if (this.node.template.visible) {
                 items.push({label: '定位模板', handler: () => this.$events.$emit("position-template", this.node.tid)});
             }
 
-            this.$emit("menu", x, y, items, () => this.menuShown = false);
+            this.$emit("menu", x, y, items, event => {
+                this.menuShown = false;
+                if (!event.ctrlKey && !event.clickItem) {
+                    this.selected = false;
+                }
+            });
             this.menuShown = true;
         },
         foldSelf() {
@@ -315,10 +353,10 @@ export default {
             } else {
                 delete this.paramValidations[prop];
             }
-            this.calcContentStyle();
+            this.checkParamsError();
             this.checkParamValueTips();
         },
-        calcContentStyle() {
+        checkParamsError() {
             let error = Object.keys(this.paramValidations).length > 0;
             let params = this.node.template.params;
             if (params && !this.creating) {
@@ -331,13 +369,7 @@ export default {
                 }
             }
 
-            this.contentStyle = {
-                'background-color': this.selected || this.creating ? '#c0acf8' : '#99ccff',
-                'border-color': this.selected || this.creating ? '#b69ffa' : '#84bcf6',
-                'box-shadow': error ? '0 0 0 1px #fd7f5a' : '',
-                '--scrollbar-thumb-color': this.selected ? '#c9b7fc' : '#a2caf6',
-                '--scrollbar-thumb-shadow-color': this.selected ? '#916cf6' : '#776eee',
-            }
+            this.contentClasses.error = error;
         },
         paramLabelStyle(paramName) {
             let style = {};
@@ -439,11 +471,29 @@ export default {
     min-width: 60px;
     max-width: 250px;
     background-color: #99ccff;
-    border: 1px solid #84bcf6;
+    border: 1px solid #8fc3fa;
     border-radius: 5px;
     font-size: 14px;
     white-space: nowrap;
     padding-left: 0;
+    --scrollbar-thumb-color: #a2caf6;
+    --scrollbar-thumb-shadow-color: #776eee;
+}
+
+.content:hover {
+    background-color: #65adf6;
+    border-color: #5da3ec;
+}
+
+.content.selected {
+    background-color: #c0acf8;
+    border-color: #b69ffa;
+    --scrollbar-thumb-color: #c9b7fc;
+    --scrollbar-thumb-shadow-color: #916cf6;
+}
+
+.content.error {
+    box-shadow: 0 0 0 1px #fd7f5a;
 }
 
 .content > div {

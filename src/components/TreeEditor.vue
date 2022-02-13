@@ -14,10 +14,12 @@
                        :freeze="boardFreeze"
                        :x="boardX"
                        :y="boardY"
+                       tabindex="0"
                        @drag-start="onBoardDragStart"
                        @drag-end="onBoardDragEnd"
                        @contextmenu.native="showBoardMenu"
                        @mouseup.native="onBoardMouseUp"
+                       @keyup.ctrl.67.exact.native="copySubtrees"
                        @wheel.ctrl.exact.native="scaleBoard"
                        :style="{width:boardWidth+'px',height:boardHeight+'px',transform:`scale(${boardScale},${boardScale})`}">
                 <canvas id="canvas" @contextmenu.prevent/>
@@ -28,7 +30,6 @@
                            @drag-start="onNodeDragStart"
                            @dragging="onNodeDragging"
                            @drag-end="onNodeDragEnd"
-                           @select="onNodeSelect"
                            @menu="showNodeMenu"
                            @copy="copyNodes"
                            @paste="pasteNodes(node)"
@@ -100,8 +101,7 @@ export default {
             boardHeight: 0,
             boardScale: 1,
             leftWidth: left_width,
-            rightWidth: right_width,
-            selectedNodes: new Set()
+            rightWidth: right_width
         }
     },
     async created() {
@@ -124,7 +124,8 @@ export default {
         });
 
         ipcRenderer.on("fold-all-node", (e, fold) => this.foldAllNode(fold));
-        ipcRenderer.on("copy-nodes", (e, subtree) => this.copyNodes(subtree));
+        ipcRenderer.on("copy-nodes", this.copyNodes);
+        ipcRenderer.on("delete-nodes", this.deleteNodes);
     },
     mounted() {
         this.resizeObserver = new ResizeObserver(this.drawTree);
@@ -177,6 +178,8 @@ export default {
     methods: {
         onSelectTree(tree) {
             this.tree = tree;
+            this.$store.selectedNodes = new Set();
+            this.$store.selectedType = null;
             this.resetBoard();
             this.drawTree();
         },
@@ -361,32 +364,36 @@ export default {
             this.boardFreeze = false;
             this.drawTree();
         },
-        onNodeSelect(node, selected) {
-            if (selected) {
-                this.selectedNodes.add(node);
-            } else {
-                this.selectedNodes.delete(node);
-            }
+        copySubtrees() {
+            this.copyNodes(false);
         },
-        copyNodes(subtree) {
-            console.log("copyNodes", subtree);
+        copyNodes(nodeSelf = true) {
+            console.log("copyNodes", nodeSelf, this.$store.selectedNodes.size);
             this.$store.copyNodes = [];
             let build;
-            if (subtree) {
+            if (nodeSelf) {
+                this.$store.copyType = "nodeSelf";
+                build = this.$utils.buildNode;
+            } else {
                 this.$store.copyType = "subtree";
                 build = this.$utils.buildSubtree;
-            } else {
-                this.$store.copyType = "node";
-                build = this.$utils.buildNode;
+
             }
 
-            for (let selectedNode of this.selectedNodes) {
+            let allAreLeaves = true;
+            for (let selectedNode of this.$store.selectedNodes) {
+                allAreLeaves &= selectedNode.children.length === 0;
                 let copyNode = build.call(this.$utils, selectedNode);
                 this.$store.copyNodes.push(copyNode);
                 this.$events.$emit("init-tree", copyNode);
             }
+
+            if (allAreLeaves) {
+                this.$store.copyType = "allAreLeaves";
+            }
         },
         pasteNodes(targetNode) {
+            console.log("pasteNodes", targetNode.id);
             if (!this.$store.copyNodes?.length) {
                 return;
             }
@@ -410,21 +417,23 @@ export default {
         },
         async deleteNodes() {
             let deletedNodeIds = new Set();
-            for (let selectedNode of this.selectedNodes) {
+            for (let selectedNode of this.$store.selectedNodes) {
                 if (selectedNode.parent) {
                     this.$utils.visitSubtree(selectedNode, node => deletedNodeIds.add(node.id));
                 }
             }
-            let selectedNodes;
-            if (deletedNodeIds.size > 0) {
+
+            if (deletedNodeIds.size === 0) {
+                return;
+            }
+
+            let selectedNodes = [...this.$store.selectedNodes];
+            if (this.$store.selectedType === "subtree") {
                 try {
-                    selectedNodes = [...this.selectedNodes];
                     await this.$confirm("确定删除选择的节点及其所有子孙节点？", {type: "warning"});
                 } catch {
                     return;
                 }
-            } else {
-                return;
             }
 
             for (let selectedNode of selectedNodes) {
@@ -476,9 +485,8 @@ export default {
             this.tree.childrenFolded = this.tree.childrenFolded || node.childrenFolded;
             this.drawTree();
         },
-        showNodeMenu(x, y, items, hideCallback) {
-            let center = document.querySelector("#center");
-            this.$refs.nodeMenu.show(x, y, center, items, hideCallback);
+        showNodeMenu(x, y, items, onHide) {
+            this.$refs.nodeMenu.show(x, y, "#center", items, onHide);
         },
         linkParentNode(node, parentNode) {
             if (parentNode == null) {
@@ -683,8 +691,7 @@ export default {
             }, {once: true});
         },
         showBoardMenu(event) {
-            let center = document.querySelector("#center");
-            this.$refs.boardMenu.show(event.clientX, event.clientY, center);
+            this.$refs.boardMenu.show(event.clientX, event.clientY, "#center");
         },
         foldAllNode(fold) {
             if (!this.tree) {
@@ -743,6 +750,10 @@ export default {
     transform-origin: 0 0;
 }
 
+#board:focus {
+    outline: none;
+}
+
 #canvas {
     position: absolute;
     width: 100%;
@@ -750,5 +761,6 @@ export default {
     z-index: 20;
     pointer-events: none;
 }
+
 
 </style>
