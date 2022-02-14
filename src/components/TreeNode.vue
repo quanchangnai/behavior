@@ -4,13 +4,13 @@
                :ready="creating"
                :style="{'z-index':node.z}"
                :scale="node.tree&&node.tree.scale||1"
-               tabindex="0"
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
                @mousedown.capture.native="onMousedown"
+               @dblclick.stop.native
                @dblclick.exact.stop.native="foldSelf"
-               @keyup.ctrl.86.exact.native="selected&&$emit('paste')"
+               @paste.native="selected&&$emit('paste')"
                @contextmenu.stop.native="showMenu($event.clientX,$event.clientY)">
         <template>
             <div ref="content"
@@ -41,9 +41,7 @@
                              label-width="auto"
                              label-position="left"
                              :hide-required-asterisk="true"
-                             @validate="onFormValidate"
-                             @mousedown.stop.native
-                             @dblclick.stop.native>
+                             @validate="onFormValidate">
                         <el-form-item v-if="node.template.comment" prop="comment">
                             <template #label>
                                 <span class="paramLabel">
@@ -57,9 +55,11 @@
                                         popper-class="tooltip"
                                         placement="right">
                                 <el-input ref="comment"
+                                          v-model="node.comment"
+                                          @mousedown.stop.native
+                                          @dblclick.stop.native
                                           @copy.stop.native
-                                          @paste.stop.native
-                                          v-model="node.comment"/>
+                                          @paste.stop.native/>
                             </el-tooltip>
                         </el-form-item>
                         <el-form-item v-for="param in node.template.params"
@@ -93,18 +93,22 @@
                                 <template #content>{{ node.params[param.name] }}</template>
                                 <el-radio-group v-if="param.type==='boolean' && !param.options"
                                                 :ref="'paramValue-'+param.name"
-                                                v-model="node.params[param.name]">
+                                                v-model="node.params[param.name]"
+                                                @mousedown.stop.native
+                                                @dblclick.stop.native>
                                     <el-radio :label="true">是</el-radio>
                                     <el-radio :label="false">否</el-radio>
                                 </el-radio-group>
                                 <!--suppress JSUnresolvedVariable -->
                                 <el-select v-else-if="param.options"
                                            :ref="'paramValue-'+param.name"
-                                           @copy.stop.native
-                                           @paste.stop.native
                                            v-model="node.params[param.name]"
                                            :multiple="Array.isArray(param.default)"
                                            :class="paramSelectClass(param.name)"
+                                           @mousedown.stop.native
+                                           @dblclick.stop.native
+                                           @copy.stop.native
+                                           @paste.stop.native
                                            @remove-tag="calcContentBodyHeight"
                                            @visible-change="onParamSelectVisibleChange('paramValue-'+param.name,$event)"
                                            popper-class="node-param-select-dropdown">
@@ -116,17 +120,21 @@
                                 <!--suppress JSUnresolvedVariable -->
                                 <el-input-number v-else-if="param.type==='int' || param.type==='float'"
                                                  :ref="'paramValue-'+param.name"
+                                                 v-model="node.params[param.name]"
+                                                 @mousedown.stop.native
+                                                 @dblclick.stop.native
                                                  @copy.stop.native
                                                  @paste.stop.native
-                                                 v-model="node.params[param.name]"
                                                  :precision="param.type==='float'?2:0"
                                                  :min="typeof param.min==='number'?param.min:-Infinity"
                                                  :max="typeof param.max==='number'?param.max:Infinity"/>
                                 <el-input v-else-if="param.type==='string'"
                                           :ref="'paramValue-'+param.name"
+                                          v-model="node.params[param.name]"
+                                          @mousedown.stop.native
+                                          @dblclick.stop.native
                                           @copy.stop.native
-                                          @paste.stop.native
-                                          v-model="node.params[param.name]"/>
+                                          @paste.stop.native/>
                             </el-tooltip>
                         </el-form-item>
                     </el-form>
@@ -565,6 +573,11 @@ export default {
     max-width: 72px;
     overflow: hidden;
     text-overflow: ellipsis;
+
+}
+
+.paramLabel::selection {
+    background-color: transparent;
 }
 
 >>> .el-form-item__label {

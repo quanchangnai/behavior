@@ -2,7 +2,8 @@
     <div ref="draggable"
          class="draggable"
          :style="{left: left + 'px', top: top + 'px'}"
-         @mousedown.left="onMouseDown">
+         @mousedown.left.stop="onMouseDown"
+         @mousemove.prevent>
         <slot/>
     </div>
 </template>
@@ -24,10 +25,6 @@ export default {
             default: 0
         },
         ready: {
-            type: Boolean,
-            default: false
-        },
-        freeze: {
             type: Boolean,
             default: false
         },
@@ -72,7 +69,7 @@ export default {
             window.addEventListener("mouseup", this.onMouseUp, {once: true});
         },
         onMouseMove(event) {
-            if (this.state < 0 || this.freeze) {
+            if (this.state < 0 ) {
                 return;
             }
             if (!this.checkCtrlKey(event)) {
@@ -119,7 +116,10 @@ export default {
 <style scoped>
 .draggable {
     position: absolute;
-    user-select: none;
+    cursor: default;
 }
 
+::selection {
+    background-color: transparent;
+}
 </style>

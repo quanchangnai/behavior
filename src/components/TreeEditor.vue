@@ -11,15 +11,13 @@
              @wheel.exact="onCenterWheel"
              :style="{left:(leftWidth+2)+'px',right:rightWidth+'px'}">
             <draggable id="board"
-                       :freeze="boardFreeze"
                        :x="boardX"
                        :y="boardY"
-                       tabindex="0"
-                       @drag-start="onBoardDragStart"
+                       @drag-start="hideNodeParamDropdown"
                        @drag-end="onBoardDragEnd"
                        @contextmenu.native="showBoardMenu"
                        @mouseup.native="onBoardMouseUp"
-                       @keyup.ctrl.67.exact.native="copySubtrees"
+                       @copy.native="copySubtrees"
                        @wheel.ctrl.exact.native="scaleBoard"
                        :style="{width:boardWidth+'px',height:boardHeight+'px',transform:`scale(${boardScale},${boardScale})`}">
                 <canvas id="canvas" @contextmenu.prevent/>
@@ -27,9 +25,9 @@
                            :node="node"
                            :key="tree.id+'-'+node.id"
                            :ref="'node-'+node.id"
-                           @drag-start="onNodeDragStart"
+                           @drag-start="hideNodeParamDropdown"
                            @dragging="onNodeDragging"
-                           @drag-end="onNodeDragEnd"
+                           @drag-end="drawTree"
                            @menu="showNodeMenu"
                            @copy="copyNodes"
                            @paste="pasteNodes(node)"
@@ -54,7 +52,7 @@
                    :creating="true"
                    style="pointer-events:none"
                    @dragging="onNodeDragging"
-                   @drag-end="onNodeDragEnd"/>
+                   @drag-end="drawTree"/>
         <context-menu ref="boardMenu" :items="boardMenuItems"/>
         <context-menu ref="nodeMenu"/>
     </div>
@@ -94,7 +92,6 @@ export default {
             config: null,//编辑器配置
             tree: null,//当前编辑的行为树
             creatingNode: null,//正在新建的节点
-            boardFreeze: false,
             boardX: 0,
             boardY: 0,
             boardWidth: 0,
@@ -352,48 +349,31 @@ export default {
                 drawLine(x1, y1, x2, y2);
             }
         },
-        onNodeDragStart() {
-            this.boardFreeze = true;
-            this.hideNodeParamDropdown();
-        },
         onNodeDragging(node) {
             this.linkParentNode(node);
             this.drawLinkLines();
         },
-        onNodeDragEnd() {
-            this.boardFreeze = false;
-            this.drawTree();
-        },
         copySubtrees() {
-            this.copyNodes(false);
-        },
-        copyNodes(nodeSelf = true) {
-            console.log("copyNodes", nodeSelf, this.$store.selectedNodes.size);
+            this.$store.copyType = this.$store.selectedType;
             this.$store.copyNodes = [];
-            let build;
-            if (nodeSelf) {
-                this.$store.copyType = "nodeSelf";
-                build = this.$utils.buildNode;
-            } else {
-                this.$store.copyType = "subtree";
-                build = this.$utils.buildSubtree;
 
-            }
-
-            let allAreLeaves = true;
             for (let selectedNode of this.$store.selectedNodes) {
-                allAreLeaves &= selectedNode.children.length === 0;
-                let copyNode = build.call(this.$utils, selectedNode);
+                let copyNode = this.$utils.buildSubtree(selectedNode);
                 this.$store.copyNodes.push(copyNode);
                 this.$events.$emit("init-tree", copyNode);
             }
+        },
+        copyNodes() {
+            this.$store.copyType = "nodeSelf";
+            this.$store.copyNodes = [];
 
-            if (allAreLeaves) {
-                this.$store.copyType = "allAreLeaves";
+            for (let selectedNode of this.$store.selectedNodes) {
+                let copyNode = this.$utils.buildNode(selectedNode);
+                this.$store.copyNodes.push(copyNode);
+                this.$events.$emit("init-tree", copyNode);
             }
         },
         pasteNodes(targetNode) {
-            console.log("pasteNodes", targetNode.id);
             if (!this.$store.copyNodes?.length) {
                 return;
             }
@@ -590,9 +570,6 @@ export default {
             if (this.tree) {
                 this.tree.scale = boardScale;
             }
-        },
-        onBoardDragStart() {
-            this.hideNodeParamDropdown();
         },
         async onBoardDragEnd(event) {
             this.boardX = event.x;

@@ -11,10 +11,9 @@
              class="context-menu-item"
              @click="onItemClick($event,item)">
             <slot :item="item">
-                <div class="context-menu-item_inner">
-                    <div style="float: left"> {{ item.label }}</div>
-                    <div v-if="item.shortcut" style="float: right;margin-left: 15px">{{ item.shortcut }}</div>
-                </div>
+                <div style="float: left"> {{ item.label }}</div>
+                <div v-if="item.shortcut" style="float: right;margin-left: 15px">{{ item.shortcut }}</div>
+                <div style="clear: both"/>
             </slot>
         </div>
     </div>
@@ -51,7 +50,7 @@ export default {
          * @param onHide  {Function|null} 菜单隐藏时的回调函数
          */
         show(x, y, limits = null, items = null, onHide = null) {
-            this.visibleItems = items ? items : this.items;
+            this.visibleItems = items || this.items;
             if (!this.visibleItems?.length) {
                 return;
             }
@@ -156,9 +155,4 @@ export default {
     background-color: #f5f7fa;
 }
 
-.context-menu-item_inner:after {
-    content: "";
-    clear: both;
-    display: block;
-}
 </style>
