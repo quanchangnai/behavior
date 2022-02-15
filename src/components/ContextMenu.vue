@@ -53,9 +53,9 @@ export default {
          * 显示菜单
          * @param x {Number} 坐标X
          * @param y {Number} 坐标Y
-         * @param limits  {String|Element|{x,y,width,height}|null} 限制显示范围，元素选择器字符串、元素对象、指定的限制对象
-         * @param items  {[{label:String,shortcut:String|null,handler:Function|null}]|null} 菜单项，覆盖items属性
-         * @param onHide  {Function|null} 菜单隐藏时的回调函数
+         * @param limits  {String|Element|{x,y,width,height}} 限制显示范围，元素选择器字符串、元素对象、指定的限制对象
+         * @param items  {Array} 菜单项，覆盖items属性
+         * @param onHide  {Function} 菜单隐藏时的回调函数
          */
         show(x, y, limits = null, items = null, onHide = null) {
             this.visibleItems = items || this.items;
@@ -81,12 +81,19 @@ export default {
                 if (typeof limits === "string") {
                     limits = document.querySelector(limits);
                 }
+
                 if (limits instanceof Element) {
+                    let limitsWidth = limits.clientWidth
+                    let limitsHeight = limits.clientHeight;
+                    if (limits instanceof HTMLElement) {
+                        limitsWidth = limits.offsetWidth;
+                        limitsHeight = limits.offsetHeight;
+                    }
                     limits = {
                         x: this.$utils.getOffsetX(limits),
                         y: this.$utils.getOffsetY(limits),
-                        width: limits.offsetWidth,
-                        height: limits.offsetHeight,
+                        width: limitsWidth,
+                        height: limitsHeight,
                     };
                 } else if (!limits) {
                     limits = {x: 0, y: 0, width: innerWidth, height: innerHeight};

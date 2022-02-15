@@ -34,6 +34,9 @@
                            @delete="deleteNodes"
                            @resize="drawTree"
                            @fold="onNodeFold"
+                           @mouseenter.native="mouseoverNode=node"
+                           @mouseleave.native="mouseoverNode=null"
+                           @mouseup.native="onNodeMouseUp(node)"
                            @children-fold="onNodeChildrenFold"
                            @param-select-show="onParamSelectShow"/>
             </draggable>
@@ -92,6 +95,7 @@ export default {
             config: null,//编辑器配置
             tree: null,//当前编辑的行为树
             creatingNode: null,//正在新建的节点
+            mouseoverNode: null,
             boardX: 0,
             boardY: 0,
             boardWidth: 0,
@@ -222,9 +226,11 @@ export default {
             let nodeRef = this.$refs["node-" + node.id];
             if (Array.isArray(nodeRef)) {
                 nodeElement = nodeRef[0].$el;
-            } else {
+            } else if (nodeRef) {
                 // noinspection JSUnresolvedFunction
                 nodeElement = nodeRef.$el;
+            } else {
+                this.$logger.error("nodeRef is null", node.id);
             }
 
             //界面渲染完成之后才能取到元素大小
@@ -352,6 +358,29 @@ export default {
             this.linkParentNode(node);
             this.drawLinkLines();
         },
+        onNodeMouseUp(node) {
+            if (!this.canReplaceNode(this.creatingNode, node)) {
+                return;
+            }
+
+            let creatingNode = this.creatingNode;
+            this.creatingNode = null;
+
+            creatingNode.tree = this.tree;
+            creatingNode.dragging = false;
+            creatingNode.z = 1;
+
+            let index = node.parent.children.indexOf(node);
+            this.$set(node.parent.children, index, creatingNode);
+            creatingNode.parent = node.parent;
+
+            creatingNode.children = node.children;
+            for (let child of node.children) {
+                child.parent = creatingNode;
+            }
+
+            this.drawTree();
+        },
         copySubtrees() {
             let selectedNodes = this.$store.selectedNodes;
             if (selectedNodes.size === 0) {
@@ -412,7 +441,7 @@ export default {
             }
             for (let copyNode of this.$store.copyNodes) {
                 let pasteNode = JSON.parse(JSON.stringify(copyNode));
-                if (!this.nodeCanLink(pasteNode, targetNode)) {
+                if (!this.canLinkNode(pasteNode, targetNode)) {
                     continue;
                 }
                 this.$utils.visitSubtree(pasteNode, (node, parent) => {
@@ -499,48 +528,6 @@ export default {
         showNodeMenu(x, y, items, onHide) {
             this.$refs.nodeMenu.show(x, y, "#center", items, onHide);
         },
-        linkParentNode(node, parentNode) {
-            if (parentNode == null) {
-                parentNode = this.findParentNode(node);
-            }
-
-            if (parentNode == null) {
-                return;
-            }
-
-            if (node === this.creatingNode) {
-                node.parent = parentNode;
-                return;
-            }
-
-            //关联父子节点
-            if (node.parent && node.parent.children) {
-                let nodeIndex = node.parent.children.indexOf(node);
-                if (nodeIndex >= 0) {
-                    node.parent.children.splice(nodeIndex, 1);
-                }
-            }
-            node.parent = parentNode;
-            parentNode.children.push(node);
-
-            //按y轴排序兄弟节点
-            parentNode.children.sort((n1, n2) => n1.y - n2.y);
-        },
-        nodeCanLink(node, targetNode) {
-            if (!targetNode || targetNode === node || targetNode.childrenFolded) {
-                return false;
-            }
-
-            //目标节点限制子节点模板类型或者模板ID
-            if (node.template.type && targetNode.template.childrenTypes.indexOf(node.template.type.id) < 0 &&
-                    (!targetNode.template.childrenIds || targetNode.template.childrenIds.indexOf(node.template.id) < 0)) {
-                return false;
-            }
-            //目标节点限制子节点数量
-            return !(targetNode.children.indexOf(node) < 0
-                    && targetNode.template.childrenNum >= 0
-                    && targetNode.children.length >= targetNode.template.childrenNum);
-        },
         findParentNode(node) {
             let deltaX = 0;
             let deltaY = 0;
@@ -561,7 +548,7 @@ export default {
                     return false;
                 }
 
-                if (this.nodeCanLink(node, targetNode)) {
+                if (this.canLinkNode(node, targetNode)) {
                     let x2 = deltaX + targetNode.x + targetNode.selfWidth - nodeSpaceX(targetNode);
                     let y2 = deltaY + targetNode.y + (targetNode.selfHeight - node_space_y) / 2;
 
@@ -574,6 +561,75 @@ export default {
             });
 
             return parentNode;
+        },
+        linkParentNode(node, parentNode) {
+            if (!parentNode) {
+                parentNode = this.findParentNode(node);
+            }
+
+            if (!parentNode) {
+                return;
+            }
+
+            if (node === this.creatingNode) {
+                if (this.canReplaceNode(node, this.mouseoverNode)) {
+                    node.parent = null;
+                } else {
+                    node.parent = parentNode;
+                }
+                return;
+            }
+
+            //关联父子节点
+            if (node.parent && node.parent.children) {
+                let index = node.parent.children.indexOf(node);
+                if (index >= 0) {
+                    node.parent.children.splice(index, 1);
+                }
+            }
+            node.parent = parentNode;
+            parentNode.children.push(node);
+
+            //按y轴排序兄弟节点
+            parentNode.children.sort((n1, n2) => n1.y - n2.y);
+        },
+        canLinkNode(node, targetNode, checkChildrenNum = true) {
+            if (!targetNode || targetNode === node || targetNode.childrenFolded) {
+                return false;
+            }
+
+            //目标节点限制子节点模板类型或者模板ID
+            if (node.template.type && targetNode.template.childrenTypes.indexOf(node.template.type.id) < 0 &&
+                    (!targetNode.template.childrenIds || targetNode.template.childrenIds.indexOf(node.template.id) < 0)) {
+                return false;
+            }
+
+            //目标节点限制子节点数量
+            if (checkChildrenNum) {
+                return !(targetNode.children.indexOf(node) < 0
+                        && targetNode.template.childrenNum >= 0
+                        && targetNode.children.length >= targetNode.template.childrenNum);
+            }
+
+            return true;
+        },
+        canReplaceNode(node, targetNode) {
+            if (!node || !targetNode || !targetNode.parent) {
+                return false;
+            }
+            if (!this.canLinkNode(node, targetNode.parent, false)) {
+                return false;
+            }
+            if (node.template.childrenNum >= 0 && targetNode.children.length > node.template.childrenNum) {
+                return false;
+            }
+            for (let targetChild of targetNode.children) {
+                if (!this.canLinkNode(targetChild, node, false)) {
+                    return false;
+                }
+            }
+
+            return true;
         },
         resetBoard() {
             this.resetBoardPosition();
@@ -640,7 +696,6 @@ export default {
 
             creatingNode.tree = this.tree;
             creatingNode.dragging = false;
-
             creatingNode.y = creatingNode.y - this.boardY;
             creatingNode.z = 1;
 
