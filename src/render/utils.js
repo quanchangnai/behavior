@@ -132,14 +132,25 @@ export default {
 
         return result;
     },
-    buildSubtree(node) {
+    /**
+     * 构造子树数据
+     * @param node {Object} 子树根节点
+     * @param resolveChildren {Function|null} 解析子节点的函数
+     * @returns {Object}
+     */
+    buildSubtree(node, resolveChildren = null) {
         let result = this.buildNode(node);
 
-        if (node.children && node.children.length) {
+        let children = node.children;
+        if (resolveChildren) {
+            children = resolveChildren(node);
+        }
+
+        if (children && children.length) {
             result.children = [];
             result.childrenFolded = node.childrenFolded;
-            for (let child of node.children) {
-                result.children.push(this.buildSubtree(child))
+            for (let child of children) {
+                result.children.push(this.buildSubtree(child, resolveChildren))
             }
         }
 

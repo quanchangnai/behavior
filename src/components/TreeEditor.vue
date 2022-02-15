@@ -176,7 +176,6 @@ export default {
         onSelectTree(tree) {
             this.tree = tree;
             this.$store.selectedNodes = new Set();
-            this.$store.selectedType = null;
             this.resetBoard();
             this.drawTree();
         },
@@ -354,19 +353,53 @@ export default {
             this.drawLinkLines();
         },
         copySubtrees() {
-            this.$store.copyType = this.$store.selectedType;
+            let selectedNodes = this.$store.selectedNodes;
+            if (selectedNodes.size === 0) {
+                return;
+            }
+
             this.$store.copyNodes = [];
 
-            for (let selectedNode of this.$store.selectedNodes) {
-                let copyNode = this.$utils.buildSubtree(selectedNode);
-                this.$store.copyNodes.push(copyNode);
-                this.$events.$emit("init-tree", copyNode);
+            //节点的任意后代节点是否有被选中
+            let descendantsSelectedMap = new Map();
+            let checkDescendantsSelected = node => {
+                let descendantSelected = false;
+                for (let child of node.children) {
+                    descendantSelected |= checkDescendantsSelected(child)
+                }
+                descendantsSelectedMap.set(node, descendantSelected);
+                return selectedNodes.has(node) || descendantSelected;
+            };
+            checkDescendantsSelected(this.tree.root);
+
+            let resolveChildren = node => {
+                let selectedChildren = node.children.filter(child => selectedNodes.has(child));
+                if (selectedChildren.length === 0 && !descendantsSelectedMap.get(node)) {
+                    return node.children;
+                } else {
+                    return selectedChildren;
+                }
+            };
+
+            for (let selectedNode of selectedNodes) {
+                if (!selectedNodes.has(selectedNode.parent)) {
+                    let copyNode = this.$utils.buildSubtree(selectedNode, resolveChildren);
+                    this.$store.copyNodes.push(copyNode);
+                    this.$events.$emit("init-tree", copyNode);
+                }
             }
         },
-        copyNodes() {
-            this.$store.copyType = "nodeSelf";
-            this.$store.copyNodes = [];
+        copyNodes(nodeSelf = true) {
+            if (this.$store.selectedNodes.size === 0) {
+                return;
+            }
 
+            if (!nodeSelf) {
+                this.copySubtrees();
+                return;
+            }
+
+            this.$store.copyNodes = [];
             for (let selectedNode of this.$store.selectedNodes) {
                 let copyNode = this.$utils.buildNode(selectedNode);
                 this.$store.copyNodes.push(copyNode);
@@ -408,12 +441,10 @@ export default {
             }
 
             let selectedNodes = [...this.$store.selectedNodes];
-            if (this.$store.selectedType === "subtree") {
-                try {
-                    await this.$confirm("确定删除选择的节点及其所有子孙节点？", {type: "warning"});
-                } catch {
-                    return;
-                }
+            try {
+                await this.$confirm("确定删除选择的节点及其所有子孙节点？", {type: "warning"});
+            } catch {
+                return;
             }
 
             for (let selectedNode of selectedNodes) {

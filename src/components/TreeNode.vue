@@ -44,9 +44,7 @@
                              @validate="onFormValidate">
                         <el-form-item v-if="node.template.comment" prop="comment">
                             <template #label>
-                                <span class="paramLabel">
-                                    节点备注
-                                </span>
+                                <span class="paramLabel">节点备注</span>
                             </template>
                             <el-tooltip effect="light"
                                         :disabled="!commentTips"
@@ -225,19 +223,10 @@ export default {
         },
         selected() {
             this.contentClasses.selected = this.selected || this.creating;
-
             if (this.selected) {
                 this.$store.selectedNodes.add(this.node);
             } else {
                 this.$store.selectedNodes.delete(this.node);
-            }
-
-            this.$store.selectedType = "allAreLeaves";
-            for (let selectedNode of this.$store.selectedNodes) {
-                if (selectedNode.children.length) {
-                    this.$store.selectedType = "subtree";
-                    break;
-                }
             }
         }
     },
@@ -263,9 +252,6 @@ export default {
             this.$utils.visitSubtree(this.node, node => node.z = 1);
             this.$emit("drag-end", this.node);
         },
-        onPaste() {
-
-        },
         onMousedown(event) {
             if (event.button === 0 && event.ctrlKey) {
                 this.selected = !this.selected;
@@ -290,13 +276,11 @@ export default {
             }
             items.push({label: '复制子树', shortcut: "Ctrl+C", handler: () => this.$emit("copy", false)});
             items.push({label: '复制节点', shortcut: "Ctrl+Shift+C", handler: () => this.$emit("copy", true)});
-            if (this.$store.copyType) {
-                let label = this.$store.copyType === "subtree" ? "粘贴子树" : "粘贴节点";
-                items.push({label, shortcut: "Ctrl+V", handler: () => this.$emit("paste")});
+            if (this.$store.copyNodes?.length) {
+                items.push({label: "粘贴", shortcut: "Ctrl+V", handler: () => this.$emit("paste")});
             }
-            if (this.node.parent && this.$store.selectedType) {
-                let label = this.$store.selectedType === "subtree" ? "删除子树" : "删除节点";
-                items.push({label, shortcut: "Del", handler: () => this.$emit("delete")});
+            if (this.node.parent && this.$store.selectedNodes?.size) {
+                items.push({label: "删除", shortcut: "Del", handler: () => this.$emit("delete")});
             }
             if (this.node.template.visible) {
                 items.push({label: '定位模板', handler: () => this.$events.$emit("position-template", this.node.tid)});
@@ -574,10 +558,6 @@ export default {
     overflow: hidden;
     text-overflow: ellipsis;
 
-}
-
-.paramLabel::selection {
-    background-color: transparent;
 }
 
 >>> .el-form-item__label {

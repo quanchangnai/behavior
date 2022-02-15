@@ -53,7 +53,7 @@ let menu = [
                 role: "paste"
             },
             {
-                label: "删除节点",
+                label: "删除",
                 accelerator: "Delete",
                 click: (item, win) => {
                     win.webContents.send("delete-nodes");

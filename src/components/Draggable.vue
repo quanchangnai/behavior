@@ -2,8 +2,7 @@
     <div ref="draggable"
          class="draggable"
          :style="{left: left + 'px', top: top + 'px'}"
-         @mousedown.left.stop="onMouseDown"
-         @mousemove.prevent>
+         @mousedown.left.stop="onMouseDown">
         <slot/>
     </div>
 </template>
@@ -69,7 +68,7 @@ export default {
             window.addEventListener("mouseup", this.onMouseUp, {once: true});
         },
         onMouseMove(event) {
-            if (this.state < 0 ) {
+            if (this.state < 0) {
                 return;
             }
             if (!this.checkCtrlKey(event)) {
@@ -119,7 +118,7 @@ export default {
     cursor: default;
 }
 
-::selection {
+>>> :not(input)::selection {
     background-color: transparent;
 }
 </style>
