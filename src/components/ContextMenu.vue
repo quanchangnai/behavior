@@ -11,8 +11,15 @@
              class="context-menu-item"
              @click="onItemClick($event,item)">
             <slot :item="item">
-                <div style="float: left"> {{ item.label }}</div>
-                <div v-if="item.shortcut" style="float: right;margin-left: 15px">{{ item.shortcut }}</div>
+                <div ref="itemLabels"
+                     style="float: left;"
+                     :style="{'min-width':labelWidth+'px'}">
+                    {{ item.label }}
+                </div>
+                <div v-if="item.shortcut"
+                     style="float: right;margin-left: 15px">
+                    {{ item.shortcut }}
+                </div>
                 <div style="clear: both"/>
             </slot>
         </div>
@@ -37,7 +44,8 @@ export default {
             y: 0,
             mouseover: false,
             visibleItems: null,
-            onHide: null
+            onHide: null,
+            labelWidth: 0
         }
     },
     methods: {
@@ -45,8 +53,8 @@ export default {
          * 显示菜单
          * @param x {Number} 坐标X
          * @param y {Number} 坐标Y
-         * @param limits  {String|Object|null} 限制显示范围，元素选择器字符串、元素对象、指定的限制对象{x,y,width,height}
-         * @param items  {Object|null} 菜单项，覆盖items属性
+         * @param limits  {String|Element|{x,y,width,height}|null} 限制显示范围，元素选择器字符串、元素对象、指定的限制对象
+         * @param items  {[{label:String,shortcut:String|null,handler:Function|null}]|null} 菜单项，覆盖items属性
          * @param onHide  {Function|null} 菜单隐藏时的回调函数
          */
         show(x, y, limits = null, items = null, onHide = null) {
@@ -66,6 +74,10 @@ export default {
             window.addEventListener("wheel", this.hide);
 
             this.$nextTick(() => {
+                for (const itemLabel of this.$refs.itemLabels) {
+                    this.labelWidth = Math.max(this.labelWidth, itemLabel.offsetWidth);
+                }
+
                 if (typeof limits === "string") {
                     limits = document.querySelector(limits);
                 }
