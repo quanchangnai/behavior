@@ -2,6 +2,7 @@
     <draggable :x="node.x"
                :y="node.y"
                :ready="creating"
+               :ctrl-key="creating?null:false"
                :style="{'z-index':node.z}"
                :scale="node.tree&&node.tree.scale||1"
                @drag-start="onDragStart"
@@ -231,9 +232,9 @@ export default {
         }
     },
     methods: {
-        onDragStart() {
+        onDragStart(event) {
             this.node.dragging = true;
-            this.$emit("drag-start", {node: this.node});
+            this.$emit("drag-start", event);
         },
         onDragging(event) {
             const deltaX = event.x - this.node.x;
@@ -245,12 +246,12 @@ export default {
                 node.z = this.creating ? 30 : 10;
             });
 
-            this.$emit("dragging", this.node);
+            this.$emit("dragging", event);
         },
-        onDragEnd() {
+        onDragEnd(event) {
             this.node.dragging = false;
             this.$utils.visitSubtree(this.node, node => node.z = 1);
-            this.$emit("drag-end", this.node);
+            this.$emit("drag-end", event);
         },
         onMousedown(event) {
             if (event.button === 0 && event.ctrlKey) {

@@ -13,10 +13,14 @@
             <draggable id="board"
                        :x="boardX"
                        :y="boardY"
+                       tabindex="-1"
                        @drag-start="hideNodeParamDropdown"
                        @drag-end="onBoardDragEnd"
                        @contextmenu.native="showBoardMenu"
+                       @mouseenter.native="boardFocus"
                        @mouseup.native="onBoardMouseUp"
+                       @keydown.ctrl.native="onBoardCtrlKeyDown"
+                       @keyup.control.native="onBoardCtrlKeyUp"
                        @copy.native="copySubtrees"
                        @wheel.ctrl.exact.native="scaleBoard"
                        :style="{width:boardWidth+'px',height:boardHeight+'px',transform:`scale(${boardScale},${boardScale})`}">
@@ -26,7 +30,7 @@
                            :key="tree.id+'-'+node.id"
                            :ref="'node-'+node.id"
                            @drag-start="hideNodeParamDropdown"
-                           @dragging="onNodeDragging"
+                           @dragging="onNodeDragging($event,node)"
                            @drag-end="drawTree"
                            @menu="showNodeMenu"
                            @copy="copyNodes"
@@ -36,7 +40,7 @@
                            @fold="onNodeFold"
                            @mouseenter.native="mouseoverNode=node"
                            @mouseleave.native="mouseoverNode=null"
-                           @mouseup.native="onNodeMouseUp(node)"
+                           @mouseup.native="onNodeMouseUp($event,node)"
                            @children-fold="onNodeChildrenFold"
                            @param-select-show="onParamSelectShow"/>
             </draggable>
@@ -54,7 +58,7 @@
                    :node="creatingNode"
                    :creating="true"
                    style="pointer-events:none"
-                   @dragging="onNodeDragging"
+                   @dragging="onNodeDragging($event,creatingNode)"
                    @drag-end="drawTree"/>
         <context-menu ref="boardMenu" :items="boardMenuItems"/>
         <context-menu ref="nodeMenu"/>
@@ -131,6 +135,7 @@ export default {
     mounted() {
         this.resizeObserver = new ResizeObserver(this.drawTree);
         this.resizeObserver.observe(document.querySelector("#center"));
+        this.boardFocus();
     },
     destroyed() {
         this.resizeObserver.disconnect();
@@ -354,12 +359,32 @@ export default {
                 drawLine(x1, y1, x2, y2);
             }
         },
-        onNodeDragging(node) {
-            this.linkParentNode(node);
+        onNodeDragging(event, node) {
+            if (node === this.creatingNode && event.ctrlKey && this.canReplaceNode(node, this.mouseoverNode)) {
+                node.parent = null;
+            } else {
+                this.linkParentNode(node);
+            }
             this.drawLinkLines();
         },
-        onNodeMouseUp(node) {
-            if (!this.canReplaceNode(this.creatingNode, node)) {
+        onBoardCtrlKeyDown() {
+            if (!this.creatingNode?.parent) {
+                return;
+            }
+            if (this.canReplaceNode(this.creatingNode, this.mouseoverNode)) {
+                this.creatingNode.parent = null;
+                this.drawLinkLines();
+            }
+        },
+        onBoardCtrlKeyUp() {
+            if (!this.creatingNode || this.creatingNode.parent) {
+                return;
+            }
+            this.linkParentNode(this.creatingNode);
+            this.drawLinkLines();
+        },
+        onNodeMouseUp(event, node) {
+            if (!event.ctrlKey || !this.canReplaceNode(this.creatingNode, node)) {
                 return;
             }
 
@@ -572,11 +597,7 @@ export default {
             }
 
             if (node === this.creatingNode) {
-                if (this.canReplaceNode(node, this.mouseoverNode)) {
-                    node.parent = null;
-                } else {
-                    node.parent = parentNode;
-                }
+                node.parent = parentNode;
                 return;
             }
 
@@ -630,6 +651,9 @@ export default {
             }
 
             return true;
+        },
+        boardFocus() {
+            document.querySelector("#board").focus();
         },
         resetBoard() {
             this.resetBoardPosition();

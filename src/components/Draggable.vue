@@ -11,7 +11,7 @@
 export default {
     name: "Draggable",
     props: {
-        ctrlKey: {
+        ctrlKey: {//true:ctrl键按下时才能拖动,false:ctrl键松开时才能拖动,null:忽略ctrl键是否按下
             type: Boolean,
             default: false
         },
@@ -56,7 +56,15 @@ export default {
     },
     methods: {
         checkCtrlKey(event) {
-            return !event || this.ctrlKey === event.ctrlKey;
+            return !event || this.ctrlKey === null || this.ctrlKey === event.ctrlKey;
+        },
+        dragEvent(domEvent) {
+            return {
+                x: this.left,
+                y: this.top,
+                ctrlKey: domEvent?.ctrlKey || false,
+                payload: this.payload
+            };
         },
         onMouseDown(event) {
             if (!this.checkCtrlKey(event)) {
@@ -82,13 +90,13 @@ export default {
                 this.state = 1;
                 this.cursor = getComputedStyle(this.$refs.draggable).cursor;
                 this.$refs.draggable.style.cursor = "move";
-                this.$emit("drag-start", {x: this.left, y: this.top, payload: this.payload});
+                this.$emit("drag-start", this.dragEvent(event));
             }
 
             //devicePixelRatio:屏幕缩放比例
             this.left = this.left + event.movementX / (this.scale * devicePixelRatio);
             this.top = this.top + event.movementY / (this.scale * devicePixelRatio);
-            this.$emit("dragging", {x: this.left, y: this.top, payload: this.payload});
+            this.$emit("dragging", this.dragEvent(event));
         },
         onMouseUp() {
             if (this.state < 0) {
@@ -102,7 +110,7 @@ export default {
                     this.cursor = null;
                 }
                 if (this.state > 0) {
-                    this.$emit("drag-end", {x: this.left, y: this.top, payload: this.payload});
+                    this.$emit("drag-end", this.dragEvent(event));
                 }
             } finally {
                 this.state = -1;
