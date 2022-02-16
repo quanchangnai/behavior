@@ -53,9 +53,18 @@ let menu = [
                 role: "paste"
             },
             {
-                label: "删除",
+                label: "删除子树",
                 accelerator: "Delete",
                 click: (item, win) => {
+                    console.log("删除子树");
+                    win.webContents.send("delete-subtrees");
+                }
+            },
+            {
+                label: "删除节点",
+                accelerator: "Shift+Delete",
+                click: (item, win) => {
+                    console.log("删除节点");
                     win.webContents.send("delete-nodes");
                 }
             }

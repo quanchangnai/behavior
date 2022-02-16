@@ -12,6 +12,9 @@ Vue.prototype.$events = new Vue();
 Vue.prototype.$utils = utils;
 Vue.prototype.$logger = logger;
 Vue.prototype.$store = {};
+Vue.prototype.$msg = function (msg, type) {
+    this.$message({message: msg, type: type || "success", center: true, offset: 200});
+};
 
 new Vue({
     render: h => h(IndexPage),

@@ -17,9 +17,7 @@ export default {
         RecentWorkspaces
     },
     created() {
-        ipcRenderer.on("msg", (event, msg, type) => {
-            this.$message({message: msg, type: type || "info", center: true, offset: 200});
-        });
+        ipcRenderer.on("msg", (event, msg, type) => this.$msg(msg, type));
         ipcRenderer.on("recent-workspaces", (event, workspaces) => {
             this.$refs.recentWorkspaces.openDialog(workspaces);
         })

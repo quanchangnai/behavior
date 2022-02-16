@@ -109,7 +109,7 @@
                                            @copy.stop.native
                                            @paste.stop.native
                                            @remove-tag="calcContentBodyHeight"
-                                           @visible-change="onParamSelectVisibleChange('paramValue-'+param.name,$event)"
+                                           @visible-change="onParamDropdownVisibleChange('paramValue-'+param.name,$event)"
                                            popper-class="node-param-select-dropdown">
                                     <el-option v-for="(option,i) in paramOptions(param.options)"
                                                :key="param.name+'-option-'+i"
@@ -275,13 +275,14 @@ export default {
             if (this.node.children.length) {
                 items.push({label: this.node.childrenFolded ? '展开子树' : '收起子树', handler: this.foldChildren});
             }
-            items.push({label: '复制子树', shortcut: "Ctrl+C", handler: () => this.$emit("copy", false)});
-            items.push({label: '复制节点', shortcut: "Ctrl+Shift+C", handler: () => this.$emit("copy", true)});
+            items.push({label: '复制子树', shortcut: "Ctrl+C", handler: () => this.$emit("copy-subtrees")});
+            items.push({label: '复制节点', shortcut: "Ctrl+Shift+C", handler: () => this.$emit("copy-nodes")});
             if (this.$store.copyNodes?.length) {
                 items.push({label: "粘贴", shortcut: "Ctrl+V", handler: () => this.$emit("paste")});
             }
-            if (this.node.parent && this.$store.selectedNodes?.size) {
-                items.push({label: "删除", shortcut: "Del", handler: () => this.$emit("delete")});
+            if (this.node.parent) {
+                items.push({label: "删除子树", shortcut: "Del", handler: () => this.$emit("delete-subtrees")});
+                items.push({label: "删除节点", shortcut: "Shift+Del", handler: () => this.$emit("delete-nodes")});
             }
             if (this.node.template.visible) {
                 items.push({label: '定位模板', handler: () => this.$events.$emit("position-template", this.node.tid)});
@@ -305,10 +306,10 @@ export default {
             this.node.childrenFolded = !this.node.childrenFolded;
             this.$emit("children-fold", this.node);
         },
-        onParamSelectVisibleChange(ref, visible) {
+        onParamDropdownVisibleChange(ref, visible) {
             this.node.z = visible ? 200 : 1;
             if (visible) {
-                this.$emit("param-select-show", this.$refs[ref][0]);
+                this.$emit("param-dropdown-show", this.$refs[ref][0]);
             }
         },
         paramSelectClass(paramName) {

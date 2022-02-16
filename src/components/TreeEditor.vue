@@ -33,16 +33,18 @@
                            @dragging="onNodeDragging($event,node)"
                            @drag-end="drawTree"
                            @menu="showNodeMenu"
-                           @copy="copyNodes"
+                           @copy-subtrees="copySubtrees"
+                           @copy-nodes="copyNodes"
                            @paste="pasteNodes(node)"
-                           @delete="deleteNodes"
+                           @delete-subtrees="deleteSubtrees"
+                           @delete-nodes="deleteNodes"
                            @resize="drawTree"
                            @fold="onNodeFold"
                            @mouseenter.native="mouseoverNode=node"
                            @mouseleave.native="mouseoverNode=null"
                            @mouseup.native="onNodeMouseUp($event,node)"
                            @children-fold="onNodeChildrenFold"
-                           @param-select-show="onParamSelectShow"/>
+                           @param-dropdown-show="onNodeParamDropdownShow"/>
             </draggable>
         </div>
         <div id="right" :style="{width:rightWidth+'px'}">
@@ -130,6 +132,7 @@ export default {
 
         ipcRenderer.on("fold-all-node", (e, fold) => this.foldAllNode(fold));
         ipcRenderer.on("copy-nodes", this.copyNodes);
+        ipcRenderer.on("delete-subtrees", this.deleteSubtrees);
         ipcRenderer.on("delete-nodes", this.deleteNodes);
     },
     mounted() {
@@ -408,7 +411,7 @@ export default {
         },
         copySubtrees() {
             let selectedNodes = this.$store.selectedNodes;
-            if (selectedNodes.size === 0) {
+            if (selectedNodes.size < 1) {
                 return;
             }
 
@@ -443,13 +446,8 @@ export default {
                 }
             }
         },
-        copyNodes(nodeSelf = true) {
-            if (this.$store.selectedNodes.size === 0) {
-                return;
-            }
-
-            if (!nodeSelf) {
-                this.copySubtrees();
+        copyNodes() {
+            if (this.$store.selectedNodes.size < 1) {
                 return;
             }
 
@@ -464,6 +462,7 @@ export default {
             if (!this.$store.copyNodes?.length) {
                 return;
             }
+            let pasteCount = 0;
             for (let copyNode of this.$store.copyNodes) {
                 let pasteNode = JSON.parse(JSON.stringify(copyNode));
                 if (!this.canLinkNode(pasteNode, targetNode)) {
@@ -478,25 +477,41 @@ export default {
                     pasteNode.y = targetNode.children[targetNode.children.length - 1].y + 1;
                 }
                 this.linkParentNode(pasteNode, targetNode);
+                pasteCount++;
+            }
+
+            if (pasteCount !== this.$store.copyNodes.length) {
+                this.$msg("部分复制的节点不能粘贴", "warning");
             }
 
             this.drawTree();
         },
-        async deleteNodes() {
+        async deleteSubtrees() {
+            let selectedNodes = [...this.$store.selectedNodes];
             let deletedNodeIds = new Set();
-            for (let selectedNode of this.$store.selectedNodes) {
+            let allAreLeaves = true;
+
+            if (selectedNodes.length < 1) {
+                return;
+            }
+
+            for (let selectedNode of selectedNodes) {
                 if (selectedNode.parent) {
+                    allAreLeaves &= selectedNode.children.length === 0;
                     this.$utils.visitSubtree(selectedNode, node => deletedNodeIds.add(node.id));
                 }
             }
 
-            if (deletedNodeIds.size === 0) {
+            if (deletedNodeIds.size < 1) {
                 return;
             }
 
-            let selectedNodes = [...this.$store.selectedNodes];
             try {
-                await this.$confirm("确定删除选择的节点及其所有子孙节点？", {type: "warning"});
+                if (allAreLeaves) {
+                    await this.$confirm("确定删除选择的节点？", {type: "warning"});
+                } else {
+                    await this.$confirm("确定删除选择的节点及其所有子孙节点？", {type: "warning"});
+                }
             } catch {
                 return;
             }
@@ -508,7 +523,62 @@ export default {
                 }
             }
 
-            //被删除的节点有可能被其他节点的选项列表引用
+            this.updateNodeParamRefs(deletedNodeIds);
+            await this.drawTree();
+        },
+        async deleteNodes() {
+            let selectedNodes = [...this.$store.selectedNodes];
+            let deletedNodeIds = new Set();
+            if (selectedNodes.length < 1) {
+                return;
+            }
+
+            for (let selectedNode of selectedNodes) {
+                if (!selectedNode.parent) {
+                    continue;
+                }
+
+                deletedNodeIds.add(selectedNode.id);
+                let selectedParentChildrenNum = selectedNode.parent.children.length - 1;
+                for (let selectedChild of selectedNode.children) {
+                    if (this.canLinkNode(selectedChild, selectedNode.parent, selectedParentChildrenNum)) {
+                        selectedParentChildrenNum++;
+                    } else {
+                        deletedNodeIds.delete(selectedNode.id);
+                        break;
+                    }
+                }
+            }
+
+            if (deletedNodeIds.size === 0) {
+                this.$msg("选择的节点不能删除", "warning");
+                return;
+            }
+
+            try {
+                await this.$confirm("确定删除选择的节点？", {type: "warning"});
+            } catch {
+                return;
+            }
+
+            for (let selectedNode of selectedNodes) {
+                if (deletedNodeIds.has(selectedNode.id)) {
+                    let index = selectedNode.parent.children.indexOf(selectedNode);
+                    selectedNode.parent.children.splice(index, 1, ...selectedNode.children);
+                    for (let selectedChild of selectedNode.children) {
+                        selectedChild.parent = selectedNode.parent;
+                    }
+                }
+            }
+
+            if (deletedNodeIds.size !== selectedNodes.length) {
+                this.$msg("部分的选择节点不能删除", "warning");
+            }
+
+            this.updateNodeParamRefs(deletedNodeIds);
+            await this.drawTree();
+        },
+        updateNodeParamRefs(deletedNodeIds) {
             this.$utils.visitSubtree(this.tree.root, node => {
                 let params = node.template.params;
                 if (!params) {
@@ -519,19 +589,18 @@ export default {
                     if (!options || Array.isArray(options) || options.refType !== "node") {
                         continue;
                     }
+                    //被删除的节点有可能被其他节点参数的选项列表引用
                     if (deletedNodeIds.has(node.params[param.name])) {
                         node.params[param.name] = null;
                     }
                 }
             });
-
-            await this.drawTree();
         },
-        onParamSelectShow(selectRef) {
-            this.selectRef = selectRef;
+        onNodeParamDropdownShow(nodeParamSelect) {
+            this.nodeParamSelect = nodeParamSelect;
         },
         hideNodeParamDropdown() {
-            this.selectRef?.handleClose();
+            this.nodeParamSelect?.handleClose();
             for (let dropdown of document.querySelectorAll(".node-param-select-dropdown").values()) {
                 dropdown.style.display = "none";
             }
@@ -614,7 +683,7 @@ export default {
             //按y轴排序兄弟节点
             parentNode.children.sort((n1, n2) => n1.y - n2.y);
         },
-        canLinkNode(node, targetNode, checkChildrenNum = true) {
+        canLinkNode(node, targetNode, targetChildrenNum = null) {
             if (!targetNode || targetNode === node || targetNode.childrenFolded) {
                 return false;
             }
@@ -625,11 +694,15 @@ export default {
                 return false;
             }
 
-            //目标节点限制子节点数量
-            if (checkChildrenNum) {
+            if (targetChildrenNum === null) {
+                targetChildrenNum = targetNode.children.length;
+            }
+
+            if (targetChildrenNum >= 0) {
+                //目标节点限制子节点数量
                 return !(targetNode.children.indexOf(node) < 0
                         && targetNode.template.childrenNum >= 0
-                        && targetNode.children.length >= targetNode.template.childrenNum);
+                        && targetChildrenNum >= targetNode.template.childrenNum);
             }
 
             return true;
@@ -638,14 +711,14 @@ export default {
             if (!node || !targetNode || !targetNode.parent) {
                 return false;
             }
-            if (!this.canLinkNode(node, targetNode.parent, false)) {
+            if (!this.canLinkNode(node, targetNode.parent, -1)) {
                 return false;
             }
             if (node.template.childrenNum >= 0 && targetNode.children.length > node.template.childrenNum) {
                 return false;
             }
             for (let targetChild of targetNode.children) {
-                if (!this.canLinkNode(targetChild, node, false)) {
+                if (!this.canLinkNode(targetChild, node, -1)) {
                     return false;
                 }
             }
