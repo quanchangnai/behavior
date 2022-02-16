@@ -487,24 +487,26 @@ export default {
             this.drawTree();
         },
         async deleteSubtrees() {
-            let selectedNodes = [...this.$store.selectedNodes];
-            let deletedNodeIds = new Set();
-            let allAreLeaves = true;
-
-            if (selectedNodes.length < 1) {
+            if (this.$store.selectedNodes.size < 1) {
                 return;
             }
 
-            for (let selectedNode of selectedNodes) {
+            let allAreLeaves = true;
+            let deletedNodeIds = new Set();
+
+            for (let selectedNode of this.$store.selectedNodes) {
+                allAreLeaves &= selectedNode.children.length === 0;
                 if (selectedNode.parent) {
-                    allAreLeaves &= selectedNode.children.length === 0;
                     this.$utils.visitSubtree(selectedNode, node => deletedNodeIds.add(node.id));
                 }
             }
 
             if (deletedNodeIds.size < 1) {
+                this.$msg("不能删除选择的节点", "warning");
                 return;
             }
+
+            let selectedNodes = [...this.$store.selectedNodes];
 
             try {
                 if (allAreLeaves) {
@@ -527,13 +529,12 @@ export default {
             await this.drawTree();
         },
         async deleteNodes() {
-            let selectedNodes = [...this.$store.selectedNodes];
-            let deletedNodeIds = new Set();
-            if (selectedNodes.length < 1) {
+            if (this.$store.selectedNodes.size < 1) {
                 return;
             }
 
-            for (let selectedNode of selectedNodes) {
+            let deletedNodeIds = new Set();
+            for (let selectedNode of this.$store.selectedNodes) {
                 if (!selectedNode.parent) {
                     continue;
                 }
@@ -550,10 +551,12 @@ export default {
                 }
             }
 
-            if (deletedNodeIds.size === 0) {
-                this.$msg("选择的节点不能删除", "warning");
+            if (deletedNodeIds.size < 1) {
+                this.$msg("不能删除选择的节点", "warning");
                 return;
             }
+
+            let selectedNodes = [...this.$store.selectedNodes];
 
             try {
                 await this.$confirm("确定删除选择的节点？", {type: "warning"});
@@ -572,7 +575,7 @@ export default {
             }
 
             if (deletedNodeIds.size !== selectedNodes.length) {
-                this.$msg("部分的选择节点不能删除", "warning");
+                this.$msg("部分的选择的节点不能删除", "warning");
             }
 
             this.updateNodeParamRefs(deletedNodeIds);
