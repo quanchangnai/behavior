@@ -282,7 +282,7 @@ export default {
             }
             if (this.node.parent) {
                 items.push({label: "删除子树", shortcut: "Del", handler: () => this.$emit("delete-subtrees")});
-                items.push({label: "删除节点", shortcut: "Shift+Del", handler: () => this.$emit("delete-nodes")});
+                items.push({label: "删除节点", shortcut: "Ctrl+Del", handler: () => this.$emit("delete-nodes")});
             }
             if (this.node.template.visible) {
                 items.push({label: '定位模板', handler: () => this.$events.$emit("position-template", this.node.tid)});
@@ -330,7 +330,7 @@ export default {
                 return options;
             }
 
-            //options.refType==="node",选项列表引用节点
+            //options.refType==="node",选项列表引用其他节点
             let _options = [];
             this.$utils.visitSubtree(this.node.tree.root, node => {
                 if (node.tid === options.refId) {

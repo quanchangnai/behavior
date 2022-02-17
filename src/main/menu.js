@@ -21,17 +21,22 @@ let menu = [
                 }
             },
             {
-                label: '打开工作区',
+                label: "重加载工作区",
+                role: "reload",
+                accelerator: "F5"
+            },
+            {
+                label: '打开工作区...',
                 click: async (item, win) => {
                     await behavior.showOpenWorkspaceDialog(win);
                 }
             },
             {
-                label: '最近工作区',
+                label: '最近工作区...',
                 click: (item, win) => {
                     win.webContents.send("recent-workspaces", behavior.recentWorkspaces());
                 }
-            },
+            }
         ]
     },
     {
@@ -56,15 +61,13 @@ let menu = [
                 label: "删除子树",
                 accelerator: "Delete",
                 click: (item, win) => {
-                    console.log("删除子树");
                     win.webContents.send("delete-subtrees");
                 }
             },
             {
                 label: "删除节点",
-                accelerator: "Shift+Delete",
+                accelerator: "CmdOrCtrl+Delete",
                 click: (item, win) => {
-                    console.log("删除节点");
                     win.webContents.send("delete-nodes");
                 }
             }
@@ -74,28 +77,23 @@ let menu = [
         label: "视图",
         submenu: [
             {
-                label: "刷新",
-                role: "reload",
-                accelerator: "F5"
-            },
-            {
                 label: "行为树列表",
+                accelerator: "CmdOrCtrl+Left",
                 click(item, win) {
-                    win.webContents.send("left-visible");
-                },
-                accelerator: "CmdOrCtrl+Left"
+                    win.webContents.send("toggle-tree-list");
+                }
             },
             {
                 label: "节点模板列表",
                 accelerator: "CmdOrCtrl+Right",
                 click(item, win) {
-                    win.webContents.send("right-visible");
+                    win.webContents.send("toggle-template-list");
                 }
             },
             {
                 label: "展开全部节点",
                 click(item, win) {
-                    win.webContents.send("fold-all-node", false);
+                    win.webContents.send("fold-all-nodes", false);
                 },
                 accelerator: "CmdOrCtrl+Down"
             },
@@ -103,7 +101,7 @@ let menu = [
                 label: "收起全部节点",
                 accelerator: "CmdOrCtrl+Up",
                 click(item, win) {
-                    win.webContents.send("fold-all-node", true);
+                    win.webContents.send("fold-all-nodes", true);
                 }
             },
             {

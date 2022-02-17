@@ -120,17 +120,17 @@ export default {
             return;
         }
 
-        ipcRenderer.on("left-visible", () => {
+        ipcRenderer.on("toggle-tree-list", () => {
             this.leftWidth = this.leftWidth === left_width ? 0 : left_width;
             this.resetBoardPosition();
         });
 
-        ipcRenderer.on("right-visible", () => {
+        ipcRenderer.on("toggle-template-list", () => {
             this.rightWidth = this.rightWidth === right_width ? 0 : right_width;
             this.resetBoardPosition();
         });
 
-        ipcRenderer.on("fold-all-node", (e, fold) => this.foldAllNode(fold));
+        ipcRenderer.on("fold-all-nodes", (e, fold) => this.foldAllNodes(fold));
         ipcRenderer.on("copy-nodes", this.copyNodes);
         ipcRenderer.on("delete-subtrees", this.deleteSubtrees);
         ipcRenderer.on("delete-nodes", this.deleteNodes);
@@ -150,10 +150,10 @@ export default {
                 return items;
             }
             if ((this.tree.folded & 1) === 1) {//至少有一个节点是收起的
-                items.push({label: '展开全部节点', handler: () => this.foldAllNode(false)});
+                items.push({label: '展开全部节点', handler: () => this.foldAllNodes(false)});
             }
             if ((this.tree.folded & 2) === 2) {//至少有一个节点是展开的
-                items.push({label: '收起全部节点', handler: () => this.foldAllNode(true)});
+                items.push({label: '收起全部节点', handler: () => this.foldAllNodes(true)});
             }
             if (this.tree.childrenFolded) {
                 items.push({label: '展开全部子树', handler: this.unfoldAllNodeChildren});
@@ -459,11 +459,13 @@ export default {
             }
         },
         pasteNodes(targetNode) {
-            if (!this.$store.copyNodes?.length) {
+            let copyNodes = this.$store.copyNodes;
+            if (!copyNodes?.length) {
                 return;
             }
+
             let pasteCount = 0;
-            for (let copyNode of this.$store.copyNodes) {
+            for (let copyNode of copyNodes) {
                 let pasteNode = JSON.parse(JSON.stringify(copyNode));
                 if (!this.canLinkNode(pasteNode, targetNode)) {
                     continue;
@@ -480,21 +482,22 @@ export default {
                 pasteCount++;
             }
 
-            if (pasteCount !== this.$store.copyNodes.length) {
-                this.$msg("部分复制的节点不能粘贴", "warning");
+            if (pasteCount !== copyNodes.length) {
+                this.$msg("部分复制的节点不能粘贴到目标节点", "warning");
             }
 
             this.drawTree();
         },
         async deleteSubtrees() {
-            if (this.$store.selectedNodes.size < 1) {
+            let selectedNodes = [...this.$store.selectedNodes];
+            if (selectedNodes.size < 1) {
                 return;
             }
 
             let allAreLeaves = true;
             let deletedNodeIds = new Set();
 
-            for (let selectedNode of this.$store.selectedNodes) {
+            for (let selectedNode of selectedNodes) {
                 allAreLeaves &= selectedNode.children.length === 0;
                 if (selectedNode.parent) {
                     this.$utils.visitSubtree(selectedNode, node => deletedNodeIds.add(node.id));
@@ -502,16 +505,12 @@ export default {
             }
 
             if (deletedNodeIds.size < 1) {
-                this.$msg("不能删除选择的节点", "warning");
+                this.$msg("不能删除选择的" + (allAreLeaves ? "节点" : "子树"), "warning");
                 return;
             }
 
-            let selectedNodes = [...this.$store.selectedNodes];
-
             try {
-                if (allAreLeaves) {
-                    await this.$confirm("确定删除选择的节点？", {type: "warning"});
-                } else {
+                if (!allAreLeaves) {
                     await this.$confirm("确定删除选择的节点及其所有子孙节点？", {type: "warning"});
                 }
             } catch {
@@ -528,58 +527,74 @@ export default {
             this.updateNodeParamRefs(deletedNodeIds);
             await this.drawTree();
         },
-        async deleteNodes() {
+        deleteNodes() {
+            let selectedNodes = this.$store.selectedNodes;
             if (this.$store.selectedNodes.size < 1) {
                 return;
             }
 
-            let deletedNodeIds = new Set();
-            for (let selectedNode of this.$store.selectedNodes) {
+            let deleteNodeChildrenMap = new Map();
+            let pushSelectedChildren = (node, children) => {
+                for (let child of node.children) {
+                    if (this.$store.selectedNodes.has(child)) {
+                        pushSelectedChildren(child, children);
+                    } else {
+                        children.push(child);
+                    }
+                }
+            };
+
+            for (let selectedNode of selectedNodes) {
                 if (!selectedNode.parent) {
                     continue;
                 }
 
-                deletedNodeIds.add(selectedNode.id);
+                let selectedChildren = [];
+                pushSelectedChildren(selectedNode, selectedChildren);
+                deleteNodeChildrenMap.set(selectedNode, selectedChildren);
                 let selectedParentChildrenNum = selectedNode.parent.children.length - 1;
-                for (let selectedChild of selectedNode.children) {
+
+                for (let selectedChild of selectedChildren) {
                     if (this.canLinkNode(selectedChild, selectedNode.parent, selectedParentChildrenNum)) {
                         selectedParentChildrenNum++;
                     } else {
-                        deletedNodeIds.delete(selectedNode.id);
+                        deleteNodeChildrenMap.delete(selectedNode);
                         break;
                     }
                 }
             }
 
-            if (deletedNodeIds.size < 1) {
+            if (deleteNodeChildrenMap.size < 1) {
                 this.$msg("不能删除选择的节点", "warning");
                 return;
             }
 
-            let selectedNodes = [...this.$store.selectedNodes];
-
-            try {
-                await this.$confirm("确定删除选择的节点？", {type: "warning"});
-            } catch {
-                return;
-            }
-
-            for (let selectedNode of selectedNodes) {
-                if (deletedNodeIds.has(selectedNode.id)) {
-                    let index = selectedNode.parent.children.indexOf(selectedNode);
-                    selectedNode.parent.children.splice(index, 1, ...selectedNode.children);
-                    for (let selectedChild of selectedNode.children) {
-                        selectedChild.parent = selectedNode.parent;
+            let deletedNodeIds = new Set();
+            this.$utils.visitSubtree(this.tree.root, node => {
+                if (!node.parent) {
+                    return;
+                }
+                if (deletedNodeIds.has(node.parent.id)) {
+                    deletedNodeIds.add(node);
+                    return;
+                }
+                let nodeChildren = deleteNodeChildrenMap.get(node);
+                if (nodeChildren) {
+                    deletedNodeIds.add(node);
+                    let index = node.parent.children.indexOf(node);
+                    node.parent.children.splice(index, 1, ...nodeChildren);
+                    for (let selectedChild of nodeChildren) {
+                        selectedChild.parent = node.parent;
                     }
                 }
-            }
+            });
 
-            if (deletedNodeIds.size !== selectedNodes.length) {
-                this.$msg("部分的选择的节点不能删除", "warning");
+            if (deletedNodeIds.size !== selectedNodes.size) {
+                this.$msg("部分选择的节点不能删除", "warning");
             }
 
             this.updateNodeParamRefs(deletedNodeIds);
-            await this.drawTree();
+            this.drawTree();
         },
         updateNodeParamRefs(deletedNodeIds) {
             this.$utils.visitSubtree(this.tree.root, node => {
@@ -588,8 +603,7 @@ export default {
                     return;
                 }
                 for (let param of params) {
-                    let options = param.options;
-                    if (!options || Array.isArray(options) || options.refType !== "node") {
+                    if (param.options?.refType !== "node") {
                         continue;
                     }
                     //被删除的节点有可能被其他节点参数的选项列表引用
@@ -856,7 +870,7 @@ export default {
         showBoardMenu(event) {
             this.$refs.boardMenu.show(event.clientX, event.clientY, "#center");
         },
-        foldAllNode(fold) {
+        foldAllNodes(fold) {
             if (!this.tree) {
                 return;
             }
