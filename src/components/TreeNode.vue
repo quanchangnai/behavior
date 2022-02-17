@@ -55,7 +55,6 @@
                                         placement="right">
                                 <el-input ref="comment"
                                           v-model="node.comment"
-                                          @mousedown.stop.native
                                           @dblclick.stop.native
                                           @copy.stop.native
                                           @paste.stop.native/>
@@ -93,7 +92,6 @@
                                 <el-radio-group v-if="param.type==='boolean' && !param.options"
                                                 :ref="'paramValue-'+param.name"
                                                 v-model="node.params[param.name]"
-                                                @mousedown.stop.native
                                                 @dblclick.stop.native>
                                     <el-radio :label="true">是</el-radio>
                                     <el-radio :label="false">否</el-radio>
@@ -104,7 +102,6 @@
                                            v-model="node.params[param.name]"
                                            :multiple="Array.isArray(param.default)"
                                            :class="paramSelectClass(param.name)"
-                                           @mousedown.stop.native
                                            @dblclick.stop.native
                                            @copy.stop.native
                                            @paste.stop.native
@@ -120,7 +117,6 @@
                                 <el-input-number v-else-if="param.type==='int' || param.type==='float'"
                                                  :ref="'paramValue-'+param.name"
                                                  v-model="node.params[param.name]"
-                                                 @mousedown.stop.native
                                                  @dblclick.stop.native
                                                  @copy.stop.native
                                                  @paste.stop.native
@@ -130,7 +126,6 @@
                                 <el-input v-else-if="param.type==='string'"
                                           :ref="'paramValue-'+param.name"
                                           v-model="node.params[param.name]"
-                                          @mousedown.stop.native
                                           @dblclick.stop.native
                                           @copy.stop.native
                                           @paste.stop.native/>
@@ -457,10 +452,6 @@ export default {
 </script>
 
 <style scoped>
-:focus {
-    outline: none;
-}
-
 .content {
     min-width: 60px;
     max-width: 250px;

@@ -67,6 +67,14 @@ export default {
             };
         },
         onMouseDown(event) {
+            if (event) {
+                if (event.target.tagName === "INPUT") {
+                    return;
+                } else {
+                    event.preventDefault();
+                }
+            }
+
             if (!this.checkCtrlKey(event)) {
                 return;
             }
@@ -98,7 +106,7 @@ export default {
             this.top = this.top + event.movementY / (this.scale * devicePixelRatio);
             this.$emit("dragging", this.dragEvent(event));
         },
-        onMouseUp() {
+        onMouseUp(event) {
             if (this.state < 0) {
                 return;
             }
