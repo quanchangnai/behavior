@@ -1,8 +1,8 @@
 <template>
     <draggable :x="node.x"
                :y="node.y"
-               :ready="creating"
-               :ctrl-key="creating?null:false"
+               :ready="node.creating===true"
+               :ctrl-key="node.creating?null:false"
                :style="{'z-index':node.z}"
                :scale="node.tree&&node.tree.scale||1"
                @drag-start="onDragStart"
@@ -151,17 +151,14 @@
 
 <script>
 import Draggable from './Draggable'
+import clipboard from "@/render/clipboard";
 
 // noinspection JSUnresolvedVariable
 export default {
     name: "TreeNode",
     components: {Draggable},
     props: {
-        node: Object,
-        creating: {
-            type: Boolean,
-            default: false
-        }
+        node: Object
     },
     data() {
         return {
@@ -194,13 +191,13 @@ export default {
         });
         this.resizeObserver.observe(this.$refs.content);
 
-        this.contentClasses.selected = this.selected || this.creating;
+        this.contentClasses.selected = this.selected || this.node.creating;
         this.contentClasses['can-fold'] = this.canFold();
         this.checkParamsError();
     },
     destroyed() {
         this.resizeObserver.disconnect();
-        this.$store.selectedNodes.delete(this.node);
+        clipboard.selectedNodes.delete(this.node);
     },
     watch: {
         'node.folded': function (folded) {
@@ -218,11 +215,11 @@ export default {
             }
         },
         selected() {
-            this.contentClasses.selected = this.selected || this.creating;
+            this.contentClasses.selected = this.selected || this.node.creating;
             if (this.selected) {
-                this.$store.selectedNodes.add(this.node);
+                clipboard.selectedNodes.add(this.node);
             } else {
-                this.$store.selectedNodes.delete(this.node);
+                clipboard.selectedNodes.delete(this.node);
             }
         }
     },
@@ -238,7 +235,7 @@ export default {
             this.$utils.visitSubtree(this.node, node => {
                 node.x += deltaX;
                 node.y += deltaY;
-                node.z = this.creating ? 30 : 10;
+                node.z = this.node.creating ? 30 : 10;
             });
 
             this.$emit("dragging", event);
@@ -256,7 +253,7 @@ export default {
             }
         },
         canFold() {
-            if (this.creating) {
+            if (this.node.creating) {
                 return false;
             }
             let template = this.node.template;
@@ -272,7 +269,7 @@ export default {
             }
             items.push({label: '复制子树', shortcut: "Ctrl+C", handler: () => this.$emit("copy-subtrees")});
             items.push({label: '复制节点', shortcut: "Ctrl+Shift+C", handler: () => this.$emit("copy-nodes")});
-            if (this.$store.copyNodes?.length) {
+            if (clipboard.copiedNodes.length) {
                 items.push({label: "粘贴", shortcut: "Ctrl+V", handler: () => this.$emit("paste")});
             }
             if (this.node.parent) {
@@ -337,6 +334,7 @@ export default {
 
         },
         onFormValidate(prop, pass) {
+            console.log("onFormValidate", prop, pass);
             if (!pass) {
                 this.paramValidations[prop] = pass;
             } else {
@@ -348,7 +346,7 @@ export default {
         checkParamsError() {
             let error = Object.keys(this.paramValidations).length > 0;
             let params = this.node.template.params;
-            if (params && !this.creating) {
+            if (params && !this.node.creating) {
                 for (let param of params) {
                     let paramValue = this.node.params[param.name];
                     if (param.required && (paramValue === undefined || Array.isArray(paramValue) && paramValue.length === 0)) {
@@ -378,7 +376,7 @@ export default {
             }
 
             //手动计算高度，多余4个表单项加滚动条，并且防止表单项部分显示
-            this.contentBodyHeight = 1;//上边框
+            this.contentBodyHeight = form.$el.clientTop;//上边框宽度
 
             const maxItems = 4;
             let formStyle = getComputedStyle(form.$el);
@@ -398,7 +396,7 @@ export default {
             }
         },
         async checkContentHeaderOverflow() {
-            if (this.creating || !this.node.comment) {
+            if (this.node.creating || !this.node.comment) {
                 return;
             }
             //等待渲染出来后再检测

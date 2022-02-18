@@ -7,20 +7,20 @@
                        @select-tree="onSelectTree"/>
         </div>
         <div id="center"
+             tabindex="-1"
+             @mouseenter="centerFocus"
              @dblclick="resetBoard"
+             @keydown.ctrl="onCtrlKeyDown"
+             @keyup.control="onCtrlKeyUp"
              @wheel.exact="onCenterWheel"
              :style="{left:(leftWidth+2)+'px',right:rightWidth+'px'}">
             <draggable id="board"
                        :x="boardX"
                        :y="boardY"
-                       tabindex="-1"
                        @drag-start="hideNodeParamDropdown"
                        @drag-end="onBoardDragEnd"
                        @contextmenu.native="showBoardMenu"
-                       @mouseenter.native="boardFocus"
                        @mouseup.native="onBoardMouseUp"
-                       @keydown.ctrl.native="onBoardCtrlKeyDown"
-                       @keyup.control.native="onBoardCtrlKeyUp"
                        @copy.native="copySubtrees"
                        @wheel.ctrl.exact.native="scaleBoard"
                        :style="{width:boardWidth+'px',height:boardHeight+'px',transform:`scale(${boardScale},${boardScale})`}">
@@ -58,7 +58,6 @@
         <tree-node v-if="creatingNode!=null"
                    :ref="'node-'+creatingNode.id"
                    :node="creatingNode"
-                   :creating="true"
                    style="pointer-events:none"
                    @dragging="onNodeDragging($event,creatingNode)"
                    @drag-end="drawTree"/>
@@ -73,25 +72,12 @@ import TreeList from "./TreeList";
 import TreeNode from "./TreeNode";
 import TemplateList from "./TemplateList";
 import ContextMenu from "./ContextMenu";
-
 import {ipcRenderer} from 'electron'
+import clipboard from "@/render/clipboard";
 
-//节点x轴间隔空间
-function nodeSpaceX(node) {
-    if (node.children.length <= 3) {
-        return 30;
-    } else if (node.children.length <= 8) {
-        return 50;
-    } else {
-        return 70;
-    }
-}
-
-const node_space_y = 20;//节点y轴间隔空间
 const board_edge_space = 100;//画板边缘空间
-
-const left_width = 220;
-const right_width = 250;
+const left_width = 220;//左侧行为树列表宽度
+const right_width = 250;//右侧节点模板宽度
 
 export default {
     name: "TreeEditor",
@@ -138,7 +124,7 @@ export default {
     mounted() {
         this.resizeObserver = new ResizeObserver(this.drawTree);
         this.resizeObserver.observe(document.querySelector("#center"));
-        this.boardFocus();
+        this.centerFocus();
     },
     destroyed() {
         this.resizeObserver.disconnect();
@@ -187,8 +173,8 @@ export default {
     methods: {
         onSelectTree(tree) {
             this.tree = tree;
-            this.$store.selectedNodes = new Set();
             this.resetBoard();
+            clipboard.setTree(tree);
             this.drawTree();
         },
         async drawTree() {
@@ -205,7 +191,7 @@ export default {
                     return;
                 }
 
-                this.calcNodeBounds(this.tree.root);
+                this.$utils.calcNodeBounds(this.tree.root, this.getNodeElement);
 
                 this.boardWidth = Math.max(this.boardWidth, this.tree.root.treeWidth + board_edge_space * 2);
                 this.boardHeight = Math.max(this.boardHeight, this.tree.root.treeHeight + board_edge_space * 2);
@@ -214,7 +200,7 @@ export default {
                     this.resetBoardPosition();
                 }
 
-                this.calcNodePosition(this.tree.root, board_edge_space);
+                this.$utils.calcNodePosition(this.tree.root, board_edge_space);
                 this.drawLinkLines();
             };
 
@@ -224,82 +210,16 @@ export default {
             await this.$nextTick();
             draw();
         },
-        calcNodeBounds(node) {
-            if (!node) {
-                return;
-            }
-
+        getNodeElement(node) {
             //坑，v-for中的ref是个数组
-            let nodeElement;
             let nodeRef = this.$refs["node-" + node.id];
             if (Array.isArray(nodeRef)) {
-                nodeElement = nodeRef[0].$el;
+                return nodeRef[0].$el;
             } else if (nodeRef) {
                 // noinspection JSUnresolvedFunction
-                nodeElement = nodeRef.$el;
+                return nodeRef.$el;
             } else {
                 this.$logger.error("nodeRef is null", node.id);
-            }
-
-            //界面渲染完成之后才能取到元素大小
-            node.selfWidth = nodeElement.offsetWidth + nodeSpaceX(node);
-            node.selfHeight = nodeElement.offsetHeight + node_space_y;
-
-            if (!node.children.length || node.childrenFolded) {
-                node.treeWidth = node.selfWidth;
-                node.treeHeight = node.selfHeight;
-                return;
-            }
-
-            let maxChildWidth = 0;
-            let childrenHeight = 0;
-
-            for (let child of node.children) {
-                this.calcNodeBounds(child);
-                if (child.treeWidth > maxChildWidth) {
-                    maxChildWidth = child.treeWidth;
-                }
-                childrenHeight += child.treeHeight;
-            }
-
-            node.treeWidth = node.selfWidth + maxChildWidth;
-            node.treeHeight = Math.max(node.selfHeight, childrenHeight);
-            node.childrenHeight = childrenHeight;
-        },
-        calcNodePosition(node, lastY) {
-            if (!node) {
-                return;
-            }
-            if (node.parent) {
-                node.x = node.parent.x + node.parent.selfWidth;
-            } else {
-                node.x = board_edge_space;
-            }
-
-            if (!node.children.length || node.childrenFolded) {
-                node.y = lastY;
-                return;
-            }
-
-            if (node.treeHeight <= node.childrenHeight) {
-                for (let child of node.children) {
-                    this.calcNodePosition(child, lastY);
-                    lastY += child.treeHeight;
-                }
-                if (node.children.length > 1) {
-                    let lastChild = node.children[node.children.length - 1];
-                    node.y = (node.children[0].y + lastChild.y + lastChild.selfHeight - node.selfHeight) / 2;
-                } else {
-                    node.y = node.children[0].y + node.children[0].selfHeight / 2 - node.selfHeight / 2;
-                }
-            } else {
-                // 父节点比所有子树高度之和还高
-                node.y = lastY;
-                lastY += (node.selfHeight - node.childrenHeight) / 2;
-                for (let child of node.children) {
-                    this.calcNodePosition(child, lastY);
-                    lastY += child.treeHeight;
-                }
             }
         },
         initCanvas() {
@@ -329,12 +249,12 @@ export default {
                     return;
                 }
 
-                let x1 = node.x + node.selfWidth - nodeSpaceX(node) + nodeFoldChildrenIconWidth;
-                let y1 = node.y + (node.selfHeight - node_space_y) / 2;
+                let x1 = node.x + node.selfWidth - this.$utils.nodeSpaceX(node) + nodeFoldChildrenIconWidth;
+                let y1 = node.y + (node.selfHeight - this.$utils.nodeSpaceY) / 2;
 
                 for (let child of node.children) {
                     let x2 = child.x;
-                    let y2 = child.y + (child.selfHeight - node_space_y) / 2;
+                    let y2 = child.y + (child.selfHeight - this.$utils.nodeSpaceY) / 2;
                     if (child.dragging) {
                         context.strokeStyle = "#b32de0"
                     } else {
@@ -350,36 +270,38 @@ export default {
             if (this.creatingNode && this.creatingNode.parent) {
                 context.strokeStyle = "#b32de0";
                 let creatingNodeParent = this.creatingNode.parent;
-                let x1 = creatingNodeParent.x + creatingNodeParent.selfWidth - nodeSpaceX(creatingNodeParent);
-                if (creatingNodeParent.children && creatingNodeParent.children.length) {
+                let x1 = creatingNodeParent.x + creatingNodeParent.selfWidth - this.$utils.nodeSpaceX(creatingNodeParent);
+                if (creatingNodeParent.children.length) {
                     x1 += nodeFoldChildrenIconWidth;
                 }
-                let y1 = creatingNodeParent.y + (creatingNodeParent.selfHeight - node_space_y) / 2;
-                let x2 = this.creatingNode.x - document.querySelector("#left").offsetWidth - this.boardX;
-                let y2 = this.creatingNode.y + (this.creatingNode.selfHeight - node_space_y) / 2 - this.boardY;
+                let y1 = creatingNodeParent.y + (creatingNodeParent.selfHeight - this.$utils.nodeSpaceY) / 2;
+
+                let x2 = this.creatingNode.x - this.$utils.getOffsetX("#center", this.$el) - this.boardX;
+                let y2 = this.creatingNode.y + (this.creatingNode.selfHeight - this.$utils.nodeSpaceY) / 2 - this.boardY;
                 x2 /= this.boardScale;
                 y2 /= this.boardScale;
+
                 drawLine(x1, y1, x2, y2);
             }
         },
         onNodeDragging(event, node) {
-            if (node === this.creatingNode && event.ctrlKey && this.canReplaceNode(node, this.mouseoverNode)) {
+            if (node.creating && event.ctrlKey && this.$utils.canReplaceNode(node, this.mouseoverNode)) {
                 node.parent = null;
             } else {
                 this.linkParentNode(node);
             }
             this.drawLinkLines();
         },
-        onBoardCtrlKeyDown() {
+        onCtrlKeyDown() {
             if (!this.creatingNode?.parent) {
                 return;
             }
-            if (this.canReplaceNode(this.creatingNode, this.mouseoverNode)) {
+            if (this.$utils.canReplaceNode(this.creatingNode, this.mouseoverNode)) {
                 this.creatingNode.parent = null;
                 this.drawLinkLines();
             }
         },
-        onBoardCtrlKeyUp() {
+        onCtrlKeyUp() {
             if (!this.creatingNode || this.creatingNode.parent) {
                 return;
             }
@@ -387,15 +309,15 @@ export default {
             this.drawLinkLines();
         },
         onNodeMouseUp(event, node) {
-            if (!event.ctrlKey || !this.canReplaceNode(this.creatingNode, node)) {
+            if (!event.ctrlKey || !this.$utils.canReplaceNode(this.creatingNode, node)) {
                 return;
             }
 
             let creatingNode = this.creatingNode;
             this.creatingNode = null;
 
-            creatingNode.tree = this.tree;
             creatingNode.dragging = false;
+            creatingNode.creating = false;
             creatingNode.z = 1;
 
             let index = node.parent.children.indexOf(node);
@@ -410,191 +332,29 @@ export default {
             this.drawTree();
         },
         copySubtrees() {
-            let selectedNodes = this.$store.selectedNodes;
-            if (selectedNodes.size < 1) {
-                return;
-            }
-
-            this.$store.copyNodes = [];
-
-            //节点的任意后代节点是否有被选中
-            let descendantsSelectedMap = new Map();
-            let checkDescendantsSelected = node => {
-                let descendantSelected = false;
-                for (let child of node.children) {
-                    descendantSelected |= checkDescendantsSelected(child)
-                }
-                descendantsSelectedMap.set(node, descendantSelected);
-                return selectedNodes.has(node) || descendantSelected;
-            };
-            checkDescendantsSelected(this.tree.root);
-
-            let resolveChildren = node => {
-                let selectedChildren = node.children.filter(child => selectedNodes.has(child));
-                if (selectedChildren.length === 0 && !descendantsSelectedMap.get(node)) {
-                    return node.children;
-                } else {
-                    return selectedChildren;
-                }
-            };
-
-            for (let selectedNode of selectedNodes) {
-                if (!selectedNodes.has(selectedNode.parent)) {
-                    let copyNode = this.$utils.buildSubtree(selectedNode, resolveChildren);
-                    this.$store.copyNodes.push(copyNode);
-                    this.$events.$emit("init-tree", copyNode);
-                }
-            }
+            clipboard.copySubtrees();
         },
         copyNodes() {
-            if (this.$store.selectedNodes.size < 1) {
-                return;
-            }
-
-            this.$store.copyNodes = [];
-            for (let selectedNode of this.$store.selectedNodes) {
-                let copyNode = this.$utils.buildNode(selectedNode);
-                this.$store.copyNodes.push(copyNode);
-                this.$events.$emit("init-tree", copyNode);
-            }
+            clipboard.copyNodes();
         },
         pasteNodes(targetNode) {
-            let copyNodes = this.$store.copyNodes;
-            if (!copyNodes?.length) {
-                return;
+            if (clipboard.pasteNodes(targetNode)) {
+                this.drawTree();
             }
-
-            let pasteCount = 0;
-            for (let copyNode of copyNodes) {
-                let pasteNode = JSON.parse(JSON.stringify(copyNode));
-                if (!this.canLinkNode(pasteNode, targetNode)) {
-                    continue;
-                }
-                this.$utils.visitSubtree(pasteNode, (node, parent) => {
-                    node.id = ++this.tree.maxNodeId;
-                    this.$utils.initNode(node, parent, this.tree);
-                });
-
-                if (targetNode.children.length) {
-                    pasteNode.y = targetNode.children[targetNode.children.length - 1].y + 1;
-                }
-                this.linkParentNode(pasteNode, targetNode);
-                pasteCount++;
-            }
-
-            if (pasteCount !== copyNodes.length) {
-                this.$msg("部分复制的节点不能粘贴到目标节点", "warning");
-            }
-
-            this.drawTree();
         },
         async deleteSubtrees() {
-            let selectedNodes = [...this.$store.selectedNodes];
-            if (selectedNodes.size < 1) {
-                return;
+            let deletedNodeIds = await clipboard.deleteSubtrees();
+            if (deletedNodeIds) {
+                this.updateNodeParamRefs(deletedNodeIds);
+                await this.drawTree();
             }
-
-            let allAreLeaves = true;
-            let deletedNodeIds = new Set();
-
-            for (let selectedNode of selectedNodes) {
-                allAreLeaves &= selectedNode.children.length === 0;
-                if (selectedNode.parent) {
-                    this.$utils.visitSubtree(selectedNode, node => deletedNodeIds.add(node.id));
-                }
-            }
-
-            if (deletedNodeIds.size < 1) {
-                this.$msg("不能删除选择的" + (allAreLeaves ? "节点" : "子树"), "warning");
-                return;
-            }
-
-            try {
-                if (!allAreLeaves) {
-                    await this.$confirm("确定删除选择的节点及其所有子孙节点？", {type: "warning"});
-                }
-            } catch {
-                return;
-            }
-
-            for (let selectedNode of selectedNodes) {
-                if (selectedNode.parent) {
-                    let index = selectedNode.parent.children.indexOf(selectedNode);
-                    selectedNode.parent.children.splice(index, 1);
-                }
-            }
-
-            this.updateNodeParamRefs(deletedNodeIds);
-            await this.drawTree();
         },
         deleteNodes() {
-            let selectedNodes = this.$store.selectedNodes;
-            if (this.$store.selectedNodes.size < 1) {
-                return;
+            let deletedNodeIds = clipboard.deleteNodes();
+            if (deletedNodeIds) {
+                this.updateNodeParamRefs(deletedNodeIds);
+                this.drawTree();
             }
-
-            let deleteNodeChildrenMap = new Map();
-            let pushSelectedChildren = (node, children) => {
-                for (let child of node.children) {
-                    if (this.$store.selectedNodes.has(child)) {
-                        pushSelectedChildren(child, children);
-                    } else {
-                        children.push(child);
-                    }
-                }
-            };
-
-            for (let selectedNode of selectedNodes) {
-                if (!selectedNode.parent) {
-                    continue;
-                }
-
-                let selectedChildren = [];
-                pushSelectedChildren(selectedNode, selectedChildren);
-                deleteNodeChildrenMap.set(selectedNode, selectedChildren);
-                let selectedParentChildrenNum = selectedNode.parent.children.length - 1;
-
-                for (let selectedChild of selectedChildren) {
-                    if (this.canLinkNode(selectedChild, selectedNode.parent, selectedParentChildrenNum)) {
-                        selectedParentChildrenNum++;
-                    } else {
-                        deleteNodeChildrenMap.delete(selectedNode);
-                        break;
-                    }
-                }
-            }
-
-            if (deleteNodeChildrenMap.size < 1) {
-                this.$msg("不能删除选择的节点", "warning");
-                return;
-            }
-
-            let deletedNodeIds = new Set();
-            this.$utils.visitSubtree(this.tree.root, node => {
-                if (!node.parent) {
-                    return;
-                }
-                if (deletedNodeIds.has(node.parent.id)) {
-                    deletedNodeIds.add(node);
-                    return;
-                }
-                let nodeChildren = deleteNodeChildrenMap.get(node);
-                if (nodeChildren) {
-                    deletedNodeIds.add(node);
-                    let index = node.parent.children.indexOf(node);
-                    node.parent.children.splice(index, 1, ...nodeChildren);
-                    for (let selectedChild of nodeChildren) {
-                        selectedChild.parent = node.parent;
-                    }
-                }
-            });
-
-            if (deletedNodeIds.size !== selectedNodes.size) {
-                this.$msg("部分选择的节点不能删除", "warning");
-            }
-
-            this.updateNodeParamRefs(deletedNodeIds);
-            this.drawTree();
         },
         updateNodeParamRefs(deletedNodeIds) {
             this.$utils.visitSubtree(this.tree.root, node => {
@@ -639,111 +399,15 @@ export default {
         showNodeMenu(x, y, items, onHide) {
             this.$refs.nodeMenu.show(x, y, "#center", items, onHide);
         },
-        findParentNode(node) {
-            let deltaX = 0;
-            let deltaY = 0;
-            if (node === this.creatingNode) {
-                deltaX = document.querySelector("#left").offsetWidth + this.boardX;
-                deltaY = this.boardY;
-            }
-
-            let x1 = node.x;
-            let y1 = node.y + (node.selfHeight - node_space_y) / 2;
-
-            //寻找最近的的节点作为父节点
-            let parentNode = null;
-            let minDistance2 = -1;
-
-            this.$utils.visitSubtree(this.tree.root, targetNode => {
-                if (!targetNode || targetNode === node || targetNode.childrenFolded) {
-                    return false;
-                }
-
-                if (this.canLinkNode(node, targetNode)) {
-                    let x2 = deltaX + targetNode.x + targetNode.selfWidth - nodeSpaceX(targetNode);
-                    let y2 = deltaY + targetNode.y + (targetNode.selfHeight - node_space_y) / 2;
-
-                    let distance2 = (x1 - x2) ** 2 + (y1 - y2) ** 2;
-                    if (!parentNode || x1 > x2 && distance2 < minDistance2) {
-                        minDistance2 = distance2;
-                        parentNode = targetNode;
-                    }
-                }
-            });
-
-            return parentNode;
-        },
         linkParentNode(node, parentNode) {
-            if (!parentNode) {
-                parentNode = this.findParentNode(node);
+            if (node.creating) {
+                this.tree.deltaX = this.boardX + this.$utils.getOffsetX("#center", this.$el);
+                this.tree.deltaY = this.boardY + this.$utils.getOffsetY("#center", this.$el);
             }
-
-            if (!parentNode) {
-                return;
-            }
-
-            if (node === this.creatingNode) {
-                node.parent = parentNode;
-                return;
-            }
-
-            //关联父子节点
-            if (node.parent && node.parent.children) {
-                let index = node.parent.children.indexOf(node);
-                if (index >= 0) {
-                    node.parent.children.splice(index, 1);
-                }
-            }
-            node.parent = parentNode;
-            parentNode.children.push(node);
-
-            //按y轴排序兄弟节点
-            parentNode.children.sort((n1, n2) => n1.y - n2.y);
+            this.$utils.linkParentNode(node, parentNode, this.getNodeElement);
         },
-        canLinkNode(node, targetNode, targetChildrenNum = null) {
-            if (!targetNode || targetNode === node || targetNode.childrenFolded) {
-                return false;
-            }
-
-            //目标节点限制子节点模板类型或者模板ID
-            if (node.template.type && targetNode.template.childrenTypes.indexOf(node.template.type.id) < 0 &&
-                    (!targetNode.template.childrenIds || targetNode.template.childrenIds.indexOf(node.template.id) < 0)) {
-                return false;
-            }
-
-            if (targetChildrenNum === null) {
-                targetChildrenNum = targetNode.children.length;
-            }
-
-            if (targetChildrenNum >= 0) {
-                //目标节点限制子节点数量
-                return !(targetNode.children.indexOf(node) < 0
-                        && targetNode.template.childrenNum >= 0
-                        && targetChildrenNum >= targetNode.template.childrenNum);
-            }
-
-            return true;
-        },
-        canReplaceNode(node, targetNode) {
-            if (!node || !targetNode || !targetNode.parent) {
-                return false;
-            }
-            if (!this.canLinkNode(node, targetNode.parent, -1)) {
-                return false;
-            }
-            if (node.template.childrenNum >= 0 && targetNode.children.length > node.template.childrenNum) {
-                return false;
-            }
-            for (let targetChild of targetNode.children) {
-                if (!this.canLinkNode(targetChild, node, -1)) {
-                    return false;
-                }
-            }
-
-            return true;
-        },
-        boardFocus() {
-            document.querySelector("#board").focus();
+        centerFocus() {
+            document.querySelector("#center").focus();
         },
         resetBoard() {
             this.resetBoardPosition();
@@ -805,15 +469,15 @@ export default {
                 return;
             }
 
-            let creatingNode = this.creatingNode;
+            let node = this.creatingNode;
             this.creatingNode = null;
 
-            creatingNode.tree = this.tree;
-            creatingNode.dragging = false;
-            creatingNode.y = creatingNode.y - this.boardY;
-            creatingNode.z = 1;
+            node.dragging = false;
+            node.creating = false;
+            node.y = node.y - this.boardY;
+            node.z = 1;
 
-            this.linkParentNode(creatingNode, creatingNode.parent);
+            this.linkParentNode(node, node.parent);
 
             await this.drawTree();
         },
@@ -835,7 +499,9 @@ export default {
                 folded: true,
                 params: {},
                 children: [],
-                childrenFolded: false
+                childrenFolded: false,
+                creating: true,
+                tree: this.tree
             };
 
             if (template.params) {
@@ -853,13 +519,13 @@ export default {
 
             await this.$nextTick();
 
-            let creatingNodeElement = this.$refs["node-" + this.creatingNode.id].$el;
+            let creatingNodeElement = this.getNodeElement(this.creatingNode);
             // noinspection JSUnresolvedVariable
             this.creatingNode.x -= creatingNodeElement.offsetWidth / 2;
             // noinspection JSUnresolvedVariable
             this.creatingNode.y -= creatingNodeElement.offsetHeight / 2;
-            this.calcNodeBounds(this.creatingNode);
-            this.linkParentNode(this.creatingNode);
+            this.$utils.calcNodeBounds(this.creatingNode, this.getNodeElement);
+            this.$utils.linkParentNode(this.creatingNode);
             this.drawLinkLines();
 
             window.addEventListener("mouseup", () => {
@@ -914,6 +580,10 @@ export default {
     border-top: solid 1px #ebeef5;
 }
 
+#center:focus {
+    outline: none;
+}
+
 #right {
     right: 0;
     user-select: none;
@@ -927,10 +597,6 @@ export default {
     transform-origin: 0 0;
 }
 
-#board:focus {
-    outline: none;
-}
-
 #canvas {
     position: absolute;
     width: 100%;
@@ -938,6 +604,5 @@ export default {
     z-index: 20;
     pointer-events: none;
 }
-
 
 </style>

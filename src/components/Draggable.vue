@@ -2,7 +2,8 @@
     <div ref="draggable"
          class="draggable"
          :style="{left: left + 'px', top: top + 'px'}"
-         @mousedown.left.stop="onMouseDown">
+         @mousedown.left.stop="onMouseDown"
+         @dragstart.prevent>
         <slot/>
     </div>
 </template>
@@ -67,12 +68,8 @@ export default {
             };
         },
         onMouseDown(event) {
-            if (event) {
-                if (event.target.tagName === "INPUT") {
-                    return;
-                } else {
-                    event.preventDefault();
-                }
+            if (event?.target.tagName === "INPUT") {
+                return;
             }
 
             if (!this.checkCtrlKey(event)) {
