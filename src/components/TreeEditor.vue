@@ -173,8 +173,8 @@ export default {
     methods: {
         onSelectTree(tree) {
             this.tree = tree;
+            clipboard.tree = tree;
             this.resetBoard();
-            clipboard.setTree(tree);
             this.drawTree();
         },
         async drawTree() {
@@ -194,7 +194,7 @@ export default {
                 this.$utils.calcNodeBounds(this.tree.root, this.getNodeElement);
 
                 this.boardWidth = Math.max(this.boardWidth, this.tree.root.treeWidth + board_edge_space * 2);
-                this.boardHeight = Math.max(this.boardHeight, this.tree.root.treeHeight + board_edge_space * 2);
+                this.boardHeight = Math.max(this.boardHeight, this.tree.root.subtreeHeight + board_edge_space * 2);
                 if (this.boardX < (-this.boardWidth + board_edge_space) * this.boardScale
                         || this.boardY < -(this.boardHeight + board_edge_space) * this.boardScale) {
                     this.resetBoardPosition();

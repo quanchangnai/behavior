@@ -216,11 +216,7 @@ export default {
         },
         selected() {
             this.contentClasses.selected = this.selected || this.node.creating;
-            if (this.selected) {
-                clipboard.selectedNodes.add(this.node);
-            } else {
-                clipboard.selectedNodes.delete(this.node);
-            }
+            clipboard.onNodeSelect(this.node, this.selected);
         }
     },
     methods: {
@@ -267,15 +263,23 @@ export default {
             if (this.node.children.length) {
                 items.push({label: this.node.childrenFolded ? '展开子树' : '收起子树', handler: this.foldChildren});
             }
-            items.push({label: '复制子树', shortcut: "Ctrl+C", handler: () => this.$emit("copy-subtrees")});
+
+            if (clipboard.selectedType === "hasSubtrees") {
+                items.push({label: '复制子树', shortcut: "Ctrl+C", handler: () => this.$emit("copy-subtrees")});
+            }
             items.push({label: '复制节点', shortcut: "Ctrl+Shift+C", handler: () => this.$emit("copy-nodes")});
+
             if (clipboard.copiedNodes.length) {
                 items.push({label: "粘贴", shortcut: "Ctrl+V", handler: () => this.$emit("paste")});
             }
+
             if (this.node.parent) {
-                items.push({label: "删除子树", shortcut: "Del", handler: () => this.$emit("delete-subtrees")});
+                if (clipboard.selectedType === "hasSubtrees") {
+                    items.push({label: "删除子树", shortcut: "Del", handler: () => this.$emit("delete-subtrees")});
+                }
                 items.push({label: "删除节点", shortcut: "Ctrl+Del", handler: () => this.$emit("delete-nodes")});
             }
+
             if (this.node.template.visible) {
                 items.push({label: '定位模板', handler: () => this.$events.$emit("position-template", this.node.tid)});
             }

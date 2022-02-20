@@ -145,7 +145,7 @@ export default {
 
         if (!node.children.length || node.childrenFolded) {
             node.treeWidth = node.selfWidth;
-            node.treeHeight = node.selfHeight;
+            node.subtreeHeight = node.selfHeight;
             return;
         }
 
@@ -157,11 +157,11 @@ export default {
             if (child.treeWidth > maxChildWidth) {
                 maxChildWidth = child.treeWidth;
             }
-            childrenHeight += child.treeHeight;
+            childrenHeight += child.subtreeHeight;
         }
 
         node.treeWidth = node.selfWidth + maxChildWidth;
-        node.treeHeight = Math.max(node.selfHeight, childrenHeight);
+        node.subtreeHeight = Math.max(node.selfHeight, childrenHeight);
         node.childrenHeight = childrenHeight;
     },
     calcNodePosition(node, top) {
@@ -180,10 +180,10 @@ export default {
             return;
         }
 
-        if (node.treeHeight <= node.childrenHeight) {
+        if (node.subtreeHeight <= node.childrenHeight) {
             for (let child of node.children) {
                 this.calcNodePosition(child, top);
-                top += child.treeHeight;
+                top += child.subtreeHeight;
             }
             if (node.children.length > 1) {
                 let lastChild = node.children[node.children.length - 1];
@@ -197,7 +197,7 @@ export default {
             top += (node.selfHeight - node.childrenHeight) / 2;
             for (let child of node.children) {
                 this.calcNodePosition(child, top);
-                top += child.treeHeight;
+                top += child.subtreeHeight;
             }
         }
     },

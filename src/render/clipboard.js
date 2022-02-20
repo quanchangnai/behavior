@@ -6,20 +6,37 @@ import utils from "./utils";
  */
 export default {
     /**
-     * 当前行为树
+     * 当前选中的行为树
      */
     tree: null,
     /**
      * 选中的节点
      */
     selectedNodes: new Set(),
+    selectedType: null,
     /**
      * 复制的节点
      */
     copiedNodes: [],
-    setTree(tree) {
-        this.tree = tree;
-        this.selectedNodes.clear()
+    onNodeSelect(node, selected) {
+        if (selected) {
+            this.selectedNodes.add(node);
+        } else {
+            this.selectedNodes.delete(node);
+        }
+
+        if (this.selectedNodes.size < 1) {
+            this.selectedType = null;
+            return;
+        }
+
+        this.selectedType = "allAreLeaves";
+        for (let selectedNode of this.selectedNodes) {
+            if (selectedNode.children.length) {
+                this.selectedType = "hasSubtrees";
+                break;
+            }
+        }
     },
     copySubtrees() {
         if (this.selectedNodes.size < 1) {
@@ -75,6 +92,7 @@ export default {
         }
 
         let pastedCount = 0;
+
         for (let copiedNode of this.copiedNodes) {
             let pasteNode = JSON.parse(JSON.stringify(copiedNode));
             if (!utils.canLinkNode(pasteNode, targetNode)) {
@@ -179,6 +197,7 @@ export default {
         }
 
         let deletedNodeIds = new Set();
+
         utils.visitSubtree(this.tree.root, node => {
             if (!node.parent) {
                 return;
