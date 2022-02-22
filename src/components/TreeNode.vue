@@ -8,7 +8,7 @@
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
-               @mousedown.capture.native="onMousedown"
+               @mousedown.capture.native="onMouseDown"
                @dblclick.stop.native
                @dblclick.exact.stop.native="foldSelf"
                @paste.native="selected&&$emit('paste')"
@@ -43,7 +43,9 @@
                              label-position="left"
                              :hide-required-asterisk="true"
                              @validate="onFormValidate">
-                        <el-form-item v-if="node.template.comment" prop="comment">
+                        <el-form-item v-if="node.template.comment"
+                                      prop="comment"
+                                      :rules="{trigger: 'blur'}">
                             <template #label>
                                 <span class="paramLabel">节点备注</span>
                             </template>
@@ -62,7 +64,6 @@
                         </el-form-item>
                         <el-form-item v-for="param in node.template.params"
                                       :key="param.name"
-                                      :required="param.required"
                                       :rules="paramRules(param)"
                                       :show-message="false"
                                       :prop="'params.'+param.name">
@@ -197,7 +198,7 @@ export default {
     },
     destroyed() {
         this.resizeObserver.disconnect();
-        clipboard.selectedNodes.delete(this.node);
+        clipboard.selectedNodes?.delete(this.node.id);
     },
     watch: {
         'node.folded': function (folded) {
@@ -239,9 +240,10 @@ export default {
         onDragEnd(event) {
             this.node.dragging = false;
             this.$utils.visitSubtree(this.node, node => node.z = 1);
+            this.$utils.saveTree(this.node.tree);
             this.$emit("drag-end", event);
         },
-        onMousedown(event) {
+        onMouseDown(event) {
             if (event.button === 0 && event.ctrlKey) {
                 this.selected = !this.selected;
             } else {
@@ -269,7 +271,7 @@ export default {
             }
             items.push({label: '复制节点', shortcut: "Ctrl+Shift+C", handler: () => this.$emit("copy-nodes")});
 
-            if (clipboard.copiedNodes.length) {
+            if (clipboard.copiedNodes?.length) {
                 items.push({label: "粘贴", shortcut: "Ctrl+V", handler: () => this.$emit("paste")});
             }
 
@@ -293,13 +295,27 @@ export default {
             this.menuShown = true;
         },
         foldSelf() {
-            if (this.canFold()) {
-                this.node.folded = !this.node.folded;
-                this.$emit("fold");
+            if (!this.canFold()) {
+                return;
             }
+
+            this.node.folded = !this.node.folded;
+            this.node.tree.folded = 0;
+
+            this.$utils.visitSubtree(this.node.tree.root, node => {
+                if (node.template.comment || Object.keys(node.params).length > 0) {
+                    this.node.tree.folded |= node.folded ? 1 : 2;
+                }
+                return !node.childrenFolded;
+            });
+
+            this.$utils.saveTree(this.node.tree);
+            this.$emit("fold");
         },
         foldChildren() {
             this.node.childrenFolded = !this.node.childrenFolded;
+            this.node.tree.childrenFolded = this.node.tree.childrenFolded || this.node.childrenFolded;
+            this.$utils.saveTree(this.node.tree);
             this.$emit("children-fold", this.node);
         },
         onParamDropdownVisibleChange(ref, visible) {
@@ -315,10 +331,11 @@ export default {
             return {"el-select-normal": normal, "el-select-multiple": !normal}
         },
         paramRules(param) {
+            let rules = {required: param.required, trigger: 'blur'};
             if (param.type === 'string' && param.pattern) {
-                return {pattern: param.pattern};
+                rules.pattern = param.pattern;
             }
-            return null;
+            return rules;
         },
         paramOptions(options) {
             if (Array.isArray(options)) {
@@ -338,7 +355,6 @@ export default {
 
         },
         onFormValidate(prop, pass) {
-            console.log("onFormValidate", prop, pass);
             if (!pass) {
                 this.paramValidations[prop] = pass;
             } else {
@@ -346,6 +362,7 @@ export default {
             }
             this.checkParamsError();
             this.checkParamValueTips();
+            this.$utils.saveTree(this.node.tree);
         },
         checkParamsError() {
             let error = Object.keys(this.paramValidations).length > 0;
@@ -428,15 +445,18 @@ export default {
         async checkParamValueTips() {
             //等待渲染出来后再检测
             await this.$nextTick();
+            if (this.node.folded) {
+                return;
+            }
             if (this.node.template.comment) {
-                let commentInner = this.$refs.comment.$el.querySelector(".el-input__inner");
+                let commentInner = this.$refs.comment?.$el.querySelector(".el-input__inner");
                 this.commentTips = commentInner && this.$utils.checkOverflow(commentInner);
             }
             if (this.node.template.params) {
                 this.paramValueTips = {};
                 for (let param of this.node.template.params) {
                     let paramValue = this.$refs["paramValue-" + param.name][0];
-                    let paramValueInner = paramValue.$el.querySelector(".el-input__inner");
+                    let paramValueInner = paramValue?.$el.querySelector(".el-input__inner");
                     if (paramValueInner && this.$utils.checkOverflow(paramValueInner)) {
                         this.paramValueTips[param.name] = true;
                     }

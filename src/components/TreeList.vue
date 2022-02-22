@@ -1,5 +1,5 @@
 <template>
-    <div id="body" ref="body" @contextmenu="onContextMenu">
+    <div id="body" ref="body" @contextmenu.stop="onContextMenu">
         <div id="search">
             <el-input v-model="keyword"
                       clearable
@@ -95,7 +95,6 @@ export default {
 
             for (const tree of this.allTrees) {
                 tree.id = ++this.maxTreeId;
-                tree.renaming = false;
                 this.mappedTrees.set(tree.name.toLowerCase(), tree);
             }
 
@@ -108,25 +107,12 @@ export default {
             this.selectedTree = tree;
             if (tree && !tree.maxNodeId !== undefined) {
                 //第一次选中
-                this.initTree(tree)
+                this.$utils.initTree(tree)
             }
             this.$emit("select-tree", tree);
             ipcRenderer.send("select-tree", tree?.name);
         },
-        initTree(tree) {
-            tree.maxNodeId = 0;
-            this.$set(tree, "folded", 1);
-            this.$set(tree, "showNodeId", false);
-
-            this.$utils.visitSubtree(tree.root, (node, parent) => {
-                this.$utils.initNode(node, parent, tree);
-            });
-
-            this.$events.$emit("init-tree", tree.root);
-        },
         onContextMenu(event, tree) {
-            event.stopPropagation();
-
             this.menuItems.splice(0, this.menuItems.length);
             this.menuItems.push({label: '创建行为树', shortcut: "Alt+C", handler: this.createTree});
             if (tree != null) {
@@ -198,7 +184,6 @@ export default {
         },
         async startRenameTree(tree) {
             this.renameTree = tree || this.selectedTree;
-            this.renameTree.renaming = true;
             this.renameTree.oldName = this.renameTree.name;
             await this.$nextTick();
             this.$refs.renameTreeInput.focus();
@@ -214,7 +199,7 @@ export default {
             invalidName ||= oldTreeName === newTreeName;
             invalidName ||= newTreeName.startsWith("_");
 
-            let sameNameTree = this.mappedTrees.get(newTreeName.toLocaleString());
+            let sameNameTree = this.mappedTrees.get(newTreeName.toLowerCase());
             if (sameNameTree && sameNameTree.id !== this.selectedTree.id) {
                 invalidName = true;
             }
@@ -222,17 +207,16 @@ export default {
             if (!invalidName) {
                 try {
                     await ipcRenderer.invoke("rename-tree", oldTreeName, newTreeName);
-                    this.mappedTrees.delete(oldTreeName.toLocaleString());
-                    this.mappedTrees.set(newTreeName.toLocaleString(), this.selectedTree);
+                    this.mappedTrees.delete(oldTreeName.toLowerCase());
+                    this.mappedTrees.set(newTreeName.toLowerCase(), this.selectedTree);
                 } catch (e) {
-                    console.error(e);
+                    this.$logger.error(e);
                     this.$message.error({message: "重命名行为树失败", center: true, offset: 200});
                     renameTree.name = oldTreeName;
                 }
             } else {
                 renameTree.name = oldTreeName;
             }
-            renameTree.renaming = false;
         },
         async doLayout() {
             let body = document.querySelector("#body");

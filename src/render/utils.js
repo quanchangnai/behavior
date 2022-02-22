@@ -1,5 +1,6 @@
-import {ipcRenderer} from "electron";
 import Vue from "vue";
+import {ipcRenderer} from "electron";
+import clipboard from "@/render/clipboard";
 
 /**
  * @param el {Element|String} 元素或者选择器
@@ -18,6 +19,7 @@ export default {
     msg(msg, type = "success") {
         Vue.prototype.$message({message: msg, type, center: true, offset: 200});
     },
+    md5: require("md5").bind(this),
     /**
      * 获取元素el1相对元素el2的OffsetX
      * @param el1 {Element|String} 元素或者选择器
@@ -95,6 +97,17 @@ export default {
      * 节点y轴间隔空间
      */
     nodeSpaceY: 20,
+    initTree(tree) {
+        tree.maxNodeId = 0;
+        Vue.set(tree, "folded", 1);
+        Vue.set(tree, "showNodeId", false);
+
+        this.visitSubtree(tree.root, (node, parent) => {
+            this.initNode(node, parent, tree);
+        });
+
+        this.events.$emit("init-tree", tree.root);
+    },
     initNode(node, parent, tree) {
         node.parent = parent;
         node.tree = tree;
@@ -104,7 +117,6 @@ export default {
         Vue.set(node, "x", 0);
         Vue.set(node, "y", 0);
         Vue.set(node, "z", 1);
-        Vue.set(node, "folded", true);
 
         if (!node.params) {
             Vue.set(node, "params", []);
@@ -144,7 +156,7 @@ export default {
         node.selfHeight = nodeElement.offsetHeight + this.nodeSpaceY;
 
         if (!node.children.length || node.childrenFolded) {
-            node.treeWidth = node.selfWidth;
+            node.subtreeWidth = node.selfWidth;
             node.subtreeHeight = node.selfHeight;
             return;
         }
@@ -154,13 +166,13 @@ export default {
 
         for (let child of node.children) {
             this.calcNodeBounds(child, getNodeElement);
-            if (child.treeWidth > maxChildWidth) {
-                maxChildWidth = child.treeWidth;
+            if (child.subtreeWidth > maxChildWidth) {
+                maxChildWidth = child.subtreeWidth;
             }
             childrenHeight += child.subtreeHeight;
         }
 
-        node.treeWidth = node.selfWidth + maxChildWidth;
+        node.subtreeWidth = node.selfWidth + maxChildWidth;
         node.subtreeHeight = Math.max(node.selfHeight, childrenHeight);
         node.childrenHeight = childrenHeight;
     },
@@ -304,7 +316,7 @@ export default {
         }
     },
     buildNode(node) {
-        let result = {id: node.id, tid: node.tid};
+        let result = {id: node.id, tid: node.tid, folded: node.folded};
         if (node.template.comment) {
             result.comment = node.comment;
         }
@@ -326,37 +338,47 @@ export default {
     /**
      * 构造子树数据
      * @param node {Object} 子树根节点
-     * @param resolveChildren {Function|null} 解析子节点的函数
+     * @param getChildren {Function} 获取子节点的函数
      * @returns {Object}
      */
-    buildSubtree(node, resolveChildren = null) {
+    buildSubtree(node, getChildren = null) {
         let result = this.buildNode(node);
 
         let children = node.children;
-        if (resolveChildren) {
-            children = resolveChildren(node);
+        if (getChildren) {
+            children = getChildren(node);
         }
 
         if (children && children.length) {
             result.children = [];
             result.childrenFolded = node.childrenFolded;
             for (let child of children) {
-                result.children.push(this.buildSubtree(child, resolveChildren))
+                result.children.push(this.buildSubtree(child, getChildren))
             }
         }
 
         return result;
     },
+    buildTree(tree) {
+        let root = this.buildSubtree(tree.root);
+        return {id: tree.id, name: tree.name, root};
+    },
     /**
      * 保存行为树
-     * @param tree
-     * @returns {Promise<void>}
      */
-    async saveTree(tree) {
-        if (tree && !tree.renaming) {
-            let root = this.buildSubtree(tree.root);
-            let result = {id: tree.id, name: tree.name, root};
-            await ipcRenderer.invoke("save-tree", result);
+    saveTree(tree, snapshot = true) {
+        let builtTree = this.buildTree(tree);
+        let jsonTree = JSON.stringify(builtTree);
+        let md5 = this.md5(jsonTree);
+        if (tree.md5 && tree.md5 === md5) {
+            return;
         }
+        tree.md5 = md5;
+
+        if (snapshot) {
+            clipboard.snapshot(jsonTree);
+        }
+
+        ipcRenderer.invoke("save-tree", builtTree).then();
     }
 }

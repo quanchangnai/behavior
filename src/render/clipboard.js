@@ -2,27 +2,58 @@ import Vue from "vue";
 import utils from "./utils";
 
 /**
- * 行为树剪切板，复制行为树复制、粘贴、删除相关功能
+ * 行为树剪切板，行为树复制、粘贴、删除相关功能
  */
 export default {
-    /**
-     * 当前选中的行为树
-     */
-    tree: null,
-    /**
-     * 选中的节点
-     */
-    selectedNodes: new Set(),
-    selectedType: null,
-    /**
-     * 复制的节点
-     */
-    copiedNodes: [],
-    onNodeSelect(node, selected) {
-        if (selected) {
-            this.selectedNodes.add(node);
+    onTreeSelect(tree) {
+        this.tree = tree;
+        this.snapshots = [];
+        this.snapshotIndex = -1;
+
+        let jsonTree = JSON.stringify(utils.buildTree(tree));
+        this.snapshot(jsonTree);
+    },
+    snapshot(jsonTree) {
+        if (this.snapshotIndex < this.snapshots.length - 1) {
+            this.snapshots.splice(this.snapshotIndex + 1, this.snapshots.length - this.snapshotIndex - 1);
+        }
+        this.snapshots.push(jsonTree);
+        if (this.snapshots.length < 20) {
+            this.snapshotIndex++;
         } else {
-            this.selectedNodes.delete(node);
+            this.snapshots.shift();
+        }
+    },
+    restore() {
+        let snapshot = this.snapshots[this.snapshotIndex];
+        let tree = JSON.parse(snapshot);
+        utils.initTree(tree);
+        this.tree.name = tree.name;
+        this.tree.root = tree.root;
+        utils.saveTree(this.tree, false);
+    },
+    undo() {
+        if (this.snapshotIndex <= 0) {
+            return;
+        }
+        this.snapshotIndex--;
+        this.restore();
+    },
+    redo() {
+        if (this.snapshotIndex >= this.snapshots.length - 1) {
+            return;
+        }
+        this.snapshotIndex++;
+        this.restore();
+    },
+    onNodeSelect(node, selected) {
+        if (!this.selectedNodes) {
+            this.selectedNodes = new Map();
+        }
+        if (selected) {
+            this.selectedNodes.set(node.id, node);
+        } else {
+            this.selectedNodes.delete(node.id);
         }
 
         if (this.selectedNodes.size < 1) {
@@ -31,7 +62,7 @@ export default {
         }
 
         this.selectedType = "allAreLeaves";
-        for (let selectedNode of this.selectedNodes) {
+        for (let selectedNode of this.selectedNodes.values()) {
             if (selectedNode.children.length) {
                 this.selectedType = "hasSubtrees";
                 break;
@@ -53,12 +84,12 @@ export default {
                 descendantSelected |= checkDescendantsSelected(child)
             }
             descendantsSelectedMap.set(node, descendantSelected);
-            return this.selectedNodes.has(node) || descendantSelected;
+            return this.selectedNodes.has(node.id) || descendantSelected;
         };
         checkDescendantsSelected(this.tree.root);
 
-        let resolveChildren = node => {
-            let selectedChildren = node.children.filter(child => this.selectedNodes.has(child));
+        let getNodeChildren = node => {
+            let selectedChildren = node.children.filter(child => this.selectedNodes.has(child.id));
             if (selectedChildren.length === 0 && !descendantsSelectedMap.get(node)) {
                 return node.children;
             } else {
@@ -66,9 +97,9 @@ export default {
             }
         };
 
-        for (let selectedNode of this.selectedNodes) {
-            if (!this.selectedNodes.has(selectedNode.parent)) {
-                let copiedNode = utils.buildSubtree(selectedNode, resolveChildren);
+        for (let selectedNode of this.selectedNodes.values()) {
+            if (!this.selectedNodes.has(selectedNode.parent.id)) {
+                let copiedNode = utils.buildSubtree(selectedNode, getNodeChildren);
                 this.copiedNodes.push(copiedNode);
                 utils.events.$emit("init-tree", copiedNode);
             }
@@ -80,14 +111,14 @@ export default {
         }
 
         this.copiedNodes = [];
-        for (let selectedNode of this.selectedNodes) {
+        for (let selectedNode of this.selectedNodes.values()) {
             let copiedNode = utils.buildNode(selectedNode);
             this.copiedNodes.push(copiedNode);
             utils.events.$emit("init-tree", copiedNode);
         }
     },
     pasteNodes(targetNode) {
-        if (!this.copiedNodes.length) {
+        if (!this.copiedNodes || !this.copiedNodes.length) {
             return false;
         }
 
@@ -114,10 +145,11 @@ export default {
             utils.msg("部分复制的节点不能粘贴到目标节点", "warning");
         }
 
+        utils.saveTree(this.tree);
         return pastedCount > 0;
     },
     async deleteSubtrees() {
-        let selectedNodes = [...this.selectedNodes];
+        let selectedNodes = [...this.selectedNodes.values()];
         if (selectedNodes.size < 1) {
             return;
         }
@@ -152,18 +184,18 @@ export default {
             }
         }
 
+        utils.saveTree(this.tree);
         return deletedNodeIds;
     },
     deleteNodes() {
-        let selectedNodes = this.selectedNodes;
-        if (selectedNodes.size < 1) {
+        if (this.selectedNodes.size < 1) {
             return;
         }
 
         let deleteNodeChildrenMap = new Map();
         let pushSelectedChildren = (node, children) => {
             for (let child of node.children) {
-                if (this.selectedNodes.has(child)) {
+                if (this.selectedNodes.has(child.id)) {
                     pushSelectedChildren(child, children);
                 } else {
                     children.push(child);
@@ -171,7 +203,7 @@ export default {
             }
         };
 
-        for (let selectedNode of selectedNodes) {
+        for (let selectedNode of this.selectedNodes.values()) {
             if (!selectedNode.parent) {
                 continue;
             }
@@ -217,10 +249,11 @@ export default {
             }
         });
 
-        if (deletedNodeIds.size !== selectedNodes.size) {
+        if (deletedNodeIds.size !== this.selectedNodes.size) {
             utils.msg("部分选择的节点不能删除", "warning");
         }
 
+        utils.saveTree(this.tree);
         return deletedNodeIds;
     }
 }

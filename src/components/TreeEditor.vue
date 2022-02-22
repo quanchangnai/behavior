@@ -8,10 +8,11 @@
         </div>
         <div id="center"
              tabindex="-1"
-             @mouseenter="centerFocus"
-             @dblclick="resetBoard"
+             autofocus="autofocus"
+             @mouseenter="$event.currentTarget.focus()"
              @keydown.ctrl="onCtrlKeyDown"
              @keyup.control="onCtrlKeyUp"
+             @dblclick="resetBoard"
              @wheel.exact="onCenterWheel"
              :style="{left:(leftWidth+2)+'px',right:rightWidth+'px'}">
             <draggable id="board"
@@ -39,11 +40,11 @@
                            @delete-subtrees="deleteSubtrees"
                            @delete-nodes="deleteNodes"
                            @resize="drawTree"
-                           @fold="onNodeFold"
+                           @fold="drawTree"
+                           @children-fold="drawTree"
                            @mouseenter.native="mouseoverNode=node"
                            @mouseleave.native="mouseoverNode=null"
                            @mouseup.native="onNodeMouseUp($event,node)"
-                           @children-fold="onNodeChildrenFold"
                            @param-dropdown-show="onNodeParamDropdownShow"/>
             </draggable>
         </div>
@@ -117,6 +118,14 @@ export default {
         });
 
         ipcRenderer.on("fold-all-nodes", (e, fold) => this.foldAllNodes(fold));
+        ipcRenderer.on("undo", () => {
+            clipboard.undo();
+            this.drawTree();
+        });
+        ipcRenderer.on("redo", () => {
+            clipboard.redo();
+            this.drawTree();
+        });
         ipcRenderer.on("copy-nodes", this.copyNodes);
         ipcRenderer.on("delete-subtrees", this.deleteSubtrees);
         ipcRenderer.on("delete-nodes", this.deleteNodes);
@@ -124,7 +133,6 @@ export default {
     mounted() {
         this.resizeObserver = new ResizeObserver(this.drawTree);
         this.resizeObserver.observe(document.querySelector("#center"));
-        this.centerFocus();
     },
     destroyed() {
         this.resizeObserver.disconnect();
@@ -164,16 +172,13 @@ export default {
                 return !node.childrenFolded;
             });
 
-            //数据变化时自动保存
-            this.$utils.saveTree(this.tree);
-
             return nodes;
         }
     },
     methods: {
         onSelectTree(tree) {
             this.tree = tree;
-            clipboard.tree = tree;
+            clipboard.onTreeSelect(tree);
             this.resetBoard();
             this.drawTree();
         },
@@ -193,7 +198,7 @@ export default {
 
                 this.$utils.calcNodeBounds(this.tree.root, this.getNodeElement);
 
-                this.boardWidth = Math.max(this.boardWidth, this.tree.root.treeWidth + board_edge_space * 2);
+                this.boardWidth = Math.max(this.boardWidth, this.tree.root.subtreeWidth + board_edge_space * 2);
                 this.boardHeight = Math.max(this.boardHeight, this.tree.root.subtreeHeight + board_edge_space * 2);
                 if (this.boardX < (-this.boardWidth + board_edge_space) * this.boardScale
                         || this.boardY < -(this.boardHeight + board_edge_space) * this.boardScale) {
@@ -267,7 +272,7 @@ export default {
 
             lineToChildren(this.tree.root);
 
-            if (this.creatingNode && this.creatingNode.parent) {
+            if (this.creatingNode?.parent) {
                 context.strokeStyle = "#b32de0";
                 let creatingNodeParent = this.creatingNode.parent;
                 let x1 = creatingNodeParent.x + creatingNodeParent.selfWidth - this.$utils.nodeSpaceX(creatingNodeParent);
@@ -328,7 +333,7 @@ export default {
             for (let child of node.children) {
                 child.parent = creatingNode;
             }
-
+            this.$utils.saveTree(this.tree);
             this.drawTree();
         },
         copySubtrees() {
@@ -382,20 +387,6 @@ export default {
                 dropdown.style.display = "none";
             }
         },
-        onNodeFold() {
-            this.tree.folded = 0;
-            this.$utils.visitSubtree(this.tree.root, node => {
-                if (node.template.comment || Object.keys(node.params).length > 0) {
-                    this.tree.folded |= node.folded ? 1 : 2;
-                }
-                return !node.childrenFolded;
-            });
-            this.drawTree();
-        },
-        onNodeChildrenFold(node) {
-            this.tree.childrenFolded = this.tree.childrenFolded || node.childrenFolded;
-            this.drawTree();
-        },
         showNodeMenu(x, y, items, onHide) {
             this.$refs.nodeMenu.show(x, y, "#center", items, onHide);
         },
@@ -405,9 +396,6 @@ export default {
                 this.tree.deltaY = this.boardY + this.$utils.getOffsetY("#center", this.$el);
             }
             this.$utils.linkParentNode(node, parentNode, this.getNodeElement);
-        },
-        centerFocus() {
-            document.querySelector("#center").focus();
         },
         resetBoard() {
             this.resetBoardPosition();
@@ -479,6 +467,7 @@ export default {
 
             this.linkParentNode(node, node.parent);
 
+            this.$utils.saveTree(this.tree);
             await this.drawTree();
         },
         async onSelectTemplate(event) {

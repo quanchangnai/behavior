@@ -55,6 +55,20 @@ function buildMenu() {
             label: "编辑",
             submenu: [
                 {
+                    label: "撤销",
+                    accelerator: "CmdOrCtrl+Z",
+                    click: (item, win) => {
+                        win.webContents.send("undo");
+                    }
+                },
+                {
+                    label: "重做",
+                    accelerator: "CmdOrCtrl+Shift+Z",
+                    click: (item, win) => {
+                        win.webContents.send("redo");
+                    }
+                },
+                {
                     label: "复制子树",
                     role: "copy"
                 },
