@@ -12,9 +12,9 @@
 export default {
     name: "Draggable",
     props: {
-        ctrlKey: {//true:ctrl键按下时才能拖动,false:ctrl键松开时才能拖动,null:忽略ctrl键是否按下
+        ctrlKey: {//true:ctrl键按下时才能拖动,false:ctrl键松开时才能拖动,null:不管ctrl键是否按下
             type: Boolean,
-            default: false
+            default: null
         },
         x: {
             type: Number,

@@ -30,9 +30,9 @@
                            :node="node"
                            :key="tree.id+'-'+node.id"
                            :ref="'node-'+node.id"
-                           @drag-start="hideNodeParamDropdown"
+                           @drag-start="onNodeDragStart(node)"
                            @dragging="onNodeDragging($event,node)"
-                           @drag-end="drawTree"
+                           @drag-end="onNodeDragEnd(node)"
                            @menu="showNodeMenu"
                            @copy-subtrees="copySubtrees"
                            @copy-nodes="copyNodes"
@@ -59,9 +59,7 @@
         <tree-node v-if="creatingNode!=null"
                    :ref="'node-'+creatingNode.id"
                    :node="creatingNode"
-                   style="pointer-events:none"
-                   @dragging="onNodeDragging($event,creatingNode)"
-                   @drag-end="drawTree"/>
+                   @dragging="onNodeDragging($event,creatingNode)"/>
         <context-menu ref="boardMenu" :items="boardMenuItems"/>
         <context-menu ref="nodeMenu"/>
     </div>
@@ -88,6 +86,7 @@ export default {
             config: null,//编辑器配置
             tree: null,//当前编辑的行为树
             creatingNode: null,//正在新建的节点
+            draggingNode: null,
             mouseoverNode: null,
             boardX: 0,
             boardY: 0,
@@ -118,14 +117,8 @@ export default {
         });
 
         ipcRenderer.on("fold-all-nodes", (e, fold) => this.foldAllNodes(fold));
-        ipcRenderer.on("undo", () => {
-            clipboard.undo();
-            this.drawTree();
-        });
-        ipcRenderer.on("redo", () => {
-            clipboard.redo();
-            this.drawTree();
-        });
+        ipcRenderer.on("undo", this.undo);
+        ipcRenderer.on("redo", this.redo);
         ipcRenderer.on("copy-nodes", this.copyNodes);
         ipcRenderer.on("delete-subtrees", this.deleteSubtrees);
         ipcRenderer.on("delete-nodes", this.deleteNodes);
@@ -258,21 +251,23 @@ export default {
                 let y1 = node.y + (node.selfHeight - this.$utils.nodeSpaceY) / 2;
 
                 for (let child of node.children) {
-                    let x2 = child.x;
-                    let y2 = child.y + (child.selfHeight - this.$utils.nodeSpaceY) / 2;
-                    if (child.dragging) {
-                        context.strokeStyle = "#b32de0"
-                    } else {
-                        context.strokeStyle = "#5b7af8"
+                    if (!child.replacing) {
+                        let x2 = child.x;
+                        let y2 = child.y + (child.selfHeight - this.$utils.nodeSpaceY) / 2;
+                        if (child.dragging) {
+                            context.strokeStyle = "#b32de0"
+                        } else {
+                            context.strokeStyle = "#5b7af8"
+                        }
+                        drawLine(x1, y1, x2, y2);
                     }
-                    drawLine(x1, y1, x2, y2);
                     lineToChildren(child);
                 }
             };
 
             lineToChildren(this.tree.root);
 
-            if (this.creatingNode?.parent) {
+            if (this.creatingNode?.parent && !this.creatingNode.replacing) {
                 context.strokeStyle = "#b32de0";
                 let creatingNodeParent = this.creatingNode.parent;
                 let x1 = creatingNodeParent.x + creatingNodeParent.selfWidth - this.$utils.nodeSpaceX(creatingNodeParent);
@@ -281,7 +276,7 @@ export default {
                 }
                 let y1 = creatingNodeParent.y + (creatingNodeParent.selfHeight - this.$utils.nodeSpaceY) / 2;
 
-                let x2 = this.creatingNode.x - this.$utils.getOffsetX("#center", this.$el) - this.boardX;
+                let x2 = this.creatingNode.x - this.$utils.getOffsetX("#center", this.$el) - this.boardX + 1;
                 let y2 = this.creatingNode.y + (this.creatingNode.selfHeight - this.$utils.nodeSpaceY) / 2 - this.boardY;
                 x2 /= this.boardScale;
                 y2 /= this.boardScale;
@@ -289,51 +284,58 @@ export default {
                 drawLine(x1, y1, x2, y2);
             }
         },
+        onNodeDragStart(node) {
+            this.draggingNode = node;
+            this.hideNodeParamDropdown();
+        },
         onNodeDragging(event, node) {
-            if (node.creating && event.ctrlKey && this.$utils.canReplaceNode(node, this.mouseoverNode)) {
-                node.parent = null;
+            if (node.dragging && event.ctrlKey && this.$utils.canReplaceNode(node, this.mouseoverNode)) {
+                node.replacing = true;
             } else {
+                node.replacing = false;
                 this.linkParentNode(node);
             }
             this.drawLinkLines();
         },
+        onNodeDragEnd() {
+            this.draggingNode = null;
+            this.drawTree();
+        },
         onCtrlKeyDown() {
-            if (!this.creatingNode?.parent) {
+            let draggingNode = this.draggingNode || this.creatingNode;
+            if (!draggingNode || draggingNode.replacing) {
                 return;
             }
-            if (this.$utils.canReplaceNode(this.creatingNode, this.mouseoverNode)) {
-                this.creatingNode.parent = null;
+            if (this.$utils.canReplaceNode(draggingNode, this.mouseoverNode)) {
+                draggingNode.replacing = true;
                 this.drawLinkLines();
             }
         },
         onCtrlKeyUp() {
-            if (!this.creatingNode || this.creatingNode.parent) {
+            let draggingNode = this.draggingNode || this.creatingNode;
+            if (!draggingNode || !draggingNode.replacing) {
                 return;
             }
-            this.linkParentNode(this.creatingNode);
+
+            draggingNode.replacing = false;
+            this.linkParentNode(draggingNode);
             this.drawLinkLines();
         },
-        onNodeMouseUp(event, node) {
-            if (!event.ctrlKey || !this.$utils.canReplaceNode(this.creatingNode, node)) {
+        onNodeMouseUp(event, targetNode) {
+            let draggingNode = this.draggingNode || this.creatingNode;
+            if (!event.ctrlKey || !this.$utils.canReplaceNode(draggingNode, targetNode)) {
                 return;
             }
 
-            let creatingNode = this.creatingNode;
-            this.creatingNode = null;
-
-            creatingNode.dragging = false;
-            creatingNode.creating = false;
-            creatingNode.z = 1;
-
-            let index = node.parent.children.indexOf(node);
-            this.$set(node.parent.children, index, creatingNode);
-            creatingNode.parent = node.parent;
-
-            creatingNode.children = node.children;
-            for (let child of node.children) {
-                child.parent = creatingNode;
+            if (this.creatingNode) {
+                this.creatingNode.dragging = false;
+                this.creatingNode.creating = false;
+                this.creatingNode.z = 1;
+                this.creatingNode = null;
             }
-            this.$utils.saveTree(this.tree);
+
+            this.$utils.replaceNode(draggingNode, targetNode);
+
             this.drawTree();
         },
         copySubtrees() {
@@ -396,6 +398,8 @@ export default {
                 this.tree.deltaY = this.boardY + this.$utils.getOffsetY("#center", this.$el);
             }
             this.$utils.linkParentNode(node, parentNode, this.getNodeElement);
+            this.tree.deltaX = 0;
+            this.tree.deltaY = 0;
         },
         resetBoard() {
             this.resetBoardPosition();
@@ -482,8 +486,8 @@ export default {
                 comment: "",
                 tid: template.id,
                 template,
-                x: event.x - this.$utils.getOffsetX(this.$refs.body),
-                y: event.y - this.$utils.getOffsetY(this.$refs.body),
+                x: event.x - this.$utils.getOffsetX(this.$el),
+                y: event.y - this.$utils.getOffsetY(this.$el),
                 z: 1,
                 folded: true,
                 params: {},
@@ -544,7 +548,21 @@ export default {
                 node.childrenFolded = false
             });
             this.drawTree();
-        }
+        },
+        redo() {
+            if (this.draggingNode || this.creatingNode) {
+                return;
+            }
+            clipboard.redo();
+            this.drawTree();
+        },
+        undo() {
+            if (this.draggingNode || this.creatingNode) {
+                return;
+            }
+            clipboard.undo();
+            this.drawTree();
+        },
     }
 }
 </script>

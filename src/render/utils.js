@@ -237,24 +237,6 @@ export default {
 
         return true;
     },
-    canReplaceNode(node, targetNode) {
-        if (!node || !targetNode || !targetNode.parent) {
-            return false;
-        }
-        if (!this.canLinkNode(node, targetNode.parent, -1)) {
-            return false;
-        }
-        if (node.template.childrenNum >= 0 && targetNode.children.length > node.template.childrenNum) {
-            return false;
-        }
-        for (let targetChild of targetNode.children) {
-            if (!this.canLinkNode(targetChild, node, -1)) {
-                return false;
-            }
-        }
-
-        return true;
-    },
     findParentNode(node) {
         let x1 = node.x;
         let y1 = node.y + (node.selfHeight - this.nodeSpaceY) / 2;
@@ -305,15 +287,56 @@ export default {
             }
         }
         node.parent = newParent;
-        newParent.children.push(node);
 
-        //按y轴排序兄弟节点
-        newParent.children.sort((n1, n2) => n1.y - n2.y);
+        newParent.children.push(node);
+        newParent.children.sort((n1, n2) => n1.y - n2.y);//按y轴排序兄弟节点
 
         if (oldParent !== node.parent) {
             this.calcNodeBounds(oldParent, getNodeElement);
             this.calcNodeBounds(node.parent, getNodeElement);
         }
+    },
+    canReplaceNode(node, targetNode) {
+        if (!node || !targetNode || !targetNode.parent) {
+            return false;
+        }
+        if (node === targetNode) {
+            return false;
+        }
+        if (!this.canLinkNode(node, targetNode.parent, -1)) {
+            return false;
+        }
+        if (node.template.childrenNum >= 0 && (targetNode.children.length + node.children.length) > node.template.childrenNum) {
+            return false;
+        }
+        for (let targetChild of targetNode.children) {
+            if (!this.canLinkNode(targetChild, node, -1)) {
+                return false;
+            }
+        }
+
+        return true;
+    },
+    replaceNode(node, targetNode) {
+        node.replacing = false;
+
+        if (node.parent) {
+            let draggingNodeIndex = node.parent.children.indexOf(node);
+            if (draggingNodeIndex >= 0) {
+                node.parent.children.splice(draggingNodeIndex, 1);
+            }
+        }
+
+        node.parent = targetNode.parent;
+        node.children = [...targetNode.children, ...node.children];
+
+        let targetNodeIndex = targetNode.parent.children.indexOf(targetNode);
+        Vue.prototype.$set(targetNode.parent.children, targetNodeIndex, node);
+        for (let child of targetNode.children) {
+            child.parent = node;
+        }
+
+        this.saveTree(node.tree);
     },
     buildNode(node) {
         let result = {id: node.id, tid: node.tid, folded: node.folded};
@@ -369,8 +392,9 @@ export default {
     saveTree(tree, snapshot = true) {
         let builtTree = this.buildTree(tree);
         let jsonTree = JSON.stringify(builtTree);
+
         let md5 = this.md5(jsonTree);
-        if (tree.md5 && tree.md5 === md5) {
+        if (tree.md5 === md5) {
             return;
         }
         tree.md5 = md5;

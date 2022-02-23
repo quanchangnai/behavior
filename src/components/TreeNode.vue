@@ -1,10 +1,9 @@
 <template>
     <draggable :x="node.x"
                :y="node.y"
-               :ready="node.creating===true"
-               :ctrl-key="node.creating?null:false"
-               :style="{'z-index':node.z}"
-               :scale="node.tree&&node.tree.scale||1"
+               :ready="node.creating"
+               :style="{'z-index':node.z,'pointer-events':pointerEvents}"
+               :scale="!node.creating&&node.tree.scale||1"
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
@@ -175,7 +174,8 @@ export default {
             paramLabelTips: {},//参数标签提示状态，文本太长时加提示
             paramValueTips: {},//参数值示状态
             commentTips: false,
-            menuShown: false
+            menuShown: false,
+            pointerEvents: "auto"
         };
     },
     mounted() {
@@ -223,6 +223,7 @@ export default {
     methods: {
         onDragStart(event) {
             this.node.dragging = true;
+            this.pointerEvents = "none";
             this.$emit("drag-start", event);
         },
         onDragging(event) {
@@ -239,6 +240,7 @@ export default {
         },
         onDragEnd(event) {
             this.node.dragging = false;
+            this.pointerEvents = "auto";
             this.$utils.visitSubtree(this.node, node => node.z = 1);
             this.$utils.saveTree(this.node.tree);
             this.$emit("drag-end", event);
