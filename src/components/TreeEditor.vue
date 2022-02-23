@@ -22,6 +22,7 @@
                        @drag-end="onBoardDragEnd"
                        @contextmenu.native="showBoardMenu"
                        @mouseup.native="onBoardMouseUp"
+                       @cut.native="deleteSubtrees(true)"
                        @copy.native="copySubtrees"
                        @wheel.ctrl.exact.native="scaleBoard"
                        :style="{width:boardWidth+'px',height:boardHeight+'px',transform:`scale(${boardScale},${boardScale})`}">
@@ -34,6 +35,8 @@
                            @dragging="onNodeDragging($event,node)"
                            @drag-end="onNodeDragEnd(node)"
                            @menu="showNodeMenu"
+                           @cut-subtrees="deleteSubtrees(true)"
+                           @cut-nodes="deleteNodes(true)"
                            @copy-subtrees="copySubtrees"
                            @copy-nodes="copyNodes"
                            @paste="pasteNodes(node)"
@@ -119,6 +122,7 @@ export default {
         ipcRenderer.on("fold-all-nodes", (e, fold) => this.foldAllNodes(fold));
         ipcRenderer.on("undo", this.undo);
         ipcRenderer.on("redo", this.redo);
+        ipcRenderer.on("cut-nodes", () => this.deleteNodes(true));
         ipcRenderer.on("copy-nodes", this.copyNodes);
         ipcRenderer.on("delete-subtrees", this.deleteSubtrees);
         ipcRenderer.on("delete-nodes", this.deleteNodes);
@@ -136,6 +140,7 @@ export default {
             if (!this.tree) {
                 return items;
             }
+
             if ((this.tree.folded & 1) === 1) {//至少有一个节点是收起的
                 items.push({label: '展开全部节点', handler: () => this.foldAllNodes(false)});
             }
@@ -349,15 +354,15 @@ export default {
                 this.drawTree();
             }
         },
-        async deleteSubtrees() {
-            let deletedNodeIds = await clipboard.deleteSubtrees();
+        async deleteSubtrees(cut) {
+            let deletedNodeIds = await clipboard.deleteSubtrees(cut);
             if (deletedNodeIds) {
                 this.updateNodeParamRefs(deletedNodeIds);
                 await this.drawTree();
             }
         },
-        deleteNodes() {
-            let deletedNodeIds = clipboard.deleteNodes();
+        deleteNodes(cut) {
+            let deletedNodeIds = clipboard.deleteNodes(cut);
             if (deletedNodeIds) {
                 this.updateNodeParamRefs(deletedNodeIds);
                 this.drawTree();

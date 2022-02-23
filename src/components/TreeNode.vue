@@ -268,6 +268,13 @@ export default {
                 items.push({label: this.node.childrenFolded ? '展开子树' : '收起子树', handler: this.foldChildren});
             }
 
+            if (this.node.parent) {
+                if (clipboard.selectedType === "hasSubtrees") {
+                    items.push({label: "剪切子树", shortcut: "Ctrl+X", handler: () => this.$emit("cut-subtrees")});
+                }
+                items.push({label: "剪切节点", shortcut: "Ctrl+Shift+X", handler: () => this.$emit("cut-nodes")});
+            }
+
             if (clipboard.selectedType === "hasSubtrees") {
                 items.push({label: '复制子树', shortcut: "Ctrl+C", handler: () => this.$emit("copy-subtrees")});
             }

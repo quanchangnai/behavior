@@ -69,6 +69,17 @@ function buildMenu() {
                     }
                 },
                 {
+                    label: "剪切子树",
+                    role: "cut"
+                },
+                {
+                    label: "剪切节点",
+                    accelerator: "CmdOrCtrl+Shift+X",
+                    click: (item, win) => {
+                        win.webContents.send("cut-nodes");
+                    }
+                },
+                {
                     label: "复制子树",
                     role: "copy"
                 },

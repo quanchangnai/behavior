@@ -2,7 +2,7 @@ import Vue from "vue";
 import utils from "./utils";
 
 /**
- * 行为树剪切板，行为树复制、粘贴、删除相关功能
+ * 行为树剪切板，行为树剪切、复制、粘贴、删除相关功能
  */
 export default {
     onTreeSelect(tree) {
@@ -148,12 +148,13 @@ export default {
         utils.saveTree(this.tree);
         return pastedCount > 0;
     },
-    async deleteSubtrees() {
+    async deleteSubtrees(cut = false) {
         let selectedNodes = [...this.selectedNodes.values()];
         if (selectedNodes.size < 1) {
             return;
         }
 
+        let operation = cut ? "剪切" : "删除";
         let allAreLeaves = true;
         let deletedNodeIds = new Set();
 
@@ -165,29 +166,40 @@ export default {
         }
 
         if (deletedNodeIds.size < 1) {
-            utils.msg("不能删除选择的" + (allAreLeaves ? "节点" : "子树"), "warning");
+            utils.msg(`不能${operation}选择的` + (allAreLeaves ? "节点" : "子树"), "warning");
             return;
         }
 
         try {
             if (!allAreLeaves) {
-                await Vue.prototype.$confirm("确定删除选择的节点及其所有子孙节点？", {type: "warning"});
+                await Vue.prototype.$confirm(`确定${operation}选择的节点及其所有子孙节点？`, {type: "warning"});
             }
         } catch {
             return;
         }
 
+        if (cut) {
+            this.copiedNodes = [];
+        }
+
         for (let selectedNode of selectedNodes) {
-            if (selectedNode.parent) {
-                let index = selectedNode.parent.children.indexOf(selectedNode);
-                selectedNode.parent.children.splice(index, 1);
+            if (!selectedNode.parent) {
+                continue
             }
+            if (cut) {
+                let copiedNode = utils.buildSubtree(selectedNode);
+                this.copiedNodes.push(copiedNode);
+                utils.events.$emit("init-tree", copiedNode);
+            }
+
+            let index = selectedNode.parent.children.indexOf(selectedNode);
+            selectedNode.parent.children.splice(index, 1);
         }
 
         utils.saveTree(this.tree);
         return deletedNodeIds;
     },
-    deleteNodes() {
+    deleteNodes(cut = false) {
         if (this.selectedNodes.size < 1) {
             return;
         }
@@ -223,24 +235,25 @@ export default {
             }
         }
 
+        let operation = cut ? "剪切" : "删除";
+        let deletedNodes = new Set();
+
         if (deleteNodeChildrenMap.size < 1) {
-            utils.msg("不能删除选择的节点", "warning");
+            utils.msg(`不能${operation}选择的节点`, "warning");
             return;
         }
-
-        let deletedNodeIds = new Set();
 
         utils.visitSubtree(this.tree.root, node => {
             if (!node.parent) {
                 return;
             }
-            if (deletedNodeIds.has(node.parent.id)) {
-                deletedNodeIds.add(node);
+            if (deletedNodes.has(node.parent)) {
+                deletedNodes.add(node);
                 return;
             }
             let nodeChildren = deleteNodeChildrenMap.get(node);
             if (nodeChildren) {
-                deletedNodeIds.add(node);
+                deletedNodes.add(node);
                 let index = node.parent.children.indexOf(node);
                 node.parent.children.splice(index, 1, ...nodeChildren);
                 for (let selectedChild of nodeChildren) {
@@ -249,8 +262,23 @@ export default {
             }
         });
 
+        let deletedNodeIds = new Set();
+
+        if (cut) {
+            this.copiedNodes = [];
+        }
+
+        for (let deletedNode of deletedNodes) {
+            deletedNodeIds.add(deletedNode.id);
+            if (cut) {
+                let copiedNode = utils.buildNode(deletedNode);
+                this.copiedNodes.push(copiedNode);
+                utils.events.$emit("init-tree", copiedNode);
+            }
+        }
+
         if (deletedNodeIds.size !== this.selectedNodes.size) {
-            utils.msg("部分选择的节点不能删除", "warning");
+            utils.msg(`部分选择的节点不能${operation}`, "warning");
         }
 
         utils.saveTree(this.tree);
