@@ -27,9 +27,8 @@ export default {
     restore() {
         let snapshot = this.snapshots[this.snapshotIndex];
         let tree = JSON.parse(snapshot);
-        utils.initTree(tree);
-        this.tree.name = tree.name;
         this.tree.root = tree.root;
+        utils.initTree(this.tree);
         utils.saveTree(this.tree, false);
     },
     undo() {

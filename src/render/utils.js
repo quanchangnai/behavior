@@ -331,7 +331,7 @@ export default {
         node.children = [...targetNode.children, ...node.children];
 
         let targetNodeIndex = targetNode.parent.children.indexOf(targetNode);
-        Vue.prototype.$set(targetNode.parent.children, targetNodeIndex, node);
+        Vue.set(targetNode.parent.children, targetNodeIndex, node);
         for (let child of targetNode.children) {
             child.parent = node;
         }

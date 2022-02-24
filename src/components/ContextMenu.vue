@@ -83,7 +83,7 @@ export default {
                 }
 
                 if (limits instanceof Element) {
-                    let limitsWidth = limits.clientWidth
+                    let limitsWidth = limits.clientWidth;
                     let limitsHeight = limits.clientHeight;
                     if (limits instanceof HTMLElement) {
                         limitsWidth = limits.offsetWidth;
@@ -119,13 +119,14 @@ export default {
                 return;
             }
             this.visibleItems = null;
+
             window.removeEventListener("mousedown", this.onMousedown);
             window.removeEventListener("resize", this.hide);
             window.removeEventListener("scroll", this.hide);
             window.removeEventListener("blur", this.hide);
             window.removeEventListener("wheel", this.hide);
 
-            let hideEvent = {ctrlKey: domEvent.ctrlKey || false, clickItem};
+            let hideEvent = {ctrlKey: domEvent?.ctrlKey || false, clickItem};
             this.$emit("hide", hideEvent);
             if (this.onHide) {
                 this.onHide(hideEvent);

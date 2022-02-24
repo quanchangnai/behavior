@@ -233,7 +233,7 @@ export default {
             this.$utils.visitSubtree(this.node, node => {
                 node.x += deltaX;
                 node.y += deltaY;
-                node.z = this.node.creating ? 30 : 10;
+                node.z = 20;
             });
 
             this.$emit("dragging", event);
@@ -487,23 +487,26 @@ export default {
     min-width: 60px;
     max-width: 250px;
     background-color: #99ccff;
-    border: 1px solid #8fc3fa;
+    border: 1px solid #63abf6;
     border-radius: 5px;
     font-size: 14px;
     white-space: nowrap;
     padding-left: 0;
+    --content-body-border-color: #88c0f8;
     --scrollbar-thumb-color: #a2caf6;
     --scrollbar-thumb-shadow-color: #776eee;
 }
 
 .content:hover {
     background-color: #65adf6;
-    border-color: #5da3ec;
+    border-color: #3998fc;
+    --content-body-border-color: #51a4f8;
 }
 
 .content.selected {
     background-color: #c0acf8;
-    border-color: #b69ffa;
+    border-color: #9f81f8;
+    --content-body-border-color: #b69ff6;
     --scrollbar-thumb-color: #c9b7fc;
     --scrollbar-thumb-shadow-color: #916cf6;
 }
@@ -530,7 +533,7 @@ export default {
 
 .content-body {
     border-top: 1px solid;
-    border-top-color: inherit;
+    border-top-color: var(--content-body-border-color);
     overflow-y: auto;
 }
 

@@ -105,7 +105,7 @@ export default {
         },
         selectTree(tree) {
             this.selectedTree = tree;
-            if (tree && !tree.maxNodeId !== undefined) {
+            if (tree && tree.maxNodeId === undefined) {
                 //第一次选中
                 this.$utils.initTree(tree)
             }
