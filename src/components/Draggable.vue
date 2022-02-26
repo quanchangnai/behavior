@@ -1,5 +1,5 @@
 <template>
-    <div ref="draggable"
+    <div ref="body"
          class="draggable"
          :style="{left: left + 'px', top: top + 'px'}"
          @mousedown.left.stop="onMouseDown"
@@ -12,7 +12,7 @@
 export default {
     name: "Draggable",
     props: {
-        ctrlKey: {//true:ctrl键按下时才能拖动,false:ctrl键松开时才能拖动,null:不管ctrl键是否按下
+        ctrlKey: {//true:ctrl键按下时才能拖动,false:ctrl键松开时才能拖动,null:不管ctrl键是否按下都可以拖动
             type: Boolean,
             default: null
         },
@@ -93,8 +93,8 @@ export default {
 
             if (this.state === 0) {
                 this.state = 1;
-                this.cursor = getComputedStyle(this.$refs.draggable).cursor;
-                this.$refs.draggable.style.cursor = "move";
+                this.cursor = getComputedStyle(this.$el).cursor;
+                this.$refs.body.style.cursor = "move";
                 this.$emit("drag-start", this.dragEvent(event));
             }
 
@@ -110,8 +110,8 @@ export default {
 
             try {
                 window.removeEventListener("mousemove", this.onMouseMove);
-                if (this.cursor && this.$refs.draggable) {
-                    this.$refs.draggable.style.cursor = this.cursor;
+                if (this.cursor && this.$refs.body) {
+                    this.$refs.body.style.cursor = this.cursor;
                     this.cursor = null;
                 }
                 if (this.state > 0) {

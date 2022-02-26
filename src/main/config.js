@@ -63,7 +63,7 @@ let archetypes = [
             comment: "",
             tid: 1,
             children: [
-                {id: 2, comment: "", tid: 2}
+                {id: 2, comment: "", tid: 2, folded: true}
             ],
             childrenFolded: false
         }

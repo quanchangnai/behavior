@@ -1,6 +1,6 @@
 <template>
-    <div id="body">
-        <div id="search">
+    <div ref="body" class="template-list">
+        <div ref="search" class="search">
             <el-input v-model="keyword"
                       clearable
                       size="small"
@@ -119,7 +119,7 @@ export default {
     },
     mounted() {
         this.resizeObserver = new ResizeObserver(this.doLayout);
-        this.resizeObserver.observe(document.querySelector("#body"));
+        this.resizeObserver.observe(this.$refs.body);
         this.blurGroupSelectInput();
     },
     destroyed() {
@@ -269,9 +269,7 @@ export default {
             }
         },
         async doLayout() {
-            let body = document.querySelector("#body");
-            let search = document.querySelector("#search");
-            this.tableHeight = (body.offsetHeight - search.offsetHeight) + "px";
+            this.tableHeight = (this.$refs.body.offsetHeight - this.$refs.search.offsetHeight) + "px";
             await this.$nextTick();
             this.$refs.scrollbar.update();
             this.$refs.table.doLayout();
@@ -306,15 +304,15 @@ export default {
 </script>
 
 <style scoped>
-#body {
-    --border: solid #ebeef5 1px;
+.template-list {
     height: 100%;
     width: 100%;
-    border: var(--border);
+    user-select: none;
+    border-left: solid #ebeef5 1px;
 }
 
-#search {
-    border-bottom: var(--border);
+.search {
+    border-bottom: solid #ebeef5 1px;
     padding: 8px 10px
 }
 
@@ -377,7 +375,6 @@ export default {
 .template-name {
     padding: 10px 0;
     margin-right: 5px;
-    user-select: none;
     overflow-x: hidden;
     text-overflow: ellipsis;
 }

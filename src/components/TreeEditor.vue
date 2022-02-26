@@ -1,12 +1,13 @@
 <template>
-    <div id="body" ref="body" v-loading.fullscreen="config===null">
-        <div id="left" :style="{width:leftWidth+'px'}">
+    <div ref="body" class="tree-editor" v-loading.fullscreen="config===null">
+        <div class="left" :style="{width:leftWidth+'px'}">
             <tree-list v-if="config"
                        ref="treeList"
                        :archetypes="config.archetypes"
                        @select-tree="onSelectTree"/>
         </div>
-        <div id="center"
+        <div class="center"
+             ref="center"
              tabindex="-1"
              autofocus="autofocus"
              @mouseenter="$event.currentTarget.focus()"
@@ -15,7 +16,8 @@
              @dblclick="resetBoard"
              @wheel.exact="onCenterWheel"
              :style="{left:(leftWidth+2)+'px',right:rightWidth+'px'}">
-            <draggable id="board"
+            <draggable class="board"
+                       ref="board"
                        :x="boardX"
                        :y="boardY"
                        @drag-start="hideNodeParamDropdown"
@@ -24,9 +26,9 @@
                        @mouseup.native="onBoardMouseUp"
                        @cut.native="deleteSubtrees(true)"
                        @copy.native="copySubtrees"
-                       @wheel.ctrl.exact.native="scaleBoard"
+                       @wheel.ctrl.exact.native="onBoardWheel"
                        :style="{width:boardWidth+'px',height:boardHeight+'px',transform:`scale(${boardScale},${boardScale})`}">
-                <canvas id="canvas" @contextmenu.prevent/>
+                <canvas ref="canvas"/>
                 <tree-node v-for="node in visibleNodes"
                            :node="node"
                            :key="tree.id+'-'+node.id"
@@ -51,7 +53,7 @@
                            @param-dropdown-show="onNodeParamDropdownShow"/>
             </draggable>
         </div>
-        <div id="right" :style="{width:rightWidth+'px'}">
+        <div class="right" :style="{width:rightWidth+'px'}">
             <template-list v-if="config"
                            ref="templateList"
                            :templates="config.templates"
@@ -62,6 +64,8 @@
         <tree-node v-if="creatingNode!=null"
                    :ref="'node-'+creatingNode.id"
                    :node="creatingNode"
+                   style="transform-origin: 0 0"
+                   :style="{transform:`scale(${boardScale},${boardScale})`}"
                    @dragging="onNodeDragging($event,creatingNode)"/>
         <context-menu ref="boardMenu" :items="boardMenuItems"/>
         <context-menu ref="nodeMenu"/>
@@ -129,7 +133,7 @@ export default {
     },
     mounted() {
         this.resizeObserver = new ResizeObserver(this.drawTree);
-        this.resizeObserver.observe(document.querySelector("#center"));
+        this.resizeObserver.observe(this.$refs.center);
     },
     destroyed() {
         this.resizeObserver.disconnect();
@@ -185,9 +189,8 @@ export default {
             await this.$nextTick();
 
             const draw = () => {
-                const board = document.querySelector("#board");
-                this.boardWidth = board.parentElement.offsetWidth;
-                this.boardHeight = board.parentElement.offsetHeight;
+                this.boardWidth = this.$refs.board.$el.parentElement.offsetWidth;
+                this.boardHeight = this.$refs.board.$el.parentElement.offsetHeight;
 
                 if (!this.tree) {
                     this.initCanvas();
@@ -203,7 +206,7 @@ export default {
                     this.resetBoardPosition();
                 }
 
-                this.$utils.calcNodePosition(this.tree.root, board_edge_space);
+                this.$utils.calcNodePositions(this.tree.root, board_edge_space);
                 this.drawLinkLines();
             };
 
@@ -226,7 +229,7 @@ export default {
             }
         },
         initCanvas() {
-            let canvas = document.querySelector("#canvas");
+            let canvas = this.$refs.canvas;
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
             let context = canvas.getContext("2d");
@@ -281,8 +284,8 @@ export default {
                 }
                 let y1 = creatingNodeParent.y + (creatingNodeParent.selfHeight - this.$utils.nodeSpaceY) / 2;
 
-                let x2 = this.creatingNode.x - this.$utils.getOffsetX("#center", this.$el) - this.boardX + 1;
-                let y2 = this.creatingNode.y + (this.creatingNode.selfHeight - this.$utils.nodeSpaceY) / 2 - this.boardY;
+                let x2 = this.creatingNode.x - this.$utils.getOffsetX(this.$refs.center, this.$refs.body) - this.boardX + 1;
+                let y2 = this.creatingNode.y + (this.creatingNode.selfHeight - this.$utils.nodeSpaceY) * this.boardScale / 2 - this.boardY;
                 x2 /= this.boardScale;
                 y2 /= this.boardScale;
 
@@ -395,12 +398,12 @@ export default {
             }
         },
         showNodeMenu(x, y, items, onHide) {
-            this.$refs.nodeMenu.show(x, y, "#center", items, onHide);
+            this.$refs.nodeMenu.show(x, y, this.$refs.center, items, onHide);
         },
         linkParentNode(node, parentNode) {
             if (node.creating) {
-                this.tree.deltaX = this.boardX + this.$utils.getOffsetX("#center", this.$el);
-                this.tree.deltaY = this.boardY + this.$utils.getOffsetY("#center", this.$el);
+                this.tree.deltaX = this.boardX + this.$utils.getOffsetX(this.$refs.center, this.$refs.body);
+                this.tree.deltaY = this.boardY + this.$utils.getOffsetY(this.$refs.center, this.$refs.body);
             }
             this.$utils.linkParentNode(node, parentNode, this.getNodeElement);
             this.tree.deltaX = 0;
@@ -418,10 +421,9 @@ export default {
             this.boardY = 0;
             this.hideNodeParamDropdown();
         },
-        scaleBoard(event) {
-            let board = document.querySelector("#board");
-            let offsetX = this.$utils.getOffsetX(event.target, board) + event.offsetX;
-            let offsetY = this.$utils.getOffsetY(event.target, board) + event.offsetY;
+        onBoardWheel(event) {
+            let offsetX = this.$utils.getOffsetX(event.target, this.$refs.board) + event.offsetX;
+            let offsetY = this.$utils.getOffsetY(event.target, this.$refs.board) + event.offsetY;
 
             let boardScale = this.boardScale + (event.deltaY > 0 ? -0.1 : 0.1);
             boardScale = Math.min(3, Math.max(0.3, boardScale));
@@ -441,8 +443,7 @@ export default {
             await this.$nextTick();
 
             //如果拖出界了就拉回到初始位置
-            let board = document.querySelector("#board");
-            let center = document.querySelector("#center");
+            let {center, board} = this.$refs;
 
             if (this.boardX < (-board.offsetWidth + board_edge_space) * this.boardScale
                     || this.boardX > center.offsetWidth - board_edge_space * this.boardScale
@@ -454,8 +455,7 @@ export default {
         onCenterWheel(event) {
             this.boardY -= event.deltaY / 2;
             this.boardX -= event.deltaX / 2;
-            let board = document.querySelector("#board");
-            let center = document.querySelector("#center");
+            let {center, board} = this.$refs;
             this.boardY = Math.max(this.boardY, -board.offsetHeight + board_edge_space);
             this.boardY = Math.min(this.boardY, center.offsetHeight - board_edge_space);
             this.boardX = Math.max(this.boardX, -board.offsetWidth + board_edge_space);
@@ -481,6 +481,7 @@ export default {
         },
         async onSelectTemplate(event) {
             if (!this.tree) {
+                this.$msg("请先创建行为树", "warning");
                 return;
             }
 
@@ -519,11 +520,11 @@ export default {
 
             let creatingNodeElement = this.getNodeElement(this.creatingNode);
             // noinspection JSUnresolvedVariable
-            this.creatingNode.x -= creatingNodeElement.offsetWidth / 2;
+            this.creatingNode.x -= creatingNodeElement.offsetWidth * this.boardScale / 2;
             // noinspection JSUnresolvedVariable
-            this.creatingNode.y -= creatingNodeElement.offsetHeight / 2;
+            this.creatingNode.y -= creatingNodeElement.offsetHeight * this.boardScale / 2;
             this.$utils.calcNodeBounds(this.creatingNode, this.getNodeElement);
-            this.$utils.linkParentNode(this.creatingNode);
+            this.linkParentNode(this.creatingNode);
             this.drawLinkLines();
 
             window.addEventListener("mouseup", () => {
@@ -532,7 +533,7 @@ export default {
             }, {once: true});
         },
         showBoardMenu(event) {
-            this.$refs.boardMenu.show(event.clientX, event.clientY, "#center");
+            this.$refs.boardMenu.show(event.clientX, event.clientY, this.$refs.center);
         },
         foldAllNodes(fold) {
             if (!this.tree) {
@@ -573,35 +574,35 @@ export default {
 </script>
 
 <style scoped>
-#body {
+.tree-editor {
     position: absolute;
     width: 100%;
     height: 100%;
     overflow: hidden;
+    box-sizing: border-box;
+    border: solid #ebeef5 1px;
 }
 
-#left, #center, #right {
+.left, .center, .right {
     position: absolute;
     height: 100%;
     background-color: white;
     box-sizing: border-box;
 }
 
-#center {
+.center {
     overflow: hidden;
-    border-top: solid 1px #ebeef5;
 }
 
-#center:focus {
+.center:focus {
     outline: none;
 }
 
-#right {
+.right {
     right: 0;
-    user-select: none;
 }
 
-#board {
+.board {
     width: 100%;
     height: 100%;
     overflow: hidden;
@@ -609,7 +610,7 @@ export default {
     transform-origin: 0 0;
 }
 
-#canvas {
+canvas {
     position: absolute;
     width: 100%;
     height: 100%;

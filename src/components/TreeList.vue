@@ -1,6 +1,6 @@
 <template>
-    <div id="body" ref="body" @contextmenu.stop="onContextMenu">
-        <div id="search">
+    <div ref="body" class="tree-list" @contextmenu.stop="onContextMenu">
+        <div ref="search" class="search">
             <el-input v-model="keyword"
                       clearable
                       size="small"
@@ -219,9 +219,7 @@ export default {
             }
         },
         async doLayout() {
-            let body = document.querySelector("#body");
-            let search = document.querySelector("#search");
-            this.tableHeight = (body.offsetHeight - search.offsetHeight) + "px";
+            this.tableHeight = (this.$refs.body.offsetHeight - this.$refs.search.offsetHeight) + "px";
             await this.$nextTick();
             this.$refs.scrollbar.update();
             this.$refs.table.doLayout();
@@ -231,15 +229,14 @@ export default {
 </script>
 
 <style scoped>
-#body {
-    --border: solid #ebeef5 1px;
+.tree-list {
     height: 100%;
     width: 100%;
-    border: var(--border);
+    border-right: solid #ebeef5 1px;
 }
 
-#search {
-    border-bottom: var(--border);
+.search {
+    border-bottom: solid #ebeef5 1px;
     padding: 8px 10px
 }
 

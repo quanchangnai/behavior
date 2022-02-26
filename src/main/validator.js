@@ -18,6 +18,9 @@ let node = {
         comment: {
             type: "string"
         },
+        folded: {
+            type: "boolean"
+        },
         params: {
             type: "object",
             additionalProperties: {

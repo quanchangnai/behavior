@@ -16,6 +16,11 @@ function getElement(el) {
 
 export default {
     events: new Vue(),
+    /**
+     * 显示提示消息
+     * @param msg {string} 消息文本
+     * @param type {'success' | 'warning' | 'info' | 'error'} 消息类型
+     */
     msg(msg, type = "success") {
         Vue.prototype.$message({message: msg, type, center: true, offset: 200});
     },
@@ -176,7 +181,7 @@ export default {
         node.subtreeHeight = Math.max(node.selfHeight, childrenHeight);
         node.childrenHeight = childrenHeight;
     },
-    calcNodePosition(node, top) {
+    calcNodePositions(node, top) {
         if (!node) {
             return;
         }
@@ -194,7 +199,7 @@ export default {
 
         if (node.subtreeHeight <= node.childrenHeight) {
             for (let child of node.children) {
-                this.calcNodePosition(child, top);
+                this.calcNodePositions(child, top);
                 top += child.subtreeHeight;
             }
             if (node.children.length > 1) {
@@ -208,7 +213,7 @@ export default {
             node.y = top;
             top += (node.selfHeight - node.childrenHeight) / 2;
             for (let child of node.children) {
-                this.calcNodePosition(child, top);
+                this.calcNodePositions(child, top);
                 top += child.subtreeHeight;
             }
         }
@@ -241,6 +246,10 @@ export default {
         let x1 = node.x;
         let y1 = node.y + (node.selfHeight - this.nodeSpaceY) / 2;
 
+        let deltaX = node.tree.deltaX || 0;
+        let deltaY = node.tree.deltaY || 0;
+        let scale = node.creating ? node.tree.scale : 1;
+
         //寻找最近的的节点作为父节点
         let newParent = null;
         let minDistance2 = -1;
@@ -251,11 +260,11 @@ export default {
             }
 
             if (this.canLinkNode(node, targetNode)) {
-                let x2 = (node.tree.deltaX || 0) + targetNode.x + targetNode.selfWidth - this.nodeSpaceX(targetNode);
-                let y2 = (node.tree.deltaY || 0) + targetNode.y + (targetNode.selfHeight - this.nodeSpaceY) / 2;
+                let x2 = deltaX + (targetNode.x + targetNode.selfWidth - this.nodeSpaceX(targetNode)) * scale;
+                let y2 = deltaY + (targetNode.y + (targetNode.selfHeight - this.nodeSpaceY) / 2) * scale;
 
                 let distance2 = (x1 - x2) ** 2 + (y1 - y2) ** 2;
-                if (!newParent || x1 > x2 && distance2 < minDistance2) {
+                if (!newParent || x1 >= x2 && distance2 < minDistance2) {
                     minDistance2 = distance2;
                     newParent = targetNode;
                 }

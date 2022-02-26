@@ -1,6 +1,6 @@
 <template>
     <div v-if="visibleItems"
-         ref="menu"
+         ref="body"
          class="context-menu"
          :style="{left:x+'px',top:y+'px'}"
          @mouseenter="mouseover=true"
@@ -99,8 +99,8 @@ export default {
                     limits = {x: 0, y: 0, width: innerWidth, height: innerHeight};
                 }
 
-                let width = this.$refs.menu.offsetWidth;
-                let height = this.$refs.menu.offsetHeight;
+                let width = this.$refs.body.offsetWidth;
+                let height = this.$refs.body.offsetHeight;
                 if (x + width * 1.1 > limits.x + limits.width && limits.width > width) {
                     this.x = Math.max(x - width, limits.x + width * 0.1);
                 }
