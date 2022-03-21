@@ -10,8 +10,10 @@ export default {
         this.snapshots = [];
         this.snapshotIndex = -1;
 
-        let jsonTree = JSON.stringify(utils.buildTree(tree));
-        this.snapshot(jsonTree);
+        if (tree) {
+            let jsonTree = JSON.stringify(utils.buildTree(tree));
+            this.snapshot(jsonTree);
+        }
     },
     snapshot(jsonTree) {
         if (this.snapshotIndex < this.snapshots.length - 1) {
@@ -32,14 +34,14 @@ export default {
         utils.saveTree(this.tree, false);
     },
     undo() {
-        if (this.snapshotIndex <= 0) {
+        if (!this.tree || this.snapshotIndex <= 0) {
             return;
         }
         this.snapshotIndex--;
         this.restore();
     },
     redo() {
-        if (this.snapshotIndex >= this.snapshots.length - 1) {
+        if (!this.tree || this.snapshotIndex >= this.snapshots.length - 1) {
             return;
         }
         this.snapshotIndex++;

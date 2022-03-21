@@ -113,8 +113,10 @@ export default {
             ipcRenderer.send("select-tree", tree?.name);
         },
         onContextMenu(event, tree) {
+            event.stopPropagation();
             this.menuItems.splice(0, this.menuItems.length);
             this.menuItems.push({label: '创建行为树', shortcut: "Alt+C", handler: this.createTree});
+            tree = tree || this.selectedTree;
             if (tree != null) {
                 this.menuItems.push({label: '删除行为树', handler: () => this.deleteTree(tree)});
                 this.menuItems.push({label: '重命名行为树', handler: () => this.startRenameTree(tree)});

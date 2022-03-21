@@ -15,7 +15,7 @@
              @keyup.control="onCtrlKeyUp"
              @dblclick="resetBoard"
              @wheel.exact="onCenterWheel"
-             :style="{left:(leftWidth+2)+'px',right:rightWidth+'px'}">
+             :style="{left:(leftWidth+1)+'px',right:rightWidth+'px'}">
             <draggable class="board"
                        ref="board"
                        :x="boardX"

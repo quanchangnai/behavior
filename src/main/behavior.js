@@ -22,8 +22,6 @@ let workspacesTitles = new Map();
 
 let behavior = {
     async addWorkspace(workspaces, workspace, loading) {
-        await this.createWorkspace(workspace);
-
         if (exeWorkspaces.indexOf(workspace) >= 0) {
             return;
         }
@@ -42,16 +40,6 @@ let behavior = {
             homeWorkspaces.pop();
         }
 
-    },
-    async createWorkspace(workspace) {
-        if (!fs.existsSync(workspace)) {
-            await fs.promises.mkdir(workspace);
-        }
-
-        let configFile = path.resolve(workspace, "_config.json");
-        if (!fs.existsSync(configFile)) {
-            await fs.promises.writeFile(configFile, JSON.stringify(config, null, 4));
-        }
     },
     /**
      * @returns {String}
@@ -78,10 +66,21 @@ let behavior = {
             await this.openWorkspace(dialogResult.filePaths[0]);
         }
     },
+    async createWorkspace(workspace) {
+        if (!fs.existsSync(workspace)) {
+            await fs.promises.mkdir(workspace, {recursive: true});
+        }
+
+        let configFile = path.resolve(workspace, "_config.json");
+        if (!fs.existsSync(configFile)) {
+            await fs.promises.writeFile(configFile, JSON.stringify(config, null, 4));
+        }
+    },
     async openWorkspace(workspace) {
         workspace = workspace || this.getAllWorkspaces()[0];
 
         await this.addWorkspace(homeWorkspaces, workspace);
+        await this.createWorkspace(workspace);
         buildWorkspacesTitles();
 
         let webContentsId = workspacesWebContents.get(workspace);

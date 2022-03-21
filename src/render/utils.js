@@ -123,15 +123,10 @@ export default {
         Vue.set(node, "y", 0);
         Vue.set(node, "z", 1);
 
-        if (!node.params) {
-            Vue.set(node, "params", []);
-        }
-        if (!node.children) {
-            Vue.set(node, "children", []);
-        }
-        if (!node.childrenFolded) {
-            Vue.set(node, "childrenFolded", false);
-        }
+        Vue.set(node, "params", node.params || []);
+        Vue.set(node, "folded", node.folded && true);
+        Vue.set(node, "children", node.children || []);
+        Vue.set(node, "childrenFolded", node.childrenFolded || false);
     },
     /**
      * 访问子树的所有节点
