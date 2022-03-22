@@ -17,7 +17,7 @@
                  class="content"
                  :class="contentClasses">
                 <div class="content-header" ref="contentHeader">
-                    <span> {{ node.template.name }}</span>
+                    <span>{{ node.template.name }}</span>
                     <span v-if="node.tree&&node.tree.showNodeId">
                         ({{ node.id }})
                     </span>

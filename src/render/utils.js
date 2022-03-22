@@ -124,7 +124,7 @@ export default {
         Vue.set(node, "z", 1);
 
         Vue.set(node, "params", node.params || []);
-        Vue.set(node, "folded", node.folded && true);
+        Vue.set(node, "folded", node.folded || node.folded === undefined);
         Vue.set(node, "children", node.children || []);
         Vue.set(node, "childrenFolded", node.childrenFolded || false);
     },
