@@ -296,8 +296,7 @@ export default {
             await this.$nextTick();
             let templatePosition = this.$utils.getOffsetY(this.$refs["templateName-" + tid]);
             let scrollbarWrap = this.$refs.scrollbar.$refs.wrap;
-            let searchHeight = document.querySelector("#search").offsetHeight;
-            scrollbarWrap.scrollTop = templatePosition - searchHeight;
+            scrollbarWrap.scrollTop = templatePosition - this.$refs.search.offsetHeight;
         },
     }
 }
