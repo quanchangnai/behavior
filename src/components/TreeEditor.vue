@@ -422,8 +422,9 @@ export default {
             this.hideNodeParamDropdown();
         },
         onBoardWheel(event) {
-            let offsetX = this.$utils.getOffsetX(event.target, this.$refs.board) + event.offsetX;
-            let offsetY = this.$utils.getOffsetY(event.target, this.$refs.board) + event.offsetY;
+            let board = this.$refs.board.$el;
+            let offsetX = this.$utils.getOffsetX(event.target, board) + event.offsetX;
+            let offsetY = this.$utils.getOffsetY(event.target, board) + event.offsetY;
 
             let boardScale = this.boardScale + (event.deltaY > 0 ? -0.1 : 0.1);
             boardScale = Math.min(3, Math.max(0.3, boardScale));
@@ -442,12 +443,13 @@ export default {
             //等待boardX、boardY修改生效
             await this.$nextTick();
 
-            //如果拖出界了就拉回到初始位置
-            let {center, board} = this.$refs;
+            let center = this.$refs.center;
+            let {offsetWidth: boardWidth, offsetHeight: boardHeight} = this.$refs.board.$el;
 
-            if (this.boardX < (-board.offsetWidth + board_edge_space) * this.boardScale
+            //如果拖出界了就拉回到初始位置
+            if (this.boardX < (-boardWidth + board_edge_space) * this.boardScale
                     || this.boardX > center.offsetWidth - board_edge_space * this.boardScale
-                    || this.boardY < (-board.offsetHeight + board_edge_space) * this.boardScale
+                    || this.boardY < (-boardHeight + board_edge_space) * this.boardScale
                     || this.boardY > center.offsetHeight - board_edge_space * this.boardScale) {
                 this.resetBoardPosition();
             }
@@ -455,11 +457,15 @@ export default {
         onCenterWheel(event) {
             this.boardY -= event.deltaY / 2;
             this.boardX -= event.deltaX / 2;
-            let {center, board} = this.$refs;
-            this.boardY = Math.max(this.boardY, -board.offsetHeight + board_edge_space);
+
+            let center = this.$refs.center;
+            let {offsetWidth: boardWidth, offsetHeight: boardHeight} = this.$refs.board.$el;
+
+            this.boardY = Math.max(this.boardY, -boardHeight + board_edge_space);
             this.boardY = Math.min(this.boardY, center.offsetHeight - board_edge_space);
-            this.boardX = Math.max(this.boardX, -board.offsetWidth + board_edge_space);
+            this.boardX = Math.max(this.boardX, -boardWidth + board_edge_space);
             this.boardX = Math.min(this.boardX, center.offsetWidth - board_edge_space);
+
         },
         async onBoardMouseUp() {
             if (this.creatingNode == null) {
