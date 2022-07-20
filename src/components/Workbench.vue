@@ -11,7 +11,7 @@ import RecentWorkspaces from './RecentWorkspaces.vue'
 import {ipcRenderer} from "electron";
 
 export default {
-    name: 'IndexPage',
+    name: 'Workbench',
     components: {
         TreeEditor,
         RecentWorkspaces

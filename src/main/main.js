@@ -3,18 +3,20 @@
 import {app, protocol, BrowserWindow} from 'electron'
 import {createProtocol} from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, {VUEJS_DEVTOOLS} from 'electron-devtools-installer'
-import behavior from "./behavior";
+import manager from "./manager";
 import './handler'
 import './menu'
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
+if (!app.requestSingleInstanceLock()) {
+    app.quit();
+}
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
     {scheme: 'app', privileges: {secure: true, standard: true}}
 ]);
 
-async function createWindow() {
+manager.createWindow = async function () {
     // Create the browser window.
     const win = new BrowserWindow({
         show: false,
@@ -40,27 +42,23 @@ async function createWindow() {
         // Load the index.html when not in development
         await win.loadURL('app://./index.html');
     }
-}
+};
 
-if (!app.requestSingleInstanceLock()) {
-    app.quit();
-} else {
-    app.on("second-instance", async (e, args, workingDirectory) => {
-        let workspace = behavior.parseWorkspace(args, workingDirectory);
-        if (workspace) {
-            await behavior.openWorkspace(workspace);
-            return;
+app.on("second-instance", async (e, args, workingDirectory) => {
+    let workspace = manager.parseWorkspace(args, workingDirectory);
+    if (workspace) {
+        await manager.openWorkspace(workspace);
+        return;
+    }
+    let windows = BrowserWindow.getAllWindows();
+    if (windows.length > 0) {
+        let win = windows[0];
+        if (win.isMinimized()) {
+            win.restore();
         }
-        let windows = BrowserWindow.getAllWindows();
-        if (windows.length > 0) {
-            let win = windows[0];
-            if (win.isMinimized()) {
-                win.restore();
-            }
-            win.focus();
-        }
-    });
-}
+        win.focus();
+    }
+});
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -75,9 +73,11 @@ app.on('activate', async () => {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) {
-        await behavior.openWorkspace();
+        await manager.openWorkspace();
     }
 });
+
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -110,6 +110,3 @@ if (isDevelopment) {
         })
     }
 }
-
-// noinspection JSCheckFunctionSignatures
-app.on("open-workspace", createWindow);

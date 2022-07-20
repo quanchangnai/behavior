@@ -3,14 +3,11 @@ import fs from "fs";
 import {app, dialog, shell, BrowserWindow, webContents} from 'electron'
 import logger from "electron-log";
 import config from "./config";
-import {validateBehavior} from "./validator";
 
 logger.catchErrors();
 
-//程序目录下配置的工作区
-let exeWorkspaces = [];
-//用户主目录下记录的手动打开的工作区
-let homeWorkspaces = [];
+//记录最近打开过的工作区
+let recentWorkspaces = [];
 //用户正在打开的工作区，此时窗口还未创建成功
 let openingWorkspace = null;
 //webContents.id:workspace
@@ -20,35 +17,24 @@ let workspacesWebContents = new Map();
 //工作区对应的窗口标题
 let workspacesTitles = new Map();
 
-let behavior = {
-    async addWorkspace(workspaces, workspace, loading) {
-        if (exeWorkspaces.indexOf(workspace) >= 0) {
-            return;
-        }
-
-        if (loading === true) {
-            workspaces.push(workspace);
+let manager = {
+    async addWorkspace(workspace, loading) {
+        if (loading) {
+            recentWorkspaces.push(workspace);
         } else {
-            let index = workspaces.indexOf(workspace);
+            let index = recentWorkspaces.indexOf(workspace);
             if (index >= 0) {
-                workspaces.splice(index, 1);
+                recentWorkspaces.splice(index, 1);
             }
-            workspaces.splice(0, 0, workspace);
+            recentWorkspaces.splice(0, 0, workspace);
         }
 
-        if (workspaces === homeWorkspaces && workspaces.length > 10) {
-            homeWorkspaces.pop();
+        if (recentWorkspaces.length > 10) {
+            recentWorkspaces.pop();
         }
-
     },
-    /**
-     * @returns {String}
-     */
     getWorkspace(webContents) {
         return webContentsWorkspaces.get(webContents.id);
-    },
-    getAllWorkspaces() {
-        return [...exeWorkspaces, ...homeWorkspaces];
     },
     sendTitle(webContents) {
         let title = "behavior - " + workspacesTitles.get(this.getWorkspace(webContents));
@@ -59,12 +45,14 @@ let behavior = {
     },
     async showOpenWorkspaceDialog(window) {
         let dialogResult = await dialog.showOpenDialog(window, {
-            title: "打开工作区", buttonLabel: "选择", properties: ["openDirectory"]
+            title: "behavior - 打开工作区", buttonLabel: "选择", properties: ["openDirectory"]
         });
 
         if (!dialogResult.canceled) {
             await this.openWorkspace(dialogResult.filePaths[0]);
         }
+
+        return !dialogResult.canceled;
     },
     async createWorkspace(workspace) {
         if (!fs.existsSync(workspace)) {
@@ -77,9 +65,14 @@ let behavior = {
         }
     },
     async openWorkspace(workspace) {
-        workspace = workspace || this.getAllWorkspaces()[0];
+        if (!workspace && recentWorkspaces.length > 0) {
+            workspace = recentWorkspaces[0];
+        }
+        if (!workspace) {
+            return await this.showOpenWorkspaceDialog();
+        }
 
-        await this.addWorkspace(homeWorkspaces, workspace);
+        await this.addWorkspace(workspace);
         await this.createWorkspace(workspace);
         buildWorkspacesTitles();
 
@@ -93,8 +86,10 @@ let behavior = {
             win.focus();
         } else {
             openingWorkspace = workspace;
-            app.emit("open-workspace");
+            await this.createWindow();
         }
+
+        return true;
     },
     /**
      * 从命令行参数中解析要打开的工作区
@@ -112,18 +107,15 @@ let behavior = {
             }
         }
     },
-    recentWorkspaces() {
+    getRecentWorkspaces() {
         let workspaces = [];
-        for (let appWorkspace of exeWorkspaces) {
-            workspaces.push({path: appWorkspace, deletable: false})
-        }
-        for (let homeWorkspace of homeWorkspaces) {
-            workspaces.push({path: homeWorkspace, deletable: !workspacesWebContents.has(homeWorkspace)})
+        for (let workspace of recentWorkspaces) {
+            workspaces.push({path: workspace, deletable: !workspacesWebContents.has(workspace)})
         }
         return workspaces;
     },
     deleteWorkspace(workspace) {
-        homeWorkspaces.splice(homeWorkspaces.indexOf(workspace), 1);
+        recentWorkspaces.splice(recentWorkspaces.indexOf(workspace), 1);
         workspacesTitles.delete(workspace);
         // noinspection JSIgnoredPromiseFromCall
         save();
@@ -140,65 +132,39 @@ let behavior = {
 };
 
 async function save() {
-    let homeBehaviorFile = path.resolve(app.getPath("home"), "behavior", "behavior.json");
-    let json = JSON.stringify({workspaces: [...homeWorkspaces]}, null, 4);
-    await fs.promises.writeFile(homeBehaviorFile, json);
+    let workspacesFile = path.resolve(app.getPath("userData"), "workspaces.json");
+    let workspacesStr = JSON.stringify(recentWorkspaces, null, 4);
+    await fs.promises.writeFile(workspacesFile, workspacesStr);
 }
 
 async function load() {
-    //程序目录
-    let exePath = path.dirname(app.getPath("exe"));
-    let exeBehaviorFile = path.resolve(exePath, "behavior.json");
-    if (fs.existsSync(exeBehaviorFile)) {
-        let json = (await fs.promises.readFile(exeBehaviorFile)).toString();
-        let exeBehavior = JSON.parse(json);
-        if (validateBehavior(exeBehavior)) {
-            for (let workspace of exeBehavior.workspaces) {
-                workspace = path.resolve(exePath, workspace);
-                await behavior.addWorkspace(exeWorkspaces, path.resolve(exePath, workspace), true);
-            }
-        } else {
-            logger.error("exe behavior error\n", validateBehavior.errors);
-        }
+    //系统用户目录 recentWorkspaces
+    let workspacesFile = path.resolve(app.getPath("userData"), "workspaces.json");
+    let workspaces = [];
+
+    if (fs.existsSync(workspacesFile)) {
+        let json = (await fs.promises.readFile(workspacesFile)).toString();
+        workspaces = JSON.parse(json);
     }
 
-    //系统用户目录
-    let homeBehaviorPath = path.resolve(app.getPath("home"), "behavior");
-    if (!fs.existsSync(homeBehaviorPath)) {
-        await fs.promises.mkdir(homeBehaviorPath);
+    for (let workspace of workspaces) {
+        await manager.addWorkspace(workspace, true);
     }
 
-    let homeBehaviorFile = path.resolve(homeBehaviorPath, "behavior.json");
-    let homeBehavior;
-
-    if (fs.existsSync(homeBehaviorFile)) {
-        let json = (await fs.promises.readFile(homeBehaviorFile)).toString();
-        homeBehavior = JSON.parse(json);
-        if (!validateBehavior(homeBehavior)) {
-            homeBehavior = null;
-            logger.error("home behavior error\n", validateBehavior.errors);
-        }
+    let workspace = manager.parseWorkspace(process.argv);
+    if (!await manager.openWorkspace(workspace)) {
+        app.quit();
     }
-
-    if (!homeBehavior) {
-        homeBehavior = {workspaces: [path.resolve(homeBehaviorPath, "workspace")]};
-    }
-
-    for (let workspace of homeBehavior.workspaces) {
-        workspace = path.resolve(homeBehaviorPath, workspace);
-        await behavior.addWorkspace(homeWorkspaces, workspace, true);
-    }
-
-    let workspace = behavior.parseWorkspace(process.argv) || behavior.getAllWorkspaces()[0];
-    await behavior.openWorkspace(workspace);
 }
 
 app.on("ready", load);
 
 app.on("browser-window-created", async (event, window) => {
-    webContentsWorkspaces.set(window.webContents.id, openingWorkspace);
-    workspacesWebContents.set(openingWorkspace, window.webContents.id);
-    openingWorkspace = null;
+    if (openingWorkspace) {
+        webContentsWorkspaces.set(window.webContents.id, openingWorkspace);
+        workspacesWebContents.set(openingWorkspace, window.webContents.id);
+        openingWorkspace = null;
+    }
 
     window.on("close", () => {
         workspacesWebContents.delete(webContentsWorkspaces.get(window.webContents.id));
@@ -210,10 +176,9 @@ app.on("browser-window-created", async (event, window) => {
 
 function buildWorkspacesTitles() {
     workspacesTitles.clear();
-    let workspaces = behavior.getAllWorkspaces();
 
     let basename2Workspaces = new Map();
-    for (let workspace of workspaces) {
+    for (let workspace of recentWorkspaces) {
         let basename = path.basename(workspace);
         if (!basename2Workspaces.has(basename)) {
             basename2Workspaces.set(basename, []);
@@ -221,7 +186,7 @@ function buildWorkspacesTitles() {
         basename2Workspaces.get(basename).push(workspace);
     }
 
-    for (let workspace of workspaces) {
+    for (let workspace of recentWorkspaces) {
         let basename = path.basename(workspace);
         if (basename2Workspaces.get(basename).length <= 1) {
             workspacesTitles.set(workspace, basename);
@@ -230,9 +195,9 @@ function buildWorkspacesTitles() {
         }
         let webContentsId = workspacesWebContents.get(workspace);
         if (webContentsId) {
-            behavior.sendTitle(webContents.fromId(webContentsId));
+            manager.sendTitle(webContents.fromId(webContentsId));
         }
     }
 }
 
-export default behavior
+export default manager

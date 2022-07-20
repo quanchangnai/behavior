@@ -13,8 +13,8 @@
              @mouseenter="$event.currentTarget.focus()"
              @keydown.ctrl="onCtrlKeyDown"
              @keyup.control="onCtrlKeyUp"
-             @dblclick="resetBoard"
              @wheel.exact="onCenterWheel"
+             @dblclick="resetBoard"
              :style="{left:(leftWidth+1)+'px',right:rightWidth+'px'}">
             <draggable class="board"
                        ref="board"
@@ -409,6 +409,19 @@ export default {
             this.tree.deltaX = 0;
             this.tree.deltaY = 0;
         },
+        onCenterWheel(event) {
+            //滚动鼠标时，移动画板
+            this.boardY -= event.deltaY / 2;
+            this.boardX -= event.deltaX / 2;
+
+            let center = this.$refs.center;
+            let {offsetWidth: boardWidth, offsetHeight: boardHeight} = this.$refs.board.$el;
+
+            this.boardY = Math.max(this.boardY, -boardHeight + board_edge_space);
+            this.boardY = Math.min(this.boardY, center.offsetHeight - board_edge_space);
+            this.boardX = Math.max(this.boardX, -boardWidth + board_edge_space);
+            this.boardX = Math.min(this.boardX, center.offsetWidth - board_edge_space);
+        },
         resetBoard() {
             this.resetBoardPosition();
             this.boardScale = 1;
@@ -422,6 +435,7 @@ export default {
             this.hideNodeParamDropdown();
         },
         onBoardWheel(event) {
+            //按住Ctrl键同时滚动鼠标，缩放画板
             let board = this.$refs.board.$el;
             let offsetX = this.$utils.getOffsetX(event.target, board) + event.offsetX;
             let offsetY = this.$utils.getOffsetY(event.target, board) + event.offsetY;
@@ -453,19 +467,6 @@ export default {
                     || this.boardY > center.offsetHeight - board_edge_space * this.boardScale) {
                 this.resetBoardPosition();
             }
-        },
-        onCenterWheel(event) {
-            this.boardY -= event.deltaY / 2;
-            this.boardX -= event.deltaX / 2;
-
-            let center = this.$refs.center;
-            let {offsetWidth: boardWidth, offsetHeight: boardHeight} = this.$refs.board.$el;
-
-            this.boardY = Math.max(this.boardY, -boardHeight + board_edge_space);
-            this.boardY = Math.min(this.boardY, center.offsetHeight - board_edge_space);
-            this.boardX = Math.max(this.boardX, -boardWidth + board_edge_space);
-            this.boardX = Math.min(this.boardX, center.offsetWidth - board_edge_space);
-
         },
         async onBoardMouseUp() {
             if (this.creatingNode == null) {

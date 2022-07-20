@@ -513,22 +513,6 @@ let config = {
     additionalProperties: false
 };
 
-let behavior = {
-    $id: "behavior",
-    type: "object",
-    properties: {
-        workspaces: {
-            type: "array",
-            items: {
-                type: "string"
-            },
-            uniqueItems: true
-        }
-    },
-    required: ["workspaces"],
-    additionalProperties: false
-};
-
 function validateConfigLogic(config) {
     let errors = [];
 
@@ -630,7 +614,7 @@ function validateConfigLogic(config) {
 let logicValidators = {config: validateConfigLogic};
 
 let ajv = addFormats(new Ajv({$data: true}));
-ajv.addSchema([node, archetype, config, behavior]);
+ajv.addSchema([node, archetype, config]);
 
 function localizeProxy(validate) {
     return new Proxy(validate, {
@@ -655,4 +639,3 @@ function localizeProxy(validate) {
 
 export let validateNode = localizeProxy(ajv.getSchema("node"));
 export let validateConfig = localizeProxy(ajv.getSchema("config"));
-export let validateBehavior = localizeProxy(ajv.getSchema("behavior"));

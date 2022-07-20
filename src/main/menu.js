@@ -1,6 +1,6 @@
 import {app, Menu, shell} from "electron";
 import path from "path";
-import behavior from "./behavior";
+import manager from "./manager";
 
 function checkbox(checked = true) {
     if (process.platform !== 'darwin') {
@@ -29,7 +29,7 @@ function buildMenu() {
                     label: '打开工作目录',
                     accelerator: "Alt+E",
                     click: async (item, win) => {
-                        await behavior.openWorkspacePath(win.webContents)
+                        await manager.openWorkspacePath(win.webContents)
                     }
                 },
                 {
@@ -40,13 +40,13 @@ function buildMenu() {
                 {
                     label: '打开工作区...',
                     click: async (item, win) => {
-                        await behavior.showOpenWorkspaceDialog(win);
+                        await manager.showOpenWorkspaceDialog(win);
                     }
                 },
                 {
                     label: '最近工作区...',
                     click: (item, win) => {
-                        win.webContents.send("recent-workspaces", behavior.recentWorkspaces());
+                        win.webContents.send("recent-workspaces", manager.getRecentWorkspaces());
                     }
                 }
             ]

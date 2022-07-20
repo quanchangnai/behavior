@@ -1,18 +1,18 @@
 import {ipcMain} from 'electron'
-import behavior from "./behavior";
+import manager from "./manager";
 import fs from 'fs'
 import path from 'path'
 import {validateConfig} from "./validator";
 
-ipcMain.on("title", event => behavior.sendTitle(event.sender));
+ipcMain.on("title", event => manager.sendTitle(event.sender));
 
 ipcMain.handle("load-config", async event => {
-    let configFile = behavior.getConfigFile(event.sender);
+    let configFile = manager.getConfigFile(event.sender);
     let configJson;
     try {
         configJson = (await fs.promises.readFile(configFile)).toString();
     } catch (e) {
-        await behavior.createWorkspace(path.dirname(configFile));
+        await manager.createWorkspace(path.dirname(configFile));
         configJson = (await fs.promises.readFile(configFile)).toString();
     }
 
@@ -27,7 +27,7 @@ ipcMain.handle("load-config", async event => {
 });
 
 ipcMain.handle("load-trees", async event => {
-        let workspace = behavior.getWorkspace(event.sender);
+        let workspace = manager.getWorkspace(event.sender);
         let files = await fs.promises.readdir(workspace);
         let trees = [];
 
@@ -62,41 +62,41 @@ ipcMain.handle("load-trees", async event => {
 );
 
 ipcMain.handle("save-tree", async (event, tree) => {
-    let workspace = behavior.getWorkspace(event.sender);
+    let workspace = manager.getWorkspace(event.sender);
     let treeJson = JSON.stringify(tree.root, null, 4);
     let treeFile = path.resolve(workspace, tree.name + ".json");
     await fs.promises.writeFile(treeFile, treeJson, {encoding: "utf-8"});
 });
 
 ipcMain.handle("delete-tree", async (event, treeName) => {
-    let workspace = behavior.getWorkspace(event.sender);
+    let workspace = manager.getWorkspace(event.sender);
     let treeFile = path.resolve(workspace, treeName + ".json");
     await fs.promises.unlink(treeFile);
 });
 
 ipcMain.handle("rename-tree", async (event, oldTreeName, newTreeName) => {
-    let workspace = behavior.getWorkspace(event.sender);
+    let workspace = manager.getWorkspace(event.sender);
     let oldTreeFile = path.resolve(workspace, oldTreeName + ".json");
     let newTreeFile = path.resolve(workspace, newTreeName + ".json");
-    if (behavior.selectedTree === oldTreeName) {
-        behavior.selectedTree = newTreeName;
+    if (manager.selectedTree === oldTreeName) {
+        manager.selectedTree = newTreeName;
     }
     await fs.promises.rename(oldTreeFile, newTreeFile);
 });
 
 ipcMain.on("select-tree", (event, treeName) => {
-    behavior.selectedTree = treeName;
+    manager.selectedTree = treeName;
 });
 
 ipcMain.handle("open-workspace-path", async (event, treeName) => {
-    await behavior.openWorkspacePath(event.sender, treeName)
+    await manager.openWorkspacePath(event.sender, treeName)
 });
 
 ipcMain.handle("open-workspace", async (event, workspace) => {
-    await behavior.openWorkspace(workspace);
+    await manager.openWorkspace(workspace);
 });
 
 ipcMain.handle("delete-workspace", (event, workspace) => {
-    behavior.deleteWorkspace(workspace);
+    manager.deleteWorkspace(workspace);
 });
 
