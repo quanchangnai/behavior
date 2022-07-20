@@ -75,7 +75,9 @@
                                  #default="{row:template}">
                     <div :ref="'templateName-'+template.id"
                          class="template-name"
-                         @mousedown.left="selectTemplate($event,template)">
+                         draggable="true"
+                         @dragstart="selectTemplate($event,template)"
+                         @dblclick.left="onExpandChange(template)">
                         {{ template.name }}
                     </div>
                 </el-table-column>
