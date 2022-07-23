@@ -185,18 +185,26 @@ export default {
             return {width: "calc(100% - " + (treeIdTagWidth + 2) + "px)"}
         },
         async startRenameTree(tree) {
+            if (this.renameTree) {
+                await this.finishRenameTree();
+            }
+
             this.renameTree = tree || this.selectedTree;
             this.renameTree.oldName = this.renameTree.name;
+
             await this.$nextTick();
             this.$refs.renameTreeInput.focus();
         },
         async finishRenameTree() {
             let renameTree = this.renameTree;
+            if (!renameTree) {
+                return;
+            }
             this.renameTree = null;
-            let oldTreeName = renameTree.oldName;
-            let newTreeName = renameTree.name;
 
             let invalidName = false;
+            let oldTreeName = renameTree.oldName;
+            let newTreeName = renameTree.name;
 
             invalidName ||= oldTreeName === newTreeName;
             invalidName ||= newTreeName.startsWith("_");
