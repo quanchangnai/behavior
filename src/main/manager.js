@@ -33,6 +33,11 @@ let manager = {
             recentWorkspaces.pop();
         }
     },
+    /**
+     * 获取webContents对应的工作区
+     * @param webContents
+     * @returns {String}
+     */
     getWorkspace(webContents) {
         return webContentsWorkspaces.get(webContents.id);
     },
@@ -41,7 +46,7 @@ let manager = {
         webContents.send("title", title);
     },
     getConfigFile(webContents) {
-        return path.resolve(this.getWorkspace(webContents), "_config.json");
+        return path.resolve(this.getWorkspace(webContents), "behavior.config.json");
     },
     async showOpenWorkspaceDialog(window) {
         let dialogResult = await dialog.showOpenDialog(window, {
@@ -59,7 +64,7 @@ let manager = {
             await fs.promises.mkdir(workspace, {recursive: true});
         }
 
-        let configFile = path.resolve(workspace, "_config.json");
+        let configFile = path.resolve(workspace, "behavior.config.json");
         if (!fs.existsSync(configFile)) {
             await fs.promises.writeFile(configFile, JSON.stringify(config, null, 4));
         }

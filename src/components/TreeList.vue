@@ -207,7 +207,7 @@ export default {
             let newTreeName = renameTree.name;
 
             invalidName ||= oldTreeName === newTreeName;
-            invalidName ||= newTreeName.startsWith("_");
+            invalidName ||= newTreeName.includes("behavior");
 
             let sameNameTree = this.mappedTrees.get(newTreeName.toLowerCase());
             if (sameNameTree && sameNameTree.id !== this.selectedTree.id) {

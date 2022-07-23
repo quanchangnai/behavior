@@ -41,7 +41,7 @@ ipcMain.handle("load-trees", async event => {
                 continue;
             }
             let basename = path.basename(fileName, ".json");
-            if (basename.startsWith("_")) {
+            if (basename.includes("behavior")) {
                 continue;
             }
 
