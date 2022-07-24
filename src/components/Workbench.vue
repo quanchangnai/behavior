@@ -52,18 +52,18 @@ export default {
 }
 
 [x-placement^="bottom"].tooltip {
-    transform: translateY(-7px);
+    margin-top: 6px;
 }
 
 [x-placement^="top"].tooltip {
-    transform: translateY(7px);
+    margin-bottom: 5px;
 }
 
 [x-placement^="right"].tooltip {
-    transform: translateX(-7px);
+    margin-left: 6px;
 }
 
 [x-placement^="left"].tooltip {
-    transform: translateX(7px);
+    margin-right: 5px;
 }
 </style>

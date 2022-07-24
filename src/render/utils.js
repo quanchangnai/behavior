@@ -1,6 +1,6 @@
 import Vue from "vue";
 import {ipcRenderer} from "electron";
-import clipboard from "@/render/clipboard";
+import clipboard from "./clipboard";
 
 /**
  * @param el {Element|String} 元素或者选择器

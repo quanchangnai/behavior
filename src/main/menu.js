@@ -161,6 +161,12 @@ function buildMenu() {
                     visible: app.isPackaged
                 },
                 {
+                    label: "日志",
+                    async click() {
+                        await shell.openPath(path.resolve(app.getPath("userData"), "logs"));
+                    }
+                },
+                {
                     label: "联系",
                     async click() {
                         await shell.openExternal("mailto:quanchangnai@126.com")
