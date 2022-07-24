@@ -421,6 +421,8 @@ export default {
             this.boardY = Math.min(this.boardY, center.offsetHeight - board_edge_space);
             this.boardX = Math.max(this.boardX, -boardWidth + board_edge_space);
             this.boardX = Math.min(this.boardX, center.offsetWidth - board_edge_space);
+
+            this.hideNodeParamDropdown();
         },
         resetBoard() {
             this.resetBoardPosition();
@@ -449,6 +451,8 @@ export default {
             if (this.tree) {
                 this.tree.scale = boardScale;
             }
+
+            this.hideNodeParamDropdown();
         },
         async onBoardDragEnd(event) {
             this.boardX = event.x;

@@ -105,7 +105,7 @@
                                            @dblclick.stop.native
                                            @copy.stop.native
                                            @paste.stop.native
-                                           @remove-tag="calcContentBodyHeight"
+                                           @change="onParamSelectChange"
                                            @visible-change="onParamDropdownVisibleChange('paramValue-'+param.name,$event)"
                                            popper-class="node-param-select-dropdown">
                                     <el-option v-for="(option,i) in paramOptions(param.options)"
@@ -327,11 +327,12 @@ export default {
             this.$utils.saveTree(this.node.tree);
             this.$emit("children-fold", this.node);
         },
-        onParamDropdownVisibleChange(ref, visible) {
-            this.node.z = visible ? 200 : 1;
-            if (visible) {
-                this.$emit("param-dropdown-show", this.$refs[ref][0]);
+        paramLabelStyle(paramName) {
+            let style = {};
+            if (this.paramValidations['params.' + paramName] === false) {
+                style.color = "#fd7f5a";
             }
+            return style
         },
         paramSelectClass(paramName) {
             let param = this.node.params[paramName];
@@ -361,7 +362,15 @@ export default {
             });
 
             return _options;
-
+        },
+        onParamSelectChange() {
+            setTimeout(this.calcContentBodyHeight, 10);
+        },
+        onParamDropdownVisibleChange(ref, visible) {
+            this.node.z = visible ? 200 : 1;
+            if (visible) {
+                this.$emit("param-dropdown-show", this.$refs[ref][0]);
+            }
         },
         onFormValidate(prop, pass) {
             if (!pass) {
@@ -388,13 +397,6 @@ export default {
 
             this.contentClasses.error = error;
         },
-        paramLabelStyle(paramName) {
-            let style = {};
-            if (this.paramValidations['params.' + paramName] === false) {
-                style.color = "#fd7f5a";
-            }
-            return style
-        },
         async calcContentBodyHeight() {
             await this.$nextTick();
 
@@ -406,7 +408,7 @@ export default {
             }
 
             //手动计算高度，多余4个表单项加滚动条，并且防止表单项部分显示
-            this.contentBodyHeight = form.$el.clientTop;//上边框宽度
+            this.contentBodyHeight = form.$el.clientTop + 1;
 
             const maxItems = 4;
             let formStyle = getComputedStyle(form.$el);
@@ -609,10 +611,6 @@ export default {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-}
-
-.el-select-multiple {
-    margin-bottom: 10px;
 }
 
 .el-select-multiple >>> input {

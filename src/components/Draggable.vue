@@ -2,7 +2,7 @@
     <div ref="body"
          class="draggable"
          :style="{left: left + 'px', top: top + 'px'}"
-         @mousedown.left.stop="onMouseDown"
+         @mousedown.left="onMouseDown"
          @dragstart.prevent>
         <slot/>
     </div>
@@ -76,7 +76,12 @@ export default {
                 return;
             }
 
+            if (window.dragging) {
+                return;
+            }
+
             this.state = 0;
+            window.dragging = true;
             window.addEventListener("mousemove", this.onMouseMove);
             window.addEventListener("mouseup", this.onMouseUp, {once: true});
         },
@@ -84,6 +89,7 @@ export default {
             if (this.state < 0) {
                 return;
             }
+
             if (!this.checkCtrlKey(event)) {
                 if (this.state > 0) {
                     this.onMouseUp();
@@ -119,6 +125,7 @@ export default {
                 }
             } finally {
                 this.state = -1;
+                window.dragging = false;
             }
         }
     }
