@@ -20,6 +20,7 @@ module.exports = {
     filenameHashing: true,
     pluginOptions: {
         electronBuilder: {
+            outputDir: 'dist',
             nodeIntegration: true,
             mainProcessFile: 'src/main/main.js',
             rendererProcessFile: 'src/render/render.js',

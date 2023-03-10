@@ -16,7 +16,7 @@
             <div ref="content"
                  class="content"
                  :class="contentClasses">
-                <div class="content-header" ref="contentHeader">
+                <div ref="contentHeader" class="content-header">
                     <span>{{ node.template.name }}</span>
                     <span v-if="node.tree&&node.tree.showNodeId">
                         ({{ node.id }})
@@ -165,6 +165,7 @@ export default {
             selected: false,
             contentClasses: {
                 selected: false,
+                running: this.node.running,
                 error: false,
                 'can-fold': false
             },
@@ -218,6 +219,9 @@ export default {
         selected() {
             this.contentClasses.selected = this.selected || this.node.creating;
             clipboard.onNodeSelect(this.node, this.selected);
+        },
+        'node.running': function (running) {
+            this.contentClasses.running = running;
         }
     },
     methods: {
@@ -261,39 +265,73 @@ export default {
         },
         showMenu(x, y) {
             let items = [];
+
             if (this.canFold()) {
-                items.push({label: this.node.folded ? '展开节点' : '收起节点', shortcut: "双击", handler: this.foldSelf});
+                items.push({
+                    label: this.node.folded ? '展开节点' : '收起节点',
+                    shortcut: "双击",
+                    handler: this.foldSelf
+                });
             }
+
             if (this.node.children.length) {
-                items.push({label: this.node.childrenFolded ? '展开子树' : '收起子树', handler: this.foldChildren});
+                items.push({
+                    label: this.node.childrenFolded ? '展开子树' : '收起子树',
+                    handler: this.foldChildren
+                });
             }
 
-            if (this.node.parent) {
-                if (clipboard.selectedType === "hasSubtrees") {
-                    items.push({label: "剪切子树", shortcut: "Ctrl+X", handler: () => this.$emit("cut-subtrees")});
-                }
-                items.push({label: "剪切节点", shortcut: "Ctrl+Shift+X", handler: () => this.$emit("cut-nodes")});
-            }
+            let debugging = this.node.tree.nodes != null;
 
-            if (clipboard.selectedType === "hasSubtrees") {
-                items.push({label: '复制子树', shortcut: "Ctrl+C", handler: () => this.$emit("copy-subtrees")});
-            }
+            items.push({
+                label: "剪切子树",
+                shortcut: "Ctrl+X",
+                disabled: debugging || !this.node.parent || clipboard.selectedType !== "hasSubtrees",
+                handler: () => this.$emit("cut-subtrees")
+            });
+
+            items.push({
+                label: "剪切节点",
+                shortcut: "Ctrl+Shift+X",
+                disabled: debugging || !this.node.parent,
+                handler: () => this.$emit("cut-nodes")
+            });
+
+            items.push({
+                label: '复制子树',
+                shortcut: "Ctrl+C",
+                disabled: clipboard.selectedType !== "hasSubtrees",
+                handler: () => this.$emit("copy-subtrees")
+            });
+
             items.push({label: '复制节点', shortcut: "Ctrl+Shift+C", handler: () => this.$emit("copy-nodes")});
 
-            if (clipboard.copiedNodes?.length) {
-                items.push({label: "粘贴", shortcut: "Ctrl+V", handler: () => this.$emit("paste")});
-            }
+            items.push({
+                label: "粘贴",
+                shortcut: "Ctrl+V",
+                disabled: debugging || !clipboard.copiedNodes || !clipboard.copiedNodes.length,
+                handler: () => this.$emit("paste")
+            });
 
-            if (this.node.parent) {
-                if (clipboard.selectedType === "hasSubtrees") {
-                    items.push({label: "删除子树", shortcut: "Del", handler: () => this.$emit("delete-subtrees")});
-                }
-                items.push({label: "删除节点", shortcut: "Ctrl+Del", handler: () => this.$emit("delete-nodes")});
-            }
+            items.push({
+                label: "删除子树",
+                shortcut: "Del",
+                disabled: debugging || !this.node.parent || clipboard.selectedType !== "hasSubtrees",
+                handler: () => this.$emit("delete-subtrees")
+            });
 
-            if (this.node.template.visible) {
-                items.push({label: '定位模板', handler: () => this.$events.$emit("position-template", this.node.tid)});
-            }
+            items.push({
+                label: "删除节点",
+                shortcut: "Ctrl+Del",
+                disabled: debugging || !this.node.parent,
+                handler: () => this.$emit("delete-nodes")
+            });
+
+            items.push({
+                label: '定位模板',
+                disabled: !this.node.template.visible,
+                handler: () => this.$events.$emit("position-template", this.node.tid)
+            });
 
             this.$emit("menu", x, y, items, event => {
                 this.menuShown = false;
@@ -408,7 +446,7 @@ export default {
             }
 
             //手动计算高度，多余4个表单项加滚动条，并且防止表单项部分显示
-            this.contentBodyHeight = form.$el.clientTop + 1;
+            this.contentBodyHeight = 3;
 
             const maxItems = 4;
             let formStyle = getComputedStyle(form.$el);
@@ -511,6 +549,14 @@ export default {
     --content-body-border-color: #b69ff6;
     --scrollbar-thumb-color: #c9b7fc;
     --scrollbar-thumb-shadow-color: #916cf6;
+}
+
+.content.running {
+    background-color: #fd5e5eff;
+    border-color: #f3143e;
+    --content-body-border-color: #f14969;
+    --scrollbar-thumb-color: #f8728a;
+    --scrollbar-thumb-shadow-color: #ee0833;
 }
 
 .content.error {

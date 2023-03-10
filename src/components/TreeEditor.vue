@@ -101,14 +101,21 @@ export default {
             boardHeight: 0,
             boardScale: 1,
             leftWidth: left_width,
-            rightWidth: right_width
+            rightWidth: right_width,
+            nodes: null,//map:nodeId=node
+            runLog: [
+                [{nodeId: 1}, {nodeId: 2}, {nodeId: 3}, {nodeId: 4}, {nodeId: 5}],
+                [{nodeId: 1}, {nodeId: 2}, {nodeId: 4}, {nodeId: 6}, {nodeId: 7}, {nodeId: 8}]
+            ],
+            currentFrame: 0,
+            currentStep: 0
         }
     },
     async created() {
         try {
             this.config = await ipcRenderer.invoke("load-config");
         } catch (e) {
-            console.error(e);
+            this.$logger.error(e)
             this.$message.error({message: "加载编辑器配置报错，按F12查看错误详情", center: true, offset: 200});
             return;
         }
@@ -130,6 +137,10 @@ export default {
         ipcRenderer.on("copy-nodes", this.copyNodes);
         ipcRenderer.on("delete-subtrees", this.deleteSubtrees);
         ipcRenderer.on("delete-nodes", this.deleteNodes);
+        ipcRenderer.on("debug", this.debug);
+        ipcRenderer.on("next-frame", this.nextFrame);
+        ipcRenderer.on("next-step", this.nextStep);
+        ipcRenderer.on("play-pause", this.playPause);
     },
     mounted() {
         this.resizeObserver = new ResizeObserver(this.drawTree);
@@ -148,19 +159,29 @@ export default {
             if ((this.tree.folded & 1) === 1) {//至少有一个节点是收起的
                 items.push({label: '展开全部节点', handler: () => this.foldAllNodes(false)});
             }
+
             if ((this.tree.folded & 2) === 2) {//至少有一个节点是展开的
                 items.push({label: '收起全部节点', handler: () => this.foldAllNodes(true)});
             }
+
             if (this.tree.childrenFolded) {
                 items.push({label: '展开全部子树', handler: this.unfoldAllNodeChildren});
             }
+
             let showNodeId = this.tree.showNodeId;
-            items.push({label: (showNodeId ? '隐藏' : '显示') + '节点ID', handler: () => this.tree.showNodeId = !showNodeId});
             items.push({
-                label: '删除行为树', handler: () => {
+                label: (showNodeId ? '隐藏' : '显示') + '节点ID',
+                handler: () => this.tree.showNodeId = !showNodeId
+            });
+
+            items.push({
+                label: '删除行为树',
+                disabled: this.isDebugging(),
+                handler: () => {
                     this.$events.$emit("delete-tree", this.tree);
                 }
             });
+
             return items;
         },
         visibleNodes() {
@@ -175,7 +196,7 @@ export default {
             });
 
             return nodes;
-        }
+        },
     },
     methods: {
         onSelectTree(tree) {
@@ -185,12 +206,10 @@ export default {
             this.drawTree();
         },
         async drawTree() {
-            //等待界面刷新后才能获得元素大小
-            await this.$nextTick();
-
             const draw = () => {
-                this.boardWidth = this.$refs.board.$el.parentElement.offsetWidth;
-                this.boardHeight = this.$refs.board.$el.parentElement.offsetHeight;
+                let boardParentElement = this.$refs.board.$el.parentElement
+                this.boardWidth = boardParentElement.offsetWidth;
+                this.boardHeight = boardParentElement.offsetHeight;
 
                 if (!this.tree) {
                     this.initCanvas();
@@ -202,13 +221,16 @@ export default {
                 this.boardWidth = Math.max(this.boardWidth, this.tree.root.subtreeWidth + board_edge_space * 2);
                 this.boardHeight = Math.max(this.boardHeight, this.tree.root.subtreeHeight + board_edge_space * 2);
                 if (this.boardX < (-this.boardWidth + board_edge_space) * this.boardScale
-                        || this.boardY < -(this.boardHeight + board_edge_space) * this.boardScale) {
+                    || this.boardY < -(this.boardHeight + board_edge_space) * this.boardScale) {
                     this.resetBoardPosition();
                 }
 
                 this.$utils.calcNodePositions(this.tree.root, board_edge_space);
                 this.drawLinkLines();
             };
+
+            //等待界面刷新后才能获得元素大小
+            await this.$nextTick();
 
             draw();
 
@@ -297,12 +319,15 @@ export default {
             this.hideNodeParamDropdown();
         },
         onNodeDragging(event, node) {
-            if (node.dragging && event.ctrlKey && this.$utils.canReplaceNode(node, this.mouseoverNode)) {
-                node.replacing = true;
-            } else {
-                node.replacing = false;
-                this.linkParentNode(node);
+            if (!this.isDebugging()) {
+                if (node.dragging && event.ctrlKey && this.$utils.canReplaceNode(node, this.mouseoverNode)) {
+                    node.replacing = true;
+                } else {
+                    node.replacing = false;
+                    this.linkParentNode(node);
+                }
             }
+
             this.drawLinkLines();
         },
         onNodeDragEnd() {
@@ -358,6 +383,9 @@ export default {
             }
         },
         async deleteSubtrees(cut) {
+            if (this.isDebugging()) {
+                return;
+            }
             let deletedNodeIds = await clipboard.deleteSubtrees(cut);
             if (deletedNodeIds) {
                 this.updateNodeParamRefs(deletedNodeIds);
@@ -365,6 +393,9 @@ export default {
             }
         },
         deleteNodes(cut) {
+            if (this.isDebugging()) {
+                return;
+            }
             let deletedNodeIds = clipboard.deleteNodes(cut);
             if (deletedNodeIds) {
                 this.updateNodeParamRefs(deletedNodeIds);
@@ -466,9 +497,9 @@ export default {
 
             //如果拖出界了就拉回到初始位置
             if (this.boardX < (-boardWidth + board_edge_space) * this.boardScale
-                    || this.boardX > center.offsetWidth - board_edge_space * this.boardScale
-                    || this.boardY < (-boardHeight + board_edge_space) * this.boardScale
-                    || this.boardY > center.offsetHeight - board_edge_space * this.boardScale) {
+                || this.boardX > center.offsetWidth - board_edge_space * this.boardScale
+                || this.boardY < (-boardHeight + board_edge_space) * this.boardScale
+                || this.boardY > center.offsetHeight - board_edge_space * this.boardScale) {
                 this.resetBoardPosition();
             }
         },
@@ -491,6 +522,10 @@ export default {
             await this.drawTree();
         },
         async onSelectTemplate(event) {
+            if (this.isDebugging()) {
+                return
+            }
+
             if (!this.tree) {
                 this.$msg("请先创建行为树", "warning");
                 return;
@@ -567,6 +602,9 @@ export default {
             this.drawTree();
         },
         redo() {
+            if (this.isDebugging()) {
+                return;
+            }
             if (this.draggingNode || this.creatingNode) {
                 return;
             }
@@ -574,12 +612,78 @@ export default {
             this.drawTree();
         },
         undo() {
+            if (this.isDebugging()) {
+                return;
+            }
             if (this.draggingNode || this.creatingNode) {
                 return;
             }
             clipboard.undo();
             this.drawTree();
         },
+        debug() {
+            if (!this.tree) {
+                return;
+            }
+
+            if (this.isDebugging()) {
+                this.setNodeRunning(false);
+                this.tree.nodes = null;
+                this.tree.currentFrame = 0;
+                this.tree.currentStep = 0;
+            } else {
+                this.tree.nodes = new Map();
+                this.$utils.visitSubtree(this.tree.root, node =>  this.tree.nodes.set(node.id, node));
+                this.tree.currentFrame = 0;
+                this.tree.currentStep = 0;
+                this.setNodeRunning(true);
+            }
+        },
+        isDebugging() {
+            return this.tree?.nodes != null;
+        },
+        setNodeRunning(running) {
+            if (this.isDebugging()) {
+                let nodeId = this.runLog[this.tree.currentFrame][this.tree.currentStep].nodeId;
+                this.tree.nodes.get(nodeId).running = running;
+            }
+        },
+        nextFrame() {
+            if (!this.isDebugging()) {
+                return
+            }
+
+            if (this.tree.currentFrame < this.runLog.length - 1) {
+                this.setNodeRunning(false);
+                this.tree.currentFrame++;
+                this.tree.currentStep = 0;
+                this.setNodeRunning(true);
+            }
+        },
+        nextStep() {
+            if (!this.isDebugging()) {
+                return
+            }
+
+            if (this.tree.currentStep < this.runLog[this.tree.currentFrame].length - 1) {
+                this.setNodeRunning(false);
+                this.tree.currentStep++;
+                this.setNodeRunning(true);
+            } else if (this.tree.currentFrame < this.runLog.length - 1) {
+                this.nextFrame();
+            } else if (this.playId) {
+                this.playPause();
+            }
+        },
+        playPause() {
+            if (this.playId) {
+                clearInterval(this.playId);
+                this.playId = null;
+            } else {
+                this.playId = setInterval(this.nextStep, 500);
+            }
+        }
+
     }
 }
 </script>

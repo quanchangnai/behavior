@@ -4,13 +4,13 @@ behavior是一款可自由定制的可视化行为树编辑器。
 
 ## 启动
 
-点击程序目录下的behavior.exe启动，或者通过命令行执行"behavior.exe -w=aaa"启动，<br>
+点击程序目录下的behavior.exe启动，或者通过命令行执行"behavior.exe -w=aaa"启动，\
 参数aaa是要打开的工作区，后续编辑的行为树都会以json文件格式保存在该工作区中。
 
 ## 编辑器配置
 
-编辑器配置主要用来告诉编辑器如何编辑行为树，主要是节点模板配置，<br>
-第一次打开工作区时会在目录下自动创建配置文件behavior.config.json，<br>
+编辑器配置主要用来告诉编辑器如何编辑行为树，主要是节点模板配置，\
+第一次打开工作区时会在目录下自动创建配置文件behavior.config.json，\
 该文件是一个JSON对象，可以按需求修改，包含以下四个要素：
 
 ```json
@@ -37,8 +37,8 @@ templateTypes = [
 ];
 ```
 
-childrenTypes:限制子节点的模板类型,类型不合法的节点不允许作为子节点挂载。<br>
-childrenNum:限制子节点的数量，-1:不限制,0:不允许挂子节点，大于0:最多能挂的子节点数量。<br>
+childrenTypes:限制子节点的模板类型,类型不合法的节点不允许作为子节点挂载。\
+childrenNum:限制子节点的数量，-1:不限制,0:不允许挂子节点，大于0:最多能挂的子节点数量。\
 comment:可选字段，节点是否支持添加备注。
 
 ### templateGroups
@@ -77,15 +77,15 @@ let templates = [
 ];
 ```
 
-id:节点模板ID，正整数或字符串。<br>
-name:节点模板名称。<br>
-desc:可选字段，节点模板描述。<br>
-type:可选字段，节点模板类型，和配置的templateTypes字段同时出现。<br>
-group:可选字段，节点模板所属的模板组。<br>
-childrenTypes:可选字段，限制子节点的模板类型，覆盖模板类型的childrenTypes字段。<br>
-childrenIds:可选字段，限制子节点的模板ID，补充childrenTypes字段，按类型限制有时会比较宽泛。<br>
-childrenNum:可选字段，限制子节点的数量，覆盖模板类型的childrenNum字段。<br>
-comment:可选字段，节点是否支持添加备注，覆盖模板类型的comment字段。<br>
+id:节点模板ID，正整数或字符串。\
+name:节点模板名称。\
+desc:可选字段，节点模板描述。\
+type:可选字段，节点模板类型，和配置的templateTypes字段同时出现。\
+group:可选字段，节点模板所属的模板组。\
+childrenTypes:可选字段，限制子节点的模板类型，覆盖模板类型的childrenTypes字段。\
+childrenIds:可选字段，限制子节点的模板ID，补充childrenTypes字段，按类型限制有时会比较宽泛。\
+childrenNum:可选字段，限制子节点的数量，覆盖模板类型的childrenNum字段。\
+comment:可选字段，节点是否支持添加备注，覆盖模板类型的comment字段。\
 params:可选字段，节点模板参数，详情看下面示例。
 
 ```js
@@ -111,16 +111,16 @@ templates[12].params = [
 ];
 ```
 
-name:参数名，不能重复。<br>
-label:参数标签，用于显示。<br>
-type:参数类型,合法值为boolean、int、float、string。<br>
-default:可选字段，参数默认值，类型可以是参数类型、参数类型的数组、空数组。<br>
-required:可选字段，参数是否必需。<br>
-pattern:可选字段，正则表达式格式，参数类型为string可能需要。<br>
-min、max:可选字段，最小值、最大值，参数类型为int、float时可能需要。<br>
-options:可选字段，参数选项列表，数组或者对象类型。<br>
-options为数组类型时，其中每个选项对象包含label、value两个字段，value字段的类型要和参数类型保持一致，参数default字段为数组时则选项列表为多选，否则选项列表为单选。<br>
-options为对象类型时，refType: "node"表示选项列表引用行为树节点，refId即节点模板ID。<br>
+name:参数名，不能重复。\
+label:参数标签，用于显示。\
+type:参数类型,合法值为boolean、int、float、string。\
+default:可选字段，参数默认值，类型可以是参数类型、参数类型的数组、空数组。\
+required:可选字段，参数是否必需。\
+pattern:可选字段，正则表达式格式，参数类型为string可能需要。\
+min、max:可选字段，最小值、最大值，参数类型为int、float时可能需要。\
+options:可选字段，参数选项列表，数组或者对象类型。\
+options为数组类型时，其中每个选项对象包含label、value两个字段，value字段的类型要和参数类型保持一致，参数default字段为数组时则选项列表为多选，否则选项列表为单选。\
+options为对象类型时，refType: "node"表示选项列表引用行为树节点，refId即节点模板ID。\
 
 ### archetypes
 

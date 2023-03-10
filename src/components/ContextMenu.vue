@@ -9,6 +9,7 @@
         <div v-for="(item,index) in visibleItems"
              :key="'item-'+index"
              class="context-menu-item"
+             :class="{disabled:item.disabled}"
              @click="onItemClick($event,item)">
             <slot :item="item">
                 <div ref="itemLabels"
@@ -133,6 +134,10 @@ export default {
             }
         },
         onItemClick(event, item) {
+            if (item.disabled === true) {
+                return;
+            }
+
             this.hide(event, true);
             if (item.handler != null) {
                 item.handler.call(item);
@@ -173,6 +178,10 @@ export default {
 
 .context-menu-item:hover {
     background-color: #f5f7fa;
+}
+
+.context-menu-item.disabled{
+   color: #adabab;
 }
 
 </style>

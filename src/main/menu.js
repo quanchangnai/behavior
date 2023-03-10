@@ -111,6 +111,39 @@ function buildMenu() {
             ]
         },
         {
+            label: "调试",
+            submenu: [
+                {
+                    label: "调试",
+                    accelerator: "F7",
+                    click: (item, win) => {
+                        win.webContents.send("debug");
+                    }
+                },
+                {
+                    label: "下一步",
+                    accelerator: "F8",
+                    click: (item, win) => {
+                        win.webContents.send("next-step");
+                    }
+                },
+                {
+                    label: "下一帧",
+                    accelerator: "F9",
+                    click: (item, win) => {
+                        win.webContents.send("next-frame");
+                    }
+                },
+                {
+                    accelerator: "Space",
+                    label: "播放/暂停",
+                    click: (item, win) => {
+                        win.webContents.send("play-pause");
+                    }
+                }
+            ]
+        },
+        {
             label: "视图",
             submenu: [
                 {

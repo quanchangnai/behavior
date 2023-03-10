@@ -613,7 +613,7 @@ function validateConfigLogic(config) {
 
 let logicValidators = {config: validateConfigLogic};
 
-let ajv = addFormats(new Ajv({$data: true}));
+let ajv = addFormats(new Ajv({$data: true, allowUnionTypes: true}));
 ajv.addSchema([node, archetype, config]);
 
 function localizeProxy(validate) {

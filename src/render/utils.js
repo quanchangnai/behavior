@@ -127,6 +127,7 @@ export default {
         Vue.set(node, "folded", node.folded || node.folded === undefined);
         Vue.set(node, "children", node.children || []);
         Vue.set(node, "childrenFolded", node.childrenFolded || false);
+        Vue.set(node, "running", false);
     },
     /**
      * 访问子树的所有节点
