@@ -7,17 +7,19 @@
                       class="keyword-input"
                       :prefix-icon="selectGroups.length===0?'el-icon-search':''"
                       placeholder="输入关键字搜索">
-                <el-select slot="prepend"
-                           class="group-select"
-                           v-model="selectedGroup"
-                           v-if="selectGroups.length>0"
-                           popper-class="template-select-dropdown">
-                    <el-option v-for="group in selectGroups"
-                               :key="group.id"
-                               :label="group.name"
-                               :value="group.id"/>
+                <template v-slot:prepend>
+                    <el-select class="group-select"
+                               v-model="selectedGroup"
+                               v-if="selectGroups.length>0"
+                               popper-class="template-select-dropdown">
+                        <el-option v-for="group in selectGroups"
+                                   :key="group.id"
+                                   :label="group.name"
+                                   :value="group.id"/>
 
-                </el-select>
+                    </el-select>
+                </template>
+
             </el-input>
         </div>
         <el-scrollbar ref="scrollbar" :style="{height: tableHeight}">

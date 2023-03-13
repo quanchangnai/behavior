@@ -135,8 +135,8 @@ function buildMenu() {
                     }
                 },
                 {
-                    accelerator: "Space",
                     label: "播放/暂停",
+                    accelerator: "F10",
                     click: (item, win) => {
                         win.webContents.send("play-pause");
                     }

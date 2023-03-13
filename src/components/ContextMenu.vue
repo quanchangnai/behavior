@@ -35,7 +35,7 @@ export default {
         items: {
             type: Array,
             default: function () {
-                return [{label: "测试1", shortcut: "Alt+T", handler: null}, {label: "测试2", handler: null}]
+                return [{label: "测试1", shortcut: "Alt+T", handler: null}, {label: "测试2", disabled: true}]
             }
         }
     },
@@ -180,8 +180,8 @@ export default {
     background-color: #f5f7fa;
 }
 
-.context-menu-item.disabled{
-   color: #adabab;
+.context-menu-item.disabled {
+    color: #adabab;
 }
 
 </style>

@@ -114,14 +114,21 @@ export default {
         },
         onContextMenu(event, tree) {
             event.stopPropagation();
+            tree = tree || this.selectedTree;
+
             this.menuItems.splice(0, this.menuItems.length);
             this.menuItems.push({label: '创建行为树', shortcut: "Alt+C", handler: this.createTree});
-            tree = tree || this.selectedTree;
-            if (tree != null) {
-                this.menuItems.push({label: '删除行为树', handler: () => this.deleteTree(tree)});
-                this.menuItems.push({label: '重命名行为树', handler: () => this.startRenameTree(tree)});
-            }
-            this.menuItems.push({label: '打开工作目录', shortcut: "Alt+E", handler: () => this.openWorkspacePath(tree?.name)});
+            this.menuItems.push({label: '删除行为树', disabled: tree == null, handler: () => this.deleteTree(tree)});
+            this.menuItems.push({
+                label: '重命名行为树',
+                disabled: tree == null,
+                handler: () => this.startRenameTree(tree)
+            });
+            this.menuItems.push({
+                label: '打开工作目录',
+                shortcut: "Alt+E",
+                handler: () => this.openWorkspacePath(tree?.name)
+            });
 
             this.$refs.menu.show(event.clientX, event.clientY, this.$refs.body);
         },

@@ -52,6 +52,7 @@
                            @mouseup.native="onNodeMouseUp($event,node)"
                            @param-dropdown-show="onNodeParamDropdownShow"/>
             </draggable>
+            <debug-bar ref="debugBar"/>
         </div>
         <div class="right" :style="{width:rightWidth+'px'}">
             <template-list v-if="config"
@@ -67,7 +68,7 @@
                    style="transform-origin: 0 0"
                    :style="{transform:`scale(${boardScale},${boardScale})`}"
                    @dragging="onNodeDragging($event,creatingNode)"/>
-        <context-menu ref="boardMenu" :items="boardMenuItems"/>
+        <context-menu ref="boardMenu"/>
         <context-menu ref="nodeMenu"/>
     </div>
 </template>
@@ -80,6 +81,7 @@ import TemplateList from "./TemplateList";
 import ContextMenu from "./ContextMenu";
 import {ipcRenderer} from 'electron'
 import clipboard from "@/render/clipboard";
+import DebugBar from "@/components/DebugBar.vue";
 
 const board_edge_space = 100;//画板边缘空间
 const left_width = 220;//左侧行为树列表宽度
@@ -87,7 +89,7 @@ const right_width = 250;//右侧节点模板宽度
 
 export default {
     name: "TreeEditor",
-    components: {Draggable, TreeNode, TreeList, TemplateList, ContextMenu},
+    components: {DebugBar, Draggable, TreeNode, TreeList, TemplateList, ContextMenu},
     data() {
         return {
             config: null,//编辑器配置
@@ -102,13 +104,6 @@ export default {
             boardScale: 1,
             leftWidth: left_width,
             rightWidth: right_width,
-            nodes: null,//map:nodeId=node
-            runLog: [
-                [{nodeId: 1}, {nodeId: 2}, {nodeId: 3}, {nodeId: 4}, {nodeId: 5}],
-                [{nodeId: 1}, {nodeId: 2}, {nodeId: 4}, {nodeId: 6}, {nodeId: 7}, {nodeId: 8}]
-            ],
-            currentFrame: 0,
-            currentStep: 0
         }
     },
     async created() {
@@ -137,10 +132,6 @@ export default {
         ipcRenderer.on("copy-nodes", this.copyNodes);
         ipcRenderer.on("delete-subtrees", this.deleteSubtrees);
         ipcRenderer.on("delete-nodes", this.deleteNodes);
-        ipcRenderer.on("debug", this.debug);
-        ipcRenderer.on("next-frame", this.nextFrame);
-        ipcRenderer.on("next-step", this.nextStep);
-        ipcRenderer.on("play-pause", this.playPause);
     },
     mounted() {
         this.resizeObserver = new ResizeObserver(this.drawTree);
@@ -150,40 +141,6 @@ export default {
         this.resizeObserver.disconnect();
     },
     computed: {
-        boardMenuItems() {
-            let items = [];
-            if (!this.tree) {
-                return items;
-            }
-
-            if ((this.tree.folded & 1) === 1) {//至少有一个节点是收起的
-                items.push({label: '展开全部节点', handler: () => this.foldAllNodes(false)});
-            }
-
-            if ((this.tree.folded & 2) === 2) {//至少有一个节点是展开的
-                items.push({label: '收起全部节点', handler: () => this.foldAllNodes(true)});
-            }
-
-            if (this.tree.childrenFolded) {
-                items.push({label: '展开全部子树', handler: this.unfoldAllNodeChildren});
-            }
-
-            let showNodeId = this.tree.showNodeId;
-            items.push({
-                label: (showNodeId ? '隐藏' : '显示') + '节点ID',
-                handler: () => this.tree.showNodeId = !showNodeId
-            });
-
-            items.push({
-                label: '删除行为树',
-                disabled: this.isDebugging(),
-                handler: () => {
-                    this.$events.$emit("delete-tree", this.tree);
-                }
-            });
-
-            return items;
-        },
         visibleNodes() {
             let nodes = [];
             if (!this.tree) {
@@ -201,6 +158,7 @@ export default {
     methods: {
         onSelectTree(tree) {
             this.tree = tree;
+            this.$refs.debugBar.tree = tree;
             clipboard.onTreeSelect(tree);
             this.resetBoard();
             this.drawTree();
@@ -579,7 +537,39 @@ export default {
             }, {once: true});
         },
         showBoardMenu(event) {
-            this.$refs.boardMenu.show(event.clientX, event.clientY, this.$refs.center);
+            if (!this.tree) {
+                return;
+            }
+
+            let items = [];
+
+            if ((this.tree.folded & 1) === 1) {//至少有一个节点是收起的
+                items.push({label: '展开全部节点', handler: () => this.foldAllNodes(false)});
+            }
+
+            if ((this.tree.folded & 2) === 2) {//至少有一个节点是展开的
+                items.push({label: '收起全部节点', handler: () => this.foldAllNodes(true)});
+            }
+
+            if (this.tree.childrenFolded) {
+                items.push({label: '展开全部子树', handler: this.unfoldAllNodeChildren});
+            }
+
+            let showNodeId = this.tree.showNodeId;
+            items.push({
+                label: (showNodeId ? '隐藏' : '显示') + '节点ID',
+                handler: () => this.tree.showNodeId = !showNodeId
+            });
+
+            items.push({
+                label: '删除行为树',
+                disabled: this.isDebugging(),
+                handler() {
+                    this.$events.$emit("delete-tree", this.tree);
+                }
+            });
+
+            this.$refs.boardMenu.show(event.clientX, event.clientY, this.$refs.center, items);
         },
         foldAllNodes(fold) {
             if (!this.tree) {
@@ -621,69 +611,9 @@ export default {
             clipboard.undo();
             this.drawTree();
         },
-        debug() {
-            if (!this.tree) {
-                return;
-            }
-
-            if (this.isDebugging()) {
-                this.setNodeRunning(false);
-                this.tree.nodes = null;
-                this.tree.currentFrame = 0;
-                this.tree.currentStep = 0;
-            } else {
-                this.tree.nodes = new Map();
-                this.$utils.visitSubtree(this.tree.root, node =>  this.tree.nodes.set(node.id, node));
-                this.tree.currentFrame = 0;
-                this.tree.currentStep = 0;
-                this.setNodeRunning(true);
-            }
-        },
         isDebugging() {
             return this.tree?.nodes != null;
         },
-        setNodeRunning(running) {
-            if (this.isDebugging()) {
-                let nodeId = this.runLog[this.tree.currentFrame][this.tree.currentStep].nodeId;
-                this.tree.nodes.get(nodeId).running = running;
-            }
-        },
-        nextFrame() {
-            if (!this.isDebugging()) {
-                return
-            }
-
-            if (this.tree.currentFrame < this.runLog.length - 1) {
-                this.setNodeRunning(false);
-                this.tree.currentFrame++;
-                this.tree.currentStep = 0;
-                this.setNodeRunning(true);
-            }
-        },
-        nextStep() {
-            if (!this.isDebugging()) {
-                return
-            }
-
-            if (this.tree.currentStep < this.runLog[this.tree.currentFrame].length - 1) {
-                this.setNodeRunning(false);
-                this.tree.currentStep++;
-                this.setNodeRunning(true);
-            } else if (this.tree.currentFrame < this.runLog.length - 1) {
-                this.nextFrame();
-            } else if (this.playId) {
-                this.playPause();
-            }
-        },
-        playPause() {
-            if (this.playId) {
-                clearInterval(this.playId);
-                this.playId = null;
-            } else {
-                this.playId = setInterval(this.nextStep, 500);
-            }
-        }
-
     }
 }
 </script>
