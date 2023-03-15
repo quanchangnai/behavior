@@ -5,7 +5,7 @@
                       clearable
                       size="small"
                       class="keyword-input"
-                      :prefix-icon="selectGroups.length===0?'el-icon-search':''"
+                      :prefix-icon="selectGroups.length?'el-icon-search':''"
                       placeholder="输入关键字搜索">
                 <template v-slot:prepend>
                     <el-select class="group-select"

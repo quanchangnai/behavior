@@ -73,13 +73,18 @@ export default {
         await this.loadTrees();
         ipcRenderer.on("create-tree", this.createTree);
         this.$events.$on("delete-tree", this.deleteTree);
+        this.$events.$on("select-tree", this.selectTree);
+        this.$events.$on("check-tree", this.checkTree);
     },
     mounted() {
         this.resizeObserver = new ResizeObserver(this.doLayout);
         this.resizeObserver.observe(this.$refs.body);
     },
     destroyed() {
+        ipcRenderer.off("create-tree", this.createTree);
         this.$events.$off("delete-tree", this.deleteTree);
+        this.$events.$off("select-tree", this.selectTree);
+        this.$events.$off("check-tree", this.checkTree);
         this.resizeObserver.disconnect();
     },
     watch: {
@@ -103,12 +108,20 @@ export default {
                 this.$refs.table.setCurrentRow(this.visibleTrees[0]);
             }
         },
+        checkTree(treeName) {
+            let tree = this.mappedTrees.get(treeName);
+            if (tree) {
+                this.$refs.table.setCurrentRow(tree);
+            }
+            this.$events.$emit("exist-tree", tree != null)
+        },
         selectTree(tree) {
             this.selectedTree = tree;
             if (tree && tree.maxNodeId === undefined) {
                 //第一次选中
                 this.$utils.initTree(tree)
             }
+
             this.$emit("select-tree", tree);
             ipcRenderer.send("select-tree", tree?.name);
         },
@@ -228,7 +241,7 @@ export default {
                     this.mappedTrees.set(newTreeName.toLowerCase(), this.selectedTree);
                 } catch (e) {
                     this.$logger.error(e);
-                    this.$message.error({message: "重命名行为树失败", center: true, offset: 200});
+                    this.$msg("重命名行为树失败", "error");
                     renameTree.name = oldTreeName;
                 }
             } else {

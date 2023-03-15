@@ -111,7 +111,7 @@ export default {
             this.config = await ipcRenderer.invoke("load-config");
         } catch (e) {
             this.$logger.error(e)
-            this.$message.error({message: "加载编辑器配置报错，按F12查看错误详情", center: true, offset: 200});
+            this.$msg("加载编辑器配置报错，按F12查看错误详情", "error");
             return;
         }
 
@@ -158,8 +158,8 @@ export default {
     methods: {
         onSelectTree(tree) {
             this.tree = tree;
-            this.$refs.debugBar.tree = tree;
-            clipboard.onTreeSelect(tree);
+            this.$refs.debugBar.onSelectTree(tree);
+            clipboard.onSelectTree(tree);
             this.resetBoard();
             this.drawTree();
         },
@@ -612,7 +612,7 @@ export default {
             this.drawTree();
         },
         isDebugging() {
-            return this.tree?.nodes != null;
+            return this.$refs.debugBar.isDebugging();
         },
     }
 }

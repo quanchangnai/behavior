@@ -117,7 +117,7 @@ function buildMenu() {
                     label: "调试",
                     accelerator: "F7",
                     click: (item, win) => {
-                        win.webContents.send("debug");
+                        win.webContents.send("toggle-debug");
                     }
                 },
                 {

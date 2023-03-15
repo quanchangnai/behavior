@@ -14,7 +14,7 @@
                @contextmenu.stop.native="showMenu($event.clientX,$event.clientY)">
         <template>
             <div ref="content"
-                 class="content"
+                 class="body"
                  :class="contentClasses">
                 <div ref="contentHeader" class="content-header">
                     <span>{{ node.template.name }}</span>
@@ -218,7 +218,7 @@ export default {
         },
         selected() {
             this.contentClasses.selected = this.selected || this.node.creating;
-            clipboard.onNodeSelect(this.node, this.selected);
+            clipboard.onSelectNode(this.node, this.selected);
         },
         'node.running': function (running) {
             this.contentClasses.running = running;
@@ -523,7 +523,7 @@ export default {
 </script>
 
 <style scoped>
-.content {
+.body {
     min-width: 60px;
     max-width: 250px;
     background-color: #99ccff;
@@ -537,13 +537,13 @@ export default {
     --scrollbar-thumb-shadow-color: #776eee;
 }
 
-.content:hover {
+.body:hover {
     background-color: #65adf6;
     border-color: #3998fc;
     --content-body-border-color: #51a4f8;
 }
 
-.content.selected {
+.body.selected {
     background-color: #c0acf8;
     border-color: #9f81f8;
     --content-body-border-color: #b69ff6;
@@ -551,7 +551,7 @@ export default {
     --scrollbar-thumb-shadow-color: #916cf6;
 }
 
-.content.running {
+.body.running {
     background-color: #fd5e5eff;
     border-color: #f3143e;
     --content-body-border-color: #f14969;
@@ -559,16 +559,16 @@ export default {
     --scrollbar-thumb-shadow-color: #ee0833;
 }
 
-.content.error {
+.body.error {
     box-shadow: 0 0 0 1px #fd7f5a;
 }
 
-.content > div {
+.body > div {
     padding: 0 12px 0 23px;
     margin-left: -1px;
 }
 
-:not(.can-fold).content > div {
+:not(.can-fold).body > div {
     padding: 0 12px 0 12px !important;
 }
 

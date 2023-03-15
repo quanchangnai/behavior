@@ -5,7 +5,7 @@ import utils from "./utils";
  * 行为树剪切板，行为树剪切、复制、粘贴、删除相关功能
  */
 export default {
-    onTreeSelect(tree) {
+    onSelectTree(tree) {
         this.tree = tree;
         this.snapshots = [];
         this.snapshotIndex = -1;
@@ -47,7 +47,7 @@ export default {
         this.snapshotIndex++;
         this.restore();
     },
-    onNodeSelect(node, selected) {
+    onSelectNode(node, selected) {
         if (!this.selectedNodes) {
             this.selectedNodes = new Map();
         }

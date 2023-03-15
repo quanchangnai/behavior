@@ -20,7 +20,7 @@ export default {
         ipcRenderer.on("msg", (event, msg, type) => this.$msg(msg, type));
         ipcRenderer.on("recent-workspaces", (event, workspaces) => {
             this.$refs.recentWorkspaces.openDialog(workspaces);
-        })
+        });
     },
     async mounted() {
         ipcRenderer.on("title", (event, title) => document.title = title);

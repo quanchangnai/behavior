@@ -22,7 +22,7 @@ export default {
      * @param type {'success' | 'warning' | 'info' | 'error'} 消息类型
      */
     msg(msg, type = "success") {
-        Vue.prototype.$message({message: msg, type, center: true, offset: 200});
+        Vue.prototype.$message({message: msg, type, center: true, offset: 300});
     },
     md5: require("md5").bind(this),
     /**
