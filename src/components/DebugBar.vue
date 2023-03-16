@@ -66,6 +66,7 @@ export default {
             this.nodes = new Map();
             this.$utils.visitSubtree(this.tree.root, node => this.nodes.set(node.id, node));
             this.step = 0;
+            this.tree.debugging = true;
 
             await this.fetchRecords();
             this.setNodeRunning(true);
@@ -76,6 +77,7 @@ export default {
             this.nodes = null;
             this.records = [];
             this.step = 0;
+            this.tree.debugging = false;
             this.showDebugSelector(false);
         },
         onSelectTree(tree) {

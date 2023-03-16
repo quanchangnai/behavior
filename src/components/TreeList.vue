@@ -130,14 +130,12 @@ export default {
             event.stopPropagation();
             tree = tree || this.selectedTree;
 
+            let disabled = tree == null || tree.debugging;
+
             this.menuItems.splice(0, this.menuItems.length);
             this.menuItems.push({label: '创建行为树', shortcut: "Alt+C", handler: this.createTree});
-            this.menuItems.push({label: '删除行为树', disabled: tree == null, handler: () => this.deleteTree(tree)});
-            this.menuItems.push({
-                label: '重命名行为树',
-                disabled: tree == null,
-                handler: () => this.startRenameTree(tree)
-            });
+            this.menuItems.push({label: '删除行为树', disabled, handler: () => this.deleteTree(tree)});
+            this.menuItems.push({label: '重命名行为树', disabled, handler: () => this.startRenameTree(tree)});
             this.menuItems.push({
                 label: '打开工作目录',
                 shortcut: "Alt+E",

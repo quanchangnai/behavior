@@ -283,7 +283,7 @@ export default {
                 });
             }
 
-            let debugging = this.node.tree.nodes != null;
+            let debugging = this.node.tree.debugging;
 
             items.push({
                 label: "剪切子树",
