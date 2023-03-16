@@ -109,7 +109,7 @@ export default {
             } catch (e) {
                 this.$logger.error(e);
                 this.$msg(`请求[${this.baseUrl}/${url}]出错`, "error");
-                this.playPause();
+                this.pause();
             }
         },
         isDebugging() {
@@ -134,13 +134,15 @@ export default {
                 this.pause();
             }
         },
-        nextFrame() {
+        async nextFrame() {
             if (!this.isDebugging()) {
                 return;
             }
+
             if (this.records.length <= 1) {
-                return;
-            } else if (this.records.length < 10) {
+                await this.fetchRecords()
+            } else if (this.records.length <= 2) {
+                // noinspection ES6MissingAwait
                 this.fetchRecords();
             }
 
@@ -158,10 +160,8 @@ export default {
                 this.setNodeRunning(false);
                 this.step++;
                 this.setNodeRunning(true);
-            } else if (this.records.length > 1) {
-                this.nextFrame();
             } else {
-                this.pause();
+                this.nextFrame();
             }
         },
         pause() {

@@ -7,7 +7,7 @@
                @drag-start="onDragStart"
                @dragging="onDragging"
                @drag-end="onDragEnd"
-               @mousedown.capture.native="onMouseDown"
+               @mousedown.capture.native="onSelfMouseDown"
                @dblclick.stop.native
                @dblclick.exact.stop.native="foldSelf"
                @paste.native="selected&&$emit('paste')"
@@ -180,11 +180,7 @@ export default {
         };
     },
     mounted() {
-        window.addEventListener('mousedown', event => {
-            if (!event.ctrlKey && !this.menuShown) {
-                this.selected = false;
-            }
-        }, true);
+        window.addEventListener('mousedown', this.onOtherMouseDown, true);
 
         this.resizeObserver = new ResizeObserver(async () => {
             await this.checkContentHeaderOverflow();
@@ -198,6 +194,7 @@ export default {
         this.checkParamsError();
     },
     destroyed() {
+        window.removeEventListener('mousedown', this.onOtherMouseDown, true);
         this.resizeObserver.disconnect();
         clipboard.selectedNodes?.delete(this.node.id);
     },
@@ -249,11 +246,16 @@ export default {
             this.$utils.saveTree(this.node.tree);
             this.$emit("drag-end", event);
         },
-        onMouseDown(event) {
+        onSelfMouseDown(event) {
             if (event.button === 0 && event.ctrlKey) {
                 this.selected = !this.selected;
             } else {
                 this.selected = true;
+            }
+        },
+        onOtherMouseDown(event) {
+            if (!event.ctrlKey && !this.menuShown) {
+                this.selected = false;
             }
         },
         canFold() {

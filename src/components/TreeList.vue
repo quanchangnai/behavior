@@ -108,12 +108,13 @@ export default {
                 this.$refs.table.setCurrentRow(this.visibleTrees[0]);
             }
         },
-        checkTree(treeName) {
+        checkTree(treeName, callback) {
             let tree = this.mappedTrees.get(treeName);
             if (tree) {
                 this.$refs.table.setCurrentRow(tree);
             }
-            this.$events.$emit("exist-tree", tree != null)
+
+            callback(tree != null);
         },
         selectTree(tree) {
             this.selectedTree = tree;

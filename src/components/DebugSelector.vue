@@ -147,16 +147,17 @@ export default {
                 return;
             }
 
-            this.$events.$once("exist-tree", exist => {
+            this.$events.$emit("check-tree", this.target2.tree, exist => {
+                if (!this.visible) {
+                    return;
+                }
                 if (exist) {
                     this.visible = false;
-                    this.$emit("select", this.baseUrl, this.target1, this.target2)
+                    this.$emit("select", this.baseUrl, this.target1, this.target2);
                 } else {
                     this.$msg(`工作区中不存在行为树[${this.target2.tree}]`, "warning");
                 }
             });
-
-            this.$events.$emit("check-tree", this.target2.tree);
         },
     }
 }

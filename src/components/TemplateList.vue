@@ -128,6 +128,7 @@ export default {
     },
     destroyed() {
         this.$events.$off("init-tree", this.onInitTree);
+        this.$events.$off("position-template", this.positionTemplate);
         this.resizeObserver.disconnect();
     },
     watch: {
