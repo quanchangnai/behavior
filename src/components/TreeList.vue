@@ -273,7 +273,7 @@ export default {
     overflow-x: hidden;
 }
 
-.el-table:before {
+.el-table::before {
     content: none;
 }
 

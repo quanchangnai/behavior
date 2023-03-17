@@ -641,7 +641,7 @@ export default {
     height: 30px;
 }
 
->>> .el-form-item__label:before {
+>>> .el-form-item__label::before {
     vertical-align: super;
 }
 

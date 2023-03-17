@@ -350,7 +350,7 @@ export default {
     padding-right: 0;
 }
 
-.el-table:before {
+.el-table::before {
     content: none;
 }
 

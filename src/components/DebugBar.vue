@@ -30,7 +30,7 @@ export default {
             target2: null,
             records: [],
             step: 0,
-            playId: 0,
+            playing: false,
         }
     },
     created() {
@@ -45,11 +45,11 @@ export default {
                 {tip: "下一步", icon: "el-icon-arrow-right", handle: this.nextStep},
                 {tip: "下一帧", icon: "el-icon-d-arrow-right", handle: this.nextFrame},
                 {
-                    tip: this.playId > 0 ? '暂停' : '播放',
-                    icon: this.playId > 0 ? 'el-icon-video-pause' : 'el-icon-video-play',
+                    tip: this.playing ? '暂停' : '播放',
+                    icon: this.playing ? 'el-icon-video-pause' : 'el-icon-video-play',
                     handle: this.playPause
                 },
-                {tip: "停止调试", icon: "el-icon-circle-close", handle: this.toggleDebug},
+                {tip: "停止调试", icon: "el-icon-circle-close", handle: this.stopDebug},
                 {tip: "选择调试目标", icon: "el-icon-setting", handle: () => this.showDebugSelector()},
             ]
         }
@@ -63,6 +63,10 @@ export default {
             }
         },
         async startDebug() {
+            if (this.isDebugging()) {
+                return;
+            }
+
             this.nodes = new Map();
             this.$utils.visitSubtree(this.tree.root, node => this.nodes.set(node.id, node));
             this.step = 0;
@@ -70,15 +74,21 @@ export default {
 
             await this.fetchRecords();
             this.setNodeRunning(true);
+            this.$forceUpdate();
         },
         stopDebug() {
-            this.pause();
+            if (!this.isDebugging()) {
+                return;
+            }
+
             this.setNodeRunning(false);
             this.nodes = null;
             this.records = [];
             this.step = 0;
+            this.playing = false;
             this.tree.debugging = false;
             this.showDebugSelector(false);
+            this.$forceUpdate();
         },
         onSelectTree(tree) {
             if (this.isDebugging() && this.tree !== tree) {
@@ -111,11 +121,11 @@ export default {
             } catch (e) {
                 this.$logger.error(e);
                 this.$msg(`请求[${this.baseUrl}/${url}]出错`, "error");
-                this.pause();
+                this.playing = false;
             }
         },
         isDebugging() {
-            return this.tree && this.nodes?.size > 0;
+            return this.tree?.debugging && this.nodes?.size > 0;
         },
         setNodeRunning(running) {
             if (!this.isDebugging()) {
@@ -123,7 +133,7 @@ export default {
             }
 
             if (this.records.length < 1) {
-                this.pause();
+                this.playing = false;
                 return;
             }
 
@@ -133,7 +143,7 @@ export default {
             } catch (e) {
                 this.$logger.error(e)
                 this.$msg("调试出错，运行记录和行为树不匹配", "error");
-                this.pause();
+                this.playing = false;
             }
         },
         async nextFrame() {
@@ -153,7 +163,7 @@ export default {
             this.step = 0;
             this.setNodeRunning(true);
         },
-        nextStep() {
+        async nextStep() {
             if (!this.isDebugging()) {
                 return
             }
@@ -163,12 +173,11 @@ export default {
                 this.step++;
                 this.setNodeRunning(true);
             } else {
-                this.nextFrame();
+                await this.nextFrame();
             }
-        },
-        pause() {
-            if (this.playId > 0) {
-                this.playPause();
+
+            if (this.playing) {
+                setTimeout(this.nextStep, 200);
             }
         },
         playPause() {
@@ -176,11 +185,11 @@ export default {
                 return
             }
 
-            if (this.playId > 0) {
-                clearInterval(this.playId);
-                this.playId = 0;
+            if (this.playing) {
+                this.playing = false;
             } else {
-                this.playId = setInterval(this.nextStep, 200);
+                this.playing = true;
+                this.nextStep();
             }
         },
         showDebugSelector(show = true) {

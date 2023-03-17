@@ -48,8 +48,8 @@
             </div>
         </div>
         <div class="footer">
-            <el-button size="small" @click="visible=false">取消</el-button>
             <el-button size="small" @click="confirmSelect">确认</el-button>
+            <el-button size="small" @click="visible=false">取消</el-button>
         </div>
     </el-dialog>
 </template>
@@ -207,7 +207,7 @@ export default {
     overflow-x: hidden;
 }
 
-.el-table:before {
+.el-table::before {
     content: none;
 }
 
@@ -218,11 +218,10 @@ export default {
 .footer {
     position: relative;
     height: 30px;
-    padding-left: 81%;
 }
 
 .footer .el-button {
-    float: left;
+    float: right;
     margin-left: 25px;
 }
 
