@@ -15,14 +15,23 @@
                 <el-scrollbar>
                     <el-table ref="table1"
                               size="mini"
-                              :show-header="false"
                               :data="visibleRows1"
                               :cell-style="{'padding-left':'5px'}"
                               tooltip-effect="light"
                               highlight-current-row
                               @current-change="onTable1RowSelect">
-                        <el-table-column prop="id" min-width="50" :show-overflow-tooltip="true"/>
-                        <el-table-column prop="name" min-width="80" :show-overflow-tooltip="true"/>
+                        <template v-if="list1[0]">
+                            <el-table-column v-if="list1[0]"
+                                             prop="id"
+                                             :label="list1[0].id.toString()"
+                                             min-width="50"
+                                             :show-overflow-tooltip="true"/>
+                            <el-table-column v-if="list1[0]"
+                                             prop="name"
+                                             :label="list1[0].name.toString()"
+                                             min-width="80"
+                                             :show-overflow-tooltip="true"/>
+                        </template>
                     </el-table>
                 </el-scrollbar>
             </div>
@@ -34,15 +43,27 @@
                 <el-scrollbar>
                     <el-table ref="table2"
                               size="mini"
-                              :show-header="false"
                               :data="visibleRows2"
                               :cell-style="{'padding-left':'5px'}"
                               tooltip-effect="light"
                               highlight-current-row
                               @current-change="onTable2RowSelect">
-                        <el-table-column prop="id" min-width="50" :show-overflow-tooltip="true"/>
-                        <el-table-column prop="name" min-width="80" :show-overflow-tooltip="true"/>
-                        <el-table-column prop="tree" min-width="70" :show-overflow-tooltip="true"/>
+                        <template v-if="list2[0]">
+                            <el-table-column prop="id"
+                                             :label="list2[0].id.toString()"
+                                             min-width="50"
+                                             :show-overflow-tooltip="true"/>
+                            <el-table-column prop="name"
+                                             :label="list2[0].name.toString()"
+                                             min-width="80"
+                                             :show-overflow-tooltip="true"/>
+                            <el-table-column prop="tree"
+                                             :label="list2[0].tree.toString()"
+                                             min-width="70"
+                                             :show-overflow-tooltip="true"/>
+
+                        </template>
+
                     </el-table>
                 </el-scrollbar>
             </div>
@@ -77,12 +98,18 @@ export default {
     },
     watch: {
         keyword1(value) {
-            this.visibleRows1 = this.list1.filter(row => {
+            this.visibleRows1 = this.list1.filter((row, index) => {
+                if (index === 0) {
+                    return false
+                }
                 return row === this.target1 || row.name.includes(value) || row.id.toString().includes(value);
             });
         },
         keyword2(value) {
-            this.visibleRows2 = this.list2.filter(row => {
+            this.visibleRows2 = this.list2.filter((row, index) => {
+                if (index === 0) {
+                    return false
+                }
                 return row === this.target2 || row.name.includes(value) || row.tree.includes(value) || row.id.toString().includes(value);
             });
         },
@@ -97,37 +124,36 @@ export default {
             localStorage.setItem("debugBaseUrl", this.baseUrl);
 
             let url = "list1"
+
             try {
                 this.list1 = await this.$request.create(this.baseUrl).get(url)
+                this.target1 = null;
+                this.target2 = null;
+
+                this.keyword1 = "";
+                this.visibleRows1 = this.list1.slice(1);
+                if (this.visibleRows1.length) {
+                    this.$refs.table1.setCurrentRow(this.visibleRows1[0]);
+                }
             } catch (e) {
                 this.$logger.error(e);
                 this.$msg(`请求[${this.baseUrl}/${url}]出错`, "error");
-                return;
             }
 
-            this.target1 = null;
-            this.target2 = null;
 
-            this.keyword1 = "";
-            this.visibleRows1 = this.list1;
-            if (this.visibleRows1.length) {
-                this.$refs.table1.setCurrentRow(this.visibleRows1[0]);
-            }
         },
         async queryList2() {
             let url = `list2?id1=${this.target1.id}`;
             try {
                 this.list2 = await this.$request.create(this.baseUrl).get(url)
+                this.keyword2 = "";
+                this.visibleRows2 = this.list2.slice(1);
+                if (this.visibleRows2.length) {
+                    this.$refs.table2.setCurrentRow(this.visibleRows2[0]);
+                }
             } catch (e) {
                 this.$logger.error(e);
                 this.$msg(`请求[${this.baseUrl}/${url}]出错`, "error");
-                return;
-            }
-
-            this.keyword2 = "";
-            this.visibleRows2 = this.list2;
-            if (this.visibleRows2.length) {
-                this.$refs.table2.setCurrentRow(this.visibleRows2[0]);
             }
         },
         onTable1RowSelect(row) {
