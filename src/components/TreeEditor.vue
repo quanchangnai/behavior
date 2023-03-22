@@ -543,6 +543,18 @@ export default {
 
             let items = [];
 
+            if (this.isDebugging()) {
+                if (this.tree.breakPointCount > 0) {
+                    items.push({label: '删除所有断点', handler: this.$refs.debugBar.removeAllBreakpoint});
+                }
+                if (this.tree.usableBreakPointCount > 0) {
+                    items.push({label: '禁用所有断点', handler: this.$refs.debugBar.disableAllBreakpoint});
+                }
+                if (this.tree.breakPointCount - this.tree.usableBreakPointCount > 0) {
+                    items.push({label: '启用所有断点', handler: this.$refs.debugBar.enableAllBreakpoint});
+                }
+            }
+
             if ((this.tree.folded & 1) === 1) {//至少有一个节点是收起的
                 items.push({label: '展开全部节点', handler: () => this.foldAllNodes(false)});
             }
@@ -564,9 +576,7 @@ export default {
             items.push({
                 label: '删除行为树',
                 disabled: this.isDebugging(),
-                handler() {
-                    this.$events.$emit("delete-tree", this.tree);
-                }
+                handler: () => this.$events.$emit("delete-tree", this.tree)
             });
 
             this.$refs.boardMenu.show(event.clientX, event.clientY, this.$refs.center, items);

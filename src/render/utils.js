@@ -106,8 +106,10 @@ export default {
         tree.maxNodeId = 0;
         Vue.set(tree, "folded", 1);
         Vue.set(tree, "showNodeId", false);
+        Vue.set(tree, "debugging", false);
 
         this.visitSubtree(tree.root, (node, parent) => {
+            tree.folded |= node.folded ? 1 : 2;
             this.initNode(node, parent, tree);
         });
 
@@ -128,6 +130,7 @@ export default {
         Vue.set(node, "children", node.children || []);
         Vue.set(node, "childrenFolded", node.childrenFolded || false);
         Vue.set(node, "running", false);
+        Vue.set(node, "breakPointState", 0);
     },
     /**
      * 访问子树的所有节点

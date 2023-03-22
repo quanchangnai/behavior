@@ -13,127 +13,132 @@
                @paste.native="selected&&$emit('paste')"
                @contextmenu.stop.native="showMenu($event.clientX,$event.clientY)">
         <template>
-            <div ref="content"
-                 class="body"
-                 :class="contentClasses">
-                <div ref="contentHeader" class="content-header">
-                    <span>{{ node.template.name }}</span>
-                    <span v-if="node.tree&&node.tree.showNodeId">
+            <el-badge is-dot :hidden="hiddenBreakPoint" :type="breakPointType">
+                <div ref="content"
+                     class="body"
+                     :class="contentClasses">
+                    <div ref="contentHeader" class="content-header">
+                        <span>{{ node.template.name }}</span>
+                        <span v-if="node.tree&&node.tree.showNodeId">
                         ({{ node.id }})
                     </span>
-                    <el-tooltip v-if="node.folded && node.comment"
-                                effect="light"
-                                :disabled="!contentHeaderOverflow"
-                                :hide-after="1000"
-                                :content="node.comment"
-                                popper-class="tooltip"
-                                placement="bottom-start">
-                        <span>: {{ node.comment }}</span>
-                    </el-tooltip>
-                </div>
-                <div class="content-body"
-                     @wheel="onContentBodyWheel"
-                     :style="{'height':contentBodyHeight+'px'}"
-                     v-if="canFold()&&!node.folded">
-                    <el-form size="mini"
-                             :model="node"
-                             ref="form"
-                             label-width="auto"
-                             label-position="left"
-                             :hide-required-asterisk="true"
-                             @validate="onFormValidate">
-                        <el-form-item v-if="node.template.comment"
-                                      prop="comment"
-                                      :rules="{trigger: 'blur'}">
-                            <template #label>
-                                <span class="paramLabel">节点备注</span>
-                            </template>
-                            <el-tooltip effect="light"
-                                        :disabled="!commentTips"
-                                        :arrowOffset="15"
-                                        :content="node.comment"
-                                        popper-class="tooltip"
-                                        placement="right">
-                                <el-input ref="comment"
-                                          v-model="node.comment"
-                                          @dblclick.stop.native
-                                          @copy.stop.native
-                                          @paste.stop.native/>
-                            </el-tooltip>
-                        </el-form-item>
-                        <el-form-item v-for="param in node.template.params"
-                                      :key="param.name"
-                                      :rules="paramRules(param)"
-                                      :show-message="false"
-                                      :prop="'params.'+param.name">
-                            <template #label>
+                        <el-tooltip v-if="node.folded && node.comment"
+                                    effect="light"
+                                    :disabled="!contentHeaderOverflow"
+                                    :hide-after="1000"
+                                    :content="node.comment"
+                                    popper-class="tooltip"
+                                    placement="bottom-start">
+                            <span>: {{ node.comment }}</span>
+                        </el-tooltip>
+                    </div>
+                    <div class="content-body"
+                         @wheel="onContentBodyWheel"
+                         :style="{'height':contentBodyHeight+'px'}"
+                         v-if="canFold()&&!node.folded">
+                        <el-form size="mini"
+                                 :model="node"
+                                 ref="form"
+                                 label-width="auto"
+                                 label-position="left"
+                                 :hide-required-asterisk="true"
+                                 @validate="onFormValidate">
+                            <el-form-item v-if="node.template.comment"
+                                          prop="comment"
+                                          :rules="{trigger: 'blur'}">
+                                <template #label>
+                                    <span class="paramLabel">节点备注</span>
+                                </template>
                                 <el-tooltip effect="light"
-                                            :disabled="!paramLabelTips[param.name]"
+                                            :disabled="!commentTips"
                                             :arrowOffset="15"
-                                            :hide-after="1000"
+                                            :content="node.comment"
                                             popper-class="tooltip"
-                                            placement="bottom-start">
-                                    <template #content>
-                                        <span v-if="(paramLabelTips[param.name]&1)===1">{{ param.label }}<br></span>
-                                        <span v-if="(paramLabelTips[param.name]&2)===2">格式：{{ param.pattern }}</span>
-                                    </template>
-                                    <span :ref="'paramLabel-'+param.name"
-                                          class="paramLabel"
-                                          :style="paramLabelStyle(param.name)">
+                                            placement="right">
+                                    <el-input ref="comment"
+                                              v-model="node.comment"
+                                              @dblclick.stop.native
+                                              @copy.stop.native
+                                              @paste.stop.native/>
+                                </el-tooltip>
+                            </el-form-item>
+                            <el-form-item v-for="param in node.template.params"
+                                          :key="param.name"
+                                          :rules="paramRules(param)"
+                                          :show-message="false"
+                                          :prop="'params.'+param.name">
+                                <template #label>
+                                    <el-tooltip effect="light"
+                                                :disabled="!paramLabelTips[param.name]"
+                                                :arrowOffset="15"
+                                                :hide-after="1000"
+                                                popper-class="tooltip"
+                                                placement="bottom-start">
+                                        <template #content>
+                                            <span v-if="(paramLabelTips[param.name]&1)===1">{{ param.label }}<br></span>
+                                            <span
+                                                v-if="(paramLabelTips[param.name]&2)===2">格式：{{
+                                                    param.pattern
+                                                }}</span>
+                                        </template>
+                                        <span :ref="'paramLabel-'+param.name"
+                                              class="paramLabel"
+                                              :style="paramLabelStyle(param.name)">
                                         {{ param.label || param.name }}
                                     </span>
+                                    </el-tooltip>
+                                </template>
+                                <el-tooltip effect="light"
+                                            :disabled="!paramValueTips[param.name]"
+                                            popper-class="tooltip"
+                                            placement="right">
+                                    <template #content>{{ node.params[param.name] }}</template>
+                                    <el-radio-group v-if="param.type==='boolean' && !param.options"
+                                                    :ref="'paramValue-'+param.name"
+                                                    v-model="node.params[param.name]"
+                                                    @dblclick.stop.native>
+                                        <el-radio :label="true">是</el-radio>
+                                        <el-radio :label="false">否</el-radio>
+                                    </el-radio-group>
+                                    <!--suppress JSUnresolvedVariable -->
+                                    <el-select v-else-if="param.options"
+                                               :ref="'paramValue-'+param.name"
+                                               v-model="node.params[param.name]"
+                                               :multiple="Array.isArray(param.default)"
+                                               :class="paramSelectClass(param.name)"
+                                               @dblclick.stop.native
+                                               @copy.stop.native
+                                               @paste.stop.native
+                                               @change="onParamSelectChange"
+                                               @visible-change="onParamDropdownVisibleChange('paramValue-'+param.name,$event)"
+                                               popper-class="node-param-select-dropdown">
+                                        <el-option v-for="(option,i) in paramOptions(param.options)"
+                                                   :key="param.name+'-option-'+i"
+                                                   :label="option.label"
+                                                   :value="option.value"/>
+                                    </el-select>
+                                    <!--suppress JSUnresolvedVariable -->
+                                    <el-input-number v-else-if="param.type==='int' || param.type==='float'"
+                                                     :ref="'paramValue-'+param.name"
+                                                     v-model="node.params[param.name]"
+                                                     @dblclick.stop.native
+                                                     @copy.stop.native
+                                                     @paste.stop.native
+                                                     :precision="param.type==='float'?2:0"
+                                                     :min="typeof param.min==='number'?param.min:-Infinity"
+                                                     :max="typeof param.max==='number'?param.max:Infinity"/>
+                                    <el-input v-else-if="param.type==='string'"
+                                              :ref="'paramValue-'+param.name"
+                                              v-model="node.params[param.name]"
+                                              @dblclick.stop.native
+                                              @copy.stop.native
+                                              @paste.stop.native/>
                                 </el-tooltip>
-                            </template>
-                            <el-tooltip effect="light"
-                                        :disabled="!paramValueTips[param.name]"
-                                        popper-class="tooltip"
-                                        placement="right">
-                                <template #content>{{ node.params[param.name] }}</template>
-                                <el-radio-group v-if="param.type==='boolean' && !param.options"
-                                                :ref="'paramValue-'+param.name"
-                                                v-model="node.params[param.name]"
-                                                @dblclick.stop.native>
-                                    <el-radio :label="true">是</el-radio>
-                                    <el-radio :label="false">否</el-radio>
-                                </el-radio-group>
-                                <!--suppress JSUnresolvedVariable -->
-                                <el-select v-else-if="param.options"
-                                           :ref="'paramValue-'+param.name"
-                                           v-model="node.params[param.name]"
-                                           :multiple="Array.isArray(param.default)"
-                                           :class="paramSelectClass(param.name)"
-                                           @dblclick.stop.native
-                                           @copy.stop.native
-                                           @paste.stop.native
-                                           @change="onParamSelectChange"
-                                           @visible-change="onParamDropdownVisibleChange('paramValue-'+param.name,$event)"
-                                           popper-class="node-param-select-dropdown">
-                                    <el-option v-for="(option,i) in paramOptions(param.options)"
-                                               :key="param.name+'-option-'+i"
-                                               :label="option.label"
-                                               :value="option.value"/>
-                                </el-select>
-                                <!--suppress JSUnresolvedVariable -->
-                                <el-input-number v-else-if="param.type==='int' || param.type==='float'"
-                                                 :ref="'paramValue-'+param.name"
-                                                 v-model="node.params[param.name]"
-                                                 @dblclick.stop.native
-                                                 @copy.stop.native
-                                                 @paste.stop.native
-                                                 :precision="param.type==='float'?2:0"
-                                                 :min="typeof param.min==='number'?param.min:-Infinity"
-                                                 :max="typeof param.max==='number'?param.max:Infinity"/>
-                                <el-input v-else-if="param.type==='string'"
-                                          :ref="'paramValue-'+param.name"
-                                          v-model="node.params[param.name]"
-                                          @dblclick.stop.native
-                                          @copy.stop.native
-                                          @paste.stop.native/>
-                            </el-tooltip>
-                        </el-form-item>
-                    </el-form>
+                            </el-form-item>
+                        </el-form>
+                    </div>
                 </div>
-            </div>
+            </el-badge>
             <div v-if="canFold()"
                  @mousedown.stop
                  @click="foldSelf"
@@ -219,6 +224,14 @@ export default {
         },
         'node.running': function (running) {
             this.contentClasses.running = running;
+        },
+    },
+    computed: {
+        hiddenBreakPoint: function () {
+            return !this.node.tree.debugging || this.node.breakPointState === 0;
+        },
+        breakPointType: function () {
+            return this.node.breakPointState === 1 ? "danger" : "info";
         }
     },
     methods: {
@@ -267,6 +280,55 @@ export default {
         },
         showMenu(x, y) {
             let items = [];
+            let debugging = this.node.tree.debugging;
+
+            if (debugging) {
+                if (this.node.breakPointState === 0) {
+                    items.push({
+                        label: "添加断点",
+                        handler: () => {
+                            if (this.node.breakPointState === 0) {
+                                this.node.breakPointState = 1;
+                                this.node.tree.breakPointCount++;
+                                this.node.tree.usableBreakPointCount++;
+                            }
+                        }
+                    });
+                }
+                if (this.node.breakPointState !== 0) {
+                    items.push({
+                        label: "删除断点",
+                        handler: () => {
+                            if (this.node.breakPointState !== 0) {
+                                this.node.breakPointState = 0;
+                                this.node.tree.breakPointCount--;
+                            }
+                        }
+                    });
+                }
+                if (this.node.breakPointState > 0) {
+                    items.push({
+                        label: "禁用断点",
+                        handler: () => {
+                            if (this.node.breakPointState > 0) {
+                                this.node.breakPointState = -1;
+                                this.node.tree.usableBreakPointCount--;
+                            }
+                        }
+                    });
+                }
+                if (this.node.breakPointState < 0) {
+                    items.push({
+                        label: "启用断点",
+                        handler: () => {
+                            if (this.node.breakPointState < 0) {
+                                this.node.breakPointState = 1;
+                                this.node.tree.usableBreakPointCount++;
+                            }
+                        }
+                    });
+                }
+            }
 
             if (this.canFold()) {
                 items.push({
@@ -283,7 +345,6 @@ export default {
                 });
             }
 
-            let debugging = this.node.tree.debugging;
 
             items.push({
                 label: "剪切子树",

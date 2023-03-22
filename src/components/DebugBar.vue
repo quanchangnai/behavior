@@ -8,7 +8,7 @@
                     popper-class="tooltip"
                     placement="bottom-start"
                     :content="tool.tip">
-            <span :class="tool.icon" @click="tool.handle"/>
+            <span :class="tool.classes" @click="tool.handle"/>
         </el-tooltip>
         <debug-selector ref="debugSelector" @select="onSelectTarget"/>
     </div>
@@ -35,26 +35,37 @@ export default {
     },
     created() {
         ipcRenderer.on("toggle-debug", this.toggleDebug);
-        ipcRenderer.on("next-step", this.nextStep);
-        ipcRenderer.on("next-frame", this.nextFrame);
+        ipcRenderer.on("next-step", this.tryNextStep);
+        ipcRenderer.on("next-frame", this.tryNextFrame);
         ipcRenderer.on("play-pause", this.playPause);
     },
     computed: {
         tools() {
             return [
-                {tip: "下一步", icon: "el-icon-arrow-right", handle: this.nextStep},
-                {tip: "下一帧", icon: "el-icon-d-arrow-right", handle: this.nextFrame},
+                {
+                    tip: "下一步",
+                    classes: ["el-icon-arrow-right", this.playing ? "disabled" : "enabled"],
+                    handle: this.tryNextStep
+                },
+                {
+                    tip: "下一帧",
+                    classes: ["el-icon-d-arrow-right", this.playing ? "disabled" : "enabled"],
+                    handle: this.tryNextFrame
+                },
                 {
                     tip: this.playing ? '暂停' : '播放',
-                    icon: this.playing ? 'el-icon-video-pause' : 'el-icon-video-play',
+                    classes: this.playing ? 'el-icon-video-pause' : 'el-icon-video-play',
                     handle: this.playPause
                 },
-                {tip: "停止调试", icon: "el-icon-circle-close", handle: this.stopDebug},
-                {tip: "选择调试目标", icon: "el-icon-setting", handle: () => this.showDebugSelector()},
+                {tip: "停止调试", classes: "el-icon-circle-close", handle: this.stopDebug},
+                {tip: "选择调试目标", classes: "el-icon-setting", handle: () => this.showDebugSelector()},
             ]
         }
     },
     methods: {
+        showDebugSelector(show = true) {
+            this.$refs.debugSelector.visible = show;
+        },
         toggleDebug() {
             if (this.isDebugging()) {
                 this.stopDebug();
@@ -68,13 +79,27 @@ export default {
             }
 
             this.nodes = new Map();
-            this.$utils.visitSubtree(this.tree.root, node => this.nodes.set(node.id, node));
-            this.step = 0;
             this.tree.debugging = true;
+            this.tree.breakPointCount = 0;
+            this.tree.usableBreakPointCount = 0;
+
+            this.$utils.visitSubtree(this.tree.root, node => {
+                this.nodes.set(node.id, node);
+                if (node.breakPointState !== 0) {
+                    node.tree.breakPointCount++;
+                    if (node.breakPointState > 0) {
+                        node.tree.usableBreakPointCount++;
+                    }
+                }
+            });
+
+            this.$forceUpdate();
 
             await this.fetchRecords();
-            this.setNodeRunning(true);
-            this.$forceUpdate();
+
+            this.step = -1;
+            this.playing = true;
+            await this.nextStep();
         },
         stopDebug() {
             if (!this.isDebugging()) {
@@ -146,6 +171,16 @@ export default {
                 this.playing = false;
             }
         },
+        tryNextFrame() {
+            if (!this.playing) {
+                this.nextFrame();
+            }
+        },
+        tryNextStep() {
+            if (!this.playing) {
+                this.nextStep();
+            }
+        },
         async nextFrame() {
             if (!this.isDebugging()) {
                 return;
@@ -169,11 +204,18 @@ export default {
             }
 
             if (this.step < this.records[0].length - 1) {
-                this.setNodeRunning(false);
+                if (this.step >= 0) {
+                    this.setNodeRunning(false);
+                }
                 this.step++;
                 this.setNodeRunning(true);
             } else {
                 await this.nextFrame();
+            }
+
+            let nodeId = this.records[0][this.step].nodeId;
+            if (this.nodes.get(nodeId).breakPointState === 1) {
+                this.playing = false;
             }
 
             if (this.playing) {
@@ -192,8 +234,28 @@ export default {
                 this.nextStep();
             }
         },
-        showDebugSelector(show = true) {
-            this.$refs.debugSelector.visible = show;
+        removeAllBreakpoint() {
+            this.tree.breakPointCount = 0;
+            this.tree.usableBreakPointCount = 0;
+            this.$utils.visitSubtree(this.tree.root, node => {
+                node.breakPointState = 0
+            });
+        },
+        disableAllBreakpoint() {
+            this.tree.usableBreakPointCount = 0;
+            this.$utils.visitSubtree(this.tree.root, node => {
+                if (node.breakPointState > 0) {
+                    node.breakPointState = -1;
+                }
+            });
+        },
+        enableAllBreakpoint() {
+            this.tree.usableBreakPointCount = this.tree.breakPointCount;
+            this.$utils.visitSubtree(this.tree.root, node => {
+                if (node.breakPointState < 0) {
+                    node.breakPointState = 1;
+                }
+            });
         },
     }
 }
@@ -214,5 +276,9 @@ export default {
 
 .debug-bar span:hover {
     color: #409EFF;
+}
+
+.debug-bar .disabled {
+    color: #adabab;
 }
 </style>

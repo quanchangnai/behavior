@@ -21,15 +21,13 @@
                               highlight-current-row
                               @current-change="onTable1RowSelect">
                         <template v-if="list1[0]">
-                            <el-table-column v-if="list1[0]"
-                                             prop="id"
-                                             :label="list1[0].id.toString()"
+                            <el-table-column prop="id"
                                              min-width="50"
+                                             :label="list1[0].id.toString()"
                                              :show-overflow-tooltip="true"/>
-                            <el-table-column v-if="list1[0]"
-                                             prop="name"
-                                             :label="list1[0].name.toString()"
+                            <el-table-column prop="name"
                                              min-width="80"
+                                             :label="list1[0].name.toString()"
                                              :show-overflow-tooltip="true"/>
                         </template>
                     </el-table>
@@ -50,20 +48,19 @@
                               @current-change="onTable2RowSelect">
                         <template v-if="list2[0]">
                             <el-table-column prop="id"
-                                             :label="list2[0].id.toString()"
                                              min-width="50"
+                                             :label="list2[0].id.toString()"
                                              :show-overflow-tooltip="true"/>
                             <el-table-column prop="name"
-                                             :label="list2[0].name.toString()"
                                              min-width="80"
+                                             :label="list2[0].name.toString()"
                                              :show-overflow-tooltip="true"/>
                             <el-table-column prop="tree"
-                                             :label="list2[0].tree.toString()"
                                              min-width="70"
+                                             :label="list2[0].tree.toString()"
                                              :show-overflow-tooltip="true"/>
 
                         </template>
-
                     </el-table>
                 </el-scrollbar>
             </div>
@@ -102,7 +99,7 @@ export default {
                 if (index === 0) {
                     return false
                 }
-                return row === this.target1 || row.name.includes(value) || row.id.toString().includes(value);
+                return row === this.target1 || row.id?.toString()?.includes(value) || row.name?.toString()?.includes(value);
             });
         },
         keyword2(value) {
@@ -110,7 +107,7 @@ export default {
                 if (index === 0) {
                     return false
                 }
-                return row === this.target2 || row.name.includes(value) || row.tree.includes(value) || row.id.toString().includes(value);
+                return row === this.target2 || row.id?.toString()?.includes(value) || row.name?.toString()?.includes(value) || row.tree?.toString()?.includes(value);
             });
         },
         visible(value) {
@@ -181,7 +178,7 @@ export default {
                     this.visible = false;
                     this.$emit("select", this.baseUrl, this.target1, this.target2);
                 } else {
-                    this.$msg(`工作区中不存在行为树[${this.target2.tree}]`, "warning");
+                    this.$msg(`工作区中不存在行为树[${this.target2.tree}]`, "error");
                 }
             });
         },

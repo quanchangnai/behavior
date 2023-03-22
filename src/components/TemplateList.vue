@@ -35,10 +35,13 @@
                 <el-table-column type="expand"
                                  width="26px"
                                  #default="{row:template}">
-                    <div class="template-expand">
+                    <div class="template-expand"
+                         draggable="true"
+                         @dragstart="selectTemplate($event,template)">
                         <el-tooltip effect="light"
                                     :arrowOffset="1"
-                                    :hide-after="600"
+                                    :open-delay="1000"
+                                    :hide-after="2000"
                                     popper-class="tooltip"
                                     placement="bottom-start"
                                     content="模板ID">
@@ -49,7 +52,8 @@
                         <el-tooltip v-if="template.type"
                                     effect="light"
                                     :arrowOffset="1"
-                                    :hide-after="600"
+                                    :open-delay="1000"
+                                    :hide-after="2000"
                                     popper-class="tooltip"
                                     placement="bottom-start"
                                     content="模板类型">
@@ -60,7 +64,8 @@
                         <el-tooltip v-if="template.group"
                                     effect="light"
                                     :arrowOffset="1"
-                                    :hide-after="600"
+                                    :open-delay="1000"
+                                    :hide-after="2000"
                                     placement="bottom-start"
                                     popper-class="tooltip"
                                     content="模板组">
@@ -68,13 +73,16 @@
                                 {{ mappedTemplateGroups.get(template.group).name }}
                             </el-tag>
                         </el-tooltip>
-                        <div style="margin-top: 8px;user-select: text">
-                            {{ template.desc }}
+                        <div style="margin-top: 8px;"
+                             draggable="true"
+                             @dragstart.stop.prevent>
+                            <div style="user-select: text">
+                                {{ template.desc }}
+                            </div>
                         </div>
                     </div>
                 </el-table-column>
-                <el-table-column :show-overflow-tooltip="true"
-                                 #default="{row:template}">
+                <el-table-column :show-overflow-tooltip="true" #default="{row:template}">
                     <div :ref="'templateName-'+template.id"
                          class="template-name"
                          draggable="true"
