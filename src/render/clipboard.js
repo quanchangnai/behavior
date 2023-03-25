@@ -9,6 +9,7 @@ export default {
         this.tree = tree;
         this.snapshots = [];
         this.snapshotIndex = -1;
+        this.selectedNodes = new Map();
 
         if (tree) {
             let jsonTree = JSON.stringify(utils.buildTree(tree));
@@ -147,6 +148,7 @@ export default {
         }
 
         utils.saveTree(this.tree);
+
         return pastedCount > 0;
     },
     async deleteSubtrees(cut = false) {
@@ -198,6 +200,7 @@ export default {
         }
 
         utils.saveTree(this.tree);
+
         return deletedNodeIds;
     },
     deleteNodes(cut = false) {
@@ -205,6 +208,7 @@ export default {
             return;
         }
 
+        //待删除节点的子节点列表
         let deleteNodeChildrenMap = new Map();
         let pushSelectedChildren = (node, children) => {
             for (let child of node.children) {
@@ -244,6 +248,9 @@ export default {
             return;
         }
 
+        //待删除节点的父节点对应的新子节点列表
+        let parentChildrenMap = new Map();
+
         utils.visitSubtree(this.tree.root, node => {
             if (!node.parent) {
                 return;
@@ -252,16 +259,24 @@ export default {
                 deletedNodes.add(node);
                 return;
             }
-            let nodeChildren = deleteNodeChildrenMap.get(node);
-            if (nodeChildren) {
+            let deleteNodeChildren = deleteNodeChildrenMap.get(node);
+            if (deleteNodeChildren) {
                 deletedNodes.add(node);
-                let index = node.parent.children.indexOf(node);
-                node.parent.children.splice(index, 1, ...nodeChildren);
-                for (let selectedChild of nodeChildren) {
-                    selectedChild.parent = node.parent;
+                let parentChildren = parentChildrenMap.get(node.parent);
+                if (!parentChildren) {
+                    parentChildren = [...node.parent.children];
+                    parentChildrenMap.set(node.parent, parentChildren)
+                }
+                let index = parentChildren.indexOf(node);
+                //把自己从父节点上删除，并把自己的孩子节点挂在父节点上
+                parentChildren.splice(index, 1, ...deleteNodeChildren);
+                for (let deleteNodeChild of deleteNodeChildren) {
+                    deleteNodeChild.parent = node.parent;
                 }
             }
         });
+
+        parentChildrenMap.forEach((value, key) => key.children = value);
 
         let deletedNodeIds = new Set();
 
@@ -283,6 +298,7 @@ export default {
         }
 
         utils.saveTree(this.tree);
+
         return deletedNodeIds;
     }
 }
