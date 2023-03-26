@@ -1,7 +1,8 @@
 <template>
     <div ref="body"
          class="draggable"
-         :style="{left: left + 'px', top: top + 'px'}"
+         :class="{moving:state===1}"
+         :style="{left:left+'px',top:top+'px'}"
          @mousedown.left="onMouseDown"
          @dragstart.prevent>
         <slot/>
@@ -38,7 +39,6 @@ export default {
         return {
             left: this.x,
             top: this.y,
-            cursor: null,
             state: -1//-1:没有被拖拽,0:鼠标按下准备拖拽,1:正在被拖拽
         }
     },
@@ -80,10 +80,10 @@ export default {
                 return;
             }
 
-            this.state = 0;
             window.dragging = true;
             window.addEventListener("mousemove", this.onMouseMove);
             window.addEventListener("mouseup", this.onMouseUp, {once: true});
+            this.state = 0;
         },
         onMouseMove(event) {
             if (this.state < 0) {
@@ -99,14 +99,11 @@ export default {
 
             if (this.state === 0) {
                 this.state = 1;
-                this.cursor = getComputedStyle(this.$el).cursor;
-                this.$refs.body.style.cursor = "move";
                 this.$emit("drag-start", this.dragEvent(event));
             }
 
-            //devicePixelRatio:屏幕缩放比例
-            this.left = this.left + event.movementX / (this.scale * devicePixelRatio);
-            this.top = this.top + event.movementY / (this.scale * devicePixelRatio);
+            this.left = this.left + event.movementX / this.scale;
+            this.top = this.top + event.movementY / this.scale;
             this.$emit("dragging", this.dragEvent(event));
         },
         onMouseUp(event) {
@@ -116,10 +113,6 @@ export default {
 
             try {
                 window.removeEventListener("mousemove", this.onMouseMove);
-                if (this.cursor && this.$refs.body) {
-                    this.$refs.body.style.cursor = this.cursor;
-                    this.cursor = null;
-                }
                 if (this.state > 0) {
                     this.$emit("drag-end", this.dragEvent(event));
                 }
@@ -136,6 +129,10 @@ export default {
 .draggable {
     position: absolute;
     cursor: default;
+}
+
+.draggable.moving {
+    cursor: move;
 }
 
 >>> :not(input)::selection {

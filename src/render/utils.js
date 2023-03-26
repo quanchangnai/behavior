@@ -117,18 +117,21 @@ export default {
     },
     initNode(node, parent, tree) {
         node.parent = parent;
-        node.tree = tree;
-        tree.maxNodeId = Math.max(tree.maxNodeId, node.id);
-        Vue.set(tree, "childrenFolded", tree.childrenFolded || node.childrenFolded);
+
+        if (tree) {
+            node.tree = tree;
+            tree.maxNodeId = Math.max(tree.maxNodeId, node.id);
+            Vue.set(tree, "childrenFolded", tree.childrenFolded || node.childrenFolded);
+        }
 
         Vue.set(node, "x", 0);
         Vue.set(node, "y", 0);
         Vue.set(node, "z", 1);
 
         Vue.set(node, "params", node.params || []);
-        Vue.set(node, "folded", node.folded || node.folded === undefined);
         Vue.set(node, "children", node.children || []);
         Vue.set(node, "childrenFolded", node.childrenFolded || false);
+        Vue.set(node, "selected", false);
         Vue.set(node, "running", false);
         Vue.set(node, "breakPointState", 0);
     },
@@ -347,7 +350,7 @@ export default {
         this.saveTree(node.tree);
     },
     buildNode(node) {
-        let result = {id: node.id, tid: node.tid, folded: node.folded};
+        let result = {id: node.id, tid: node.tid};
         if (node.template.comment) {
             result.comment = node.comment;
         }

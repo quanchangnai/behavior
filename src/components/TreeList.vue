@@ -123,11 +123,10 @@ export default {
                 this.$utils.initTree(tree)
             }
 
-            this.$emit("select-tree", tree);
-            ipcRenderer.send("select-tree", tree?.name);
+            this.$emit("selected-tree", tree);
+            ipcRenderer.send("selected-tree", tree?.name);
         },
         onContextMenu(event, tree) {
-            event.stopPropagation();
             tree = tree || this.selectedTree;
 
             let disabled = tree == null || tree.debugging;

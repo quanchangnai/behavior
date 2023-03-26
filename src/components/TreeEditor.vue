@@ -4,7 +4,7 @@
             <tree-list v-if="config"
                        ref="treeList"
                        :archetypes="config.archetypes"
-                       @select-tree="onSelectTree"/>
+                       @selected-tree="onSelectedTree"/>
         </div>
         <div class="center"
              ref="center"
@@ -15,19 +15,19 @@
              @keyup.control="onCtrlKeyUp"
              @wheel.exact="onCenterWheel"
              @dblclick="resetBoard"
-             :style="{left:(leftWidth+1)+'px',right:rightWidth+'px'}">
+             :style="{left:leftWidth+'px',right:rightWidth+'px'}">
             <draggable class="board"
                        ref="board"
                        :x="boardX"
                        :y="boardY"
+                       :style="boardStyle"
                        @drag-start="hideNodeParamDropdown"
                        @drag-end="onBoardDragEnd"
                        @contextmenu.native="showBoardMenu"
                        @mouseup.native="onBoardMouseUp"
                        @cut.native="deleteSubtrees(true)"
                        @copy.native="copySubtrees"
-                       @wheel.ctrl.exact.native="onBoardWheel"
-                       :style="{width:boardWidth+'px',height:boardHeight+'px',transform:`scale(${boardScale},${boardScale})`}">
+                       @wheel.ctrl.exact.native="onBoardWheel">
                 <canvas ref="canvas"/>
                 <tree-node v-for="node in visibleNodes"
                            :node="node"
@@ -36,6 +36,7 @@
                            @drag-start="onNodeDragStart(node)"
                            @dragging="onNodeDragging($event,node)"
                            @drag-end="onNodeDragEnd(node)"
+                           @selected="onSelectedNode"
                            @menu="showNodeMenu"
                            @cut-subtrees="deleteSubtrees(true)"
                            @cut-nodes="deleteNodes(true)"
@@ -45,7 +46,6 @@
                            @delete-subtrees="deleteSubtrees"
                            @delete-nodes="deleteNodes"
                            @resize="drawTree"
-                           @fold="drawTree"
                            @children-fold="drawTree"
                            @mouseenter.native="mouseoverNode=node"
                            @mouseleave.native="mouseoverNode=null"
@@ -53,6 +53,7 @@
                            @param-dropdown-show="onNodeParamDropdownShow"/>
             </draggable>
             <debug-bar ref="debugBar"/>
+            <tree-node-detail v-if="selectedNode" :node="selectedNode"/>
         </div>
         <div class="right" :style="{width:rightWidth+'px'}">
             <template-list v-if="config"
@@ -74,14 +75,15 @@
 </template>
 
 <script>
-import Draggable from "./Draggable";
-import TreeList from "./TreeList";
-import TreeNode from "./TreeNode";
-import TemplateList from "./TemplateList";
-import ContextMenu from "./ContextMenu";
 import {ipcRenderer} from 'electron'
 import clipboard from "@/render/clipboard";
+import Draggable from "./Draggable";
+import ContextMenu from "./ContextMenu";
 import DebugBar from "@/components/DebugBar.vue";
+import TreeList from "./TreeList";
+import TemplateList from "./TemplateList";
+import TreeNode from "./TreeNode";
+import TreeNodeDetail from "@/components/TreeNodeDetail.vue";
 
 const board_edge_space = 100;//画板边缘空间
 const left_width = 220;//左侧行为树列表宽度
@@ -89,7 +91,7 @@ const right_width = 250;//右侧节点模板宽度
 
 export default {
     name: "TreeEditor",
-    components: {DebugBar, Draggable, TreeNode, TreeList, TemplateList, ContextMenu},
+    components: {Draggable, ContextMenu, DebugBar, TreeList, TemplateList, TreeNode, TreeNodeDetail},
     data() {
         return {
             config: null,//编辑器配置
@@ -97,6 +99,7 @@ export default {
             creatingNode: null,//正在新建的节点
             draggingNode: null,
             mouseoverNode: null,
+            selectedNode: null,
             boardX: 0,
             boardY: 0,
             boardWidth: 0,
@@ -125,7 +128,6 @@ export default {
             this.resetBoardPosition();
         });
 
-        ipcRenderer.on("fold-all-nodes", (e, fold) => this.foldAllNodes(fold));
         ipcRenderer.on("undo", this.undo);
         ipcRenderer.on("redo", this.redo);
         ipcRenderer.on("cut-nodes", () => this.deleteNodes(true));
@@ -137,10 +139,14 @@ export default {
         this.resizeObserver = new ResizeObserver(this.drawTree);
         this.resizeObserver.observe(this.$refs.center);
     },
-    destroyed() {
-        this.resizeObserver.disconnect();
-    },
     computed: {
+        boardStyle() {
+            return {
+                width: this.boardWidth + 'px',
+                height: this.boardHeight + 'px',
+                transform: `scale(${this.boardScale},${this.boardScale})`
+            };
+        },
         visibleNodes() {
             let nodes = [];
             if (!this.tree) {
@@ -156,10 +162,10 @@ export default {
         },
     },
     methods: {
-        onSelectTree(tree) {
+        onSelectedTree(tree) {
             this.tree = tree;
-            this.$refs.debugBar.onSelectTree(tree);
-            clipboard.onSelectTree(tree);
+            this.$refs.debugBar.onSelectedTree(tree);
+            clipboard.onSelectedTree(tree);
             this.resetBoard();
             this.drawTree();
         },
@@ -291,6 +297,13 @@ export default {
         onNodeDragEnd() {
             this.draggingNode = null;
             this.drawTree();
+        },
+        onSelectedNode(node) {
+            if (node.selected) {
+                this.selectedNode = node;
+            } else if (this.selectedNode === node) {
+                this.selectedNode = null;
+            }
         },
         onCtrlKeyDown() {
             let draggingNode = this.draggingNode || this.creatingNode;
@@ -478,6 +491,7 @@ export default {
 
             this.$utils.saveTree(this.tree);
             await this.drawTree();
+            clipboard.selectNode(node);
         },
         async onSelectTemplate(event) {
             if (this.isDebugging()) {
@@ -496,16 +510,13 @@ export default {
                 comment: "",
                 tid: template.id,
                 template,
-                x: event.x - this.$utils.getOffsetX(this.$el),
-                y: event.y - this.$utils.getOffsetY(this.$el),
-                z: 1,
-                folded: true,
-                params: {},
-                children: [],
-                childrenFolded: false,
                 creating: true,
                 tree: this.tree
             };
+
+            this.$utils.initNode(node)
+            node.x = event.x - this.$utils.getOffsetX(this.$el);
+            node.y = event.y - this.$utils.getOffsetY(this.$el);
 
             if (template.params) {
                 for (let param of template.params) {
@@ -555,21 +566,13 @@ export default {
                 }
             }
 
-            if ((this.tree.folded & 1) === 1) {//至少有一个节点是收起的
-                items.push({label: '展开全部节点', handler: () => this.foldAllNodes(false)});
-            }
-
-            if ((this.tree.folded & 2) === 2) {//至少有一个节点是展开的
-                items.push({label: '收起全部节点', handler: () => this.foldAllNodes(true)});
-            }
-
             if (this.tree.childrenFolded) {
                 items.push({label: '展开全部子树', handler: this.unfoldAllNodeChildren});
             }
 
             let showNodeId = this.tree.showNodeId;
             items.push({
-                label: (showNodeId ? '隐藏' : '显示') + '节点ID',
+                label: showNodeId ? '隐藏节点ID' : '显示节点ID',
                 handler: () => this.tree.showNodeId = !showNodeId
             });
 
@@ -581,24 +584,12 @@ export default {
 
             this.$refs.boardMenu.show(event.clientX, event.clientY, this.$refs.center, items);
         },
-        foldAllNodes(fold) {
-            if (!this.tree) {
-                return;
-            }
-
-            this.tree.folded = fold ? 1 : 2;
-            this.$utils.visitSubtree(this.tree.root, node => {
-                node.folded = fold;
-            });
-
-            this.hideNodeParamDropdown();
-            this.drawTree();
-        },
         unfoldAllNodeChildren() {
             this.tree.childrenFolded = false;
             this.$utils.visitSubtree(this.tree.root, node => {
                 node.childrenFolded = false
             });
+            this.$utils.saveTree(this.tree);
             this.drawTree();
         },
         redo() {
@@ -645,6 +636,10 @@ export default {
     box-sizing: border-box;
 }
 
+.left {
+    border-right: solid #ebeef5 1px;
+}
+
 .center {
     overflow: hidden;
 }
@@ -655,6 +650,8 @@ export default {
 
 .right {
     right: 0;
+    border-left: solid #ebeef5 1px;
+
 }
 
 .board {

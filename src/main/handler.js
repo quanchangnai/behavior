@@ -84,7 +84,7 @@ ipcMain.handle("rename-tree", async (event, oldTreeName, newTreeName) => {
     await fs.promises.rename(oldTreeFile, newTreeFile);
 });
 
-ipcMain.on("select-tree", (event, treeName) => {
+ipcMain.on("selected-tree", (event, treeName) => {
     manager.selectedTree = treeName;
 });
 

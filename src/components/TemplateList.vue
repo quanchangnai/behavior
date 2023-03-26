@@ -199,6 +199,14 @@ export default {
                         template.comment = template.type.comment;
                     }
                 }
+
+                if (template.params){
+                    for (let param of template.params) {
+                        if (param.type === 'boolean' && !param.options) {
+                            param.options = [{label: "是", value: true}, {label: "否", value: false}]
+                        }
+                    }
+                }
             }
 
             if (this.templateTypes) {
@@ -320,7 +328,6 @@ export default {
     height: 100%;
     width: 100%;
     user-select: none;
-    border-left: solid #ebeef5 1px;
 }
 
 .search {

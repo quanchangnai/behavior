@@ -115,7 +115,7 @@ export default {
             this.showDebugSelector(false);
             this.$forceUpdate();
         },
-        onSelectTree(tree) {
+        onSelectedTree(tree) {
             if (this.isDebugging() && this.tree !== tree) {
                 this.stopDebug();
             }
@@ -237,9 +237,7 @@ export default {
         removeAllBreakpoint() {
             this.tree.breakPointCount = 0;
             this.tree.usableBreakPointCount = 0;
-            this.$utils.visitSubtree(this.tree.root, node => {
-                node.breakPointState = 0
-            });
+            this.$utils.visitSubtree(this.tree.root, node => node.breakPointState = 0);
         },
         disableAllBreakpoint() {
             this.tree.usableBreakPointCount = 0;

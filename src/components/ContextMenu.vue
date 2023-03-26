@@ -139,9 +139,7 @@ export default {
             }
 
             this.hide(event, true);
-            if (item.handler != null) {
-                item.handler.call(item);
-            }
+            item.handler?.call(item);
         }
     }
 }

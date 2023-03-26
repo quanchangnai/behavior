@@ -163,20 +163,6 @@ function buildMenu() {
                     }
                 },
                 {
-                    label: "展开全部节点",
-                    click(item, win) {
-                        win.webContents.send("fold-all-nodes", false);
-                    },
-                    accelerator: "CmdOrCtrl+Down"
-                },
-                {
-                    label: "收起全部节点",
-                    accelerator: "CmdOrCtrl+Up",
-                    click(item, win) {
-                        win.webContents.send("fold-all-nodes", true);
-                    }
-                },
-                {
                     label: "开发者工具",
                     role: "toggleDevTools",
                     accelerator: "F12",

@@ -575,6 +575,7 @@ function validateConfigLogic(config) {
                 }
             }
         }
+
         if (template.childrenIds) {
             for (const childrenId of template.childrenIds) {
                 if (!mappedTemplates.has(childrenId)) {
