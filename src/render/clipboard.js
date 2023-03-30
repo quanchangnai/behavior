@@ -71,8 +71,8 @@ export default {
             }
         }
     },
-    selectNode(node, single = true) {
-        node.selected = true;
+    selectNode(node, selected = true, single = true) {
+        node.selected = selected;
         if (single) {
             let selectedNodes = [...this.selectedNodes.values()];
             for (let selectedNode of selectedNodes) {

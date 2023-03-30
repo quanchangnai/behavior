@@ -47,7 +47,7 @@ export default {
             contentClasses: {
                 selected: this.node.selected,
                 running: this.node.running,
-                error: false
+                error: this.node.errorParams.size > 0
             },
             menuShown: false,
             pointerEvents: "auto",
@@ -76,6 +76,9 @@ export default {
         },
         'node.running'(running) {
             this.contentClasses.running = running;
+        },
+        'node.errorParams'() {
+            this.contentClasses.error = this.node.errorParams.size > 0;
         },
     },
     computed: {
@@ -115,7 +118,7 @@ export default {
             if (event.button === 0 && event.ctrlKey) {
                 this.node.selected = !this.node.selected;
             } else {
-                clipboard.selectNode(this.node, !event.ctrlKey);
+                clipboard.selectNode(this.node, true, !event.ctrlKey);
             }
         },
         showMenu(x, y) {

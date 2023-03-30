@@ -3,19 +3,19 @@
         <div class="tree-node-header">
             <span>{{ node.template.name }}</span>
             <span v-if="node.tree&&node.tree.showNodeId">({{ node.id }})</span>
+            <span id="close-icon" class="el-icon-close" @click="close"/>
         </div>
         <el-form ref="form"
-                 :inline="true"
                  :model="node"
-                 :disabled="node.tree.debugging"
                  size="mini"
-                 label-width="auto"
+                 :inline="true"
                  label-position="right"
                  :hide-required-asterisk="true"
-                 @validate="onFormValidate">
+                 :disabled="node.tree.debugging">
             <el-form-item v-if="node.template.comment"
                           prop="comment"
-                          :rules="{trigger: 'blur'}">
+                          :label-width="paramLabelWidth+'px'"
+                          :style="{'margin-right':paramMarginRight+'px'}">
                 <template #label>
                     <span class="paramLabel">节点备注</span>
                 </template>
@@ -27,33 +27,33 @@
                             placement="right">
                     <el-input ref="comment"
                               v-model="node.comment"
+                              :style="paramValueStyle('comment',0)"
                               @dblclick.stop.native
                               @copy.stop.native
-                              @paste.stop.native/>
+                              @paste.stop.native
+                              @blur="checkParams"/>
                 </el-tooltip>
             </el-form-item>
-            <el-form-item v-for="param in node.template.params"
+            <el-form-item v-for="(param,index) in node.template.params"
                           :key="param.name"
-                          :rules="paramRules(param)"
+                          :label-width="paramLabelWidth+'px'"
+                          :style="{'margin-right':paramMarginRight+'px'}"
                           :show-message="false"
                           :prop="'params.'+param.name">
                 <template #label>
                     <el-tooltip effect="light"
-                                :disabled="!paramLabelTips[param.name]"
+                                :disabled="!param.pattern"
                                 :arrowOffset="15"
                                 :hide-after="1000"
                                 popper-class="tooltip"
                                 placement="bottom-start">
                         <template #content>
-                            <span v-if="(paramLabelTips[param.name]&1)===1">{{ param.label }}<br></span>
-                            <span v-if="(paramLabelTips[param.name]&2)===2">
-                                    格式：{{ param.pattern }}
-                            </span>
+                            <span>{{ param.pattern }}</span>
                         </template>
                         <span class="paramLabel"
                               :ref="'paramLabel-'+param.name"
                               :style="paramLabelStyle(param.name)">
-                                        {{ param.label || param.name }}
+                            {{ param.label || param.name }}
                         </span>
                     </el-tooltip>
                 </template>
@@ -62,37 +62,41 @@
                             popper-class="tooltip"
                             placement="right">
                     <template #content>{{ node.params[param.name] }}</template>
-                    <!--suppress JSUnresolvedVariable -->
                     <el-select v-if="param.options"
                                :ref="'paramValue-'+param.name"
                                v-model="node.params[param.name]"
+                               :style="paramValueStyle(param.name,index+1)"
                                :multiple="Array.isArray(param.default)"
                                :collapse-tags="true"
                                @dblclick.stop.native
                                @copy.stop.native
                                @paste.stop.native
+                               @blur="checkParams"
                                popper-class="node-param-select-dropdown">
                         <el-option v-for="(option,i) in paramOptions(param.options)"
                                    :key="param.name+'-option-'+i"
                                    :label="option.label"
                                    :value="option.value"/>
                     </el-select>
-                    <!--suppress JSUnresolvedVariable -->
                     <el-input-number v-else-if="param.type==='int' || param.type==='float'"
                                      :ref="'paramValue-'+param.name"
                                      v-model="node.params[param.name]"
+                                     :style="paramValueStyle(param.name,index+1)"
                                      @dblclick.stop.native
                                      @copy.stop.native
                                      @paste.stop.native
+                                     @blur="checkParams"
                                      :precision="param.type==='float'?2:0"
                                      :min="typeof param.min==='number'?param.min:-Infinity"
                                      :max="typeof param.max==='number'?param.max:Infinity"/>
                     <el-input v-else-if="param.type==='string'"
                               :ref="'paramValue-'+param.name"
                               v-model="node.params[param.name]"
+                              :style="paramValueStyle(param.name,index+1)"
                               @dblclick.stop.native
                               @copy.stop.native
-                              @paste.stop.native/>
+                              @paste.stop.native
+                              @blur="checkParams"/>
                 </el-tooltip>
             </el-form-item>
         </el-form>
@@ -100,6 +104,8 @@
 </template>
 
 <script>
+import clipboard from "@/render/clipboard";
+
 export default {
     name: "TreeNodeDetail",
     props: {
@@ -107,26 +113,81 @@ export default {
     },
     data() {
         return {
-            paramValidations: {},//参数校验状态
-            paramLabelTips: {},//参数标签提示状态，文本太长时加提示
+            paramValueWidths: [],
+            paramLabelWidth: 60,
+            paramMarginRight: 20,
             paramValueTips: {},//参数值示状态
             commentTips: false
         };
     },
-    methods: {
-        paramLabelStyle(paramName) {
-            let style = {};
-            if (this.paramValidations['params.' + paramName] === false) {
-                style.color = "#fd7f5a";
-            }
-            return style
+    mounted() {
+        this.resizeObserver = new ResizeObserver(this.calcParamWidth);
+        this.resizeObserver.observe(this.$refs.form.$el);
+    },
+    destroyed() {
+        this.resizeObserver.disconnect();
+    },
+    watch: {
+        node() {
+            this.calcParamWidth();
         },
-        paramRules(param) {
-            let rules = {required: param.required, trigger: 'blur'};
-            if (param.type === 'string' && param.pattern) {
-                rules.pattern = param.pattern;
+    },
+    methods: {
+        calcParamWidth() {
+            let paramCount = 0;
+
+            if (this.node.template.comment) {
+                this.paramLabelWidth = this.$utils.calcTextWidth("节点备注") + 10;
+                paramCount++;
             }
-            return rules;
+
+            if (this.node.template.params) {
+                for (let param of this.node.template.params) {
+                    paramCount++;
+                    let labelWidth = this.$utils.calcTextWidth(param.label || param.name) + 10;
+                    this.paramLabelWidth = Math.min(Math.max(this.paramLabelWidth, labelWidth), 100);
+                }
+            }
+
+            if (paramCount < 1) {
+                return;
+            }
+
+
+            // noinspection JSUnresolvedVariable
+            let formWidth = this.$refs.form.$el.offsetWidth;
+
+            let perLinesNumber;
+            if (paramCount <= 2) {
+                perLinesNumber = 2;
+            } else if (paramCount % 4 === 0 || paramCount % 3 !== 0 && paramCount % 4 >= paramCount % 3) {
+                perLinesNumber = 4;
+            } else {
+                perLinesNumber = 3;
+            }
+
+            let paramValueWidth = formWidth / perLinesNumber - this.paramLabelWidth;
+            if (paramValueWidth < 160) {
+                perLinesNumber = 2;
+                paramValueWidth = formWidth / perLinesNumber - this.paramLabelWidth;
+                paramValueWidth = Math.max(120, paramValueWidth)
+            }
+
+            if (perLinesNumber === 2 || paramValueWidth > 300) {
+                this.paramMarginRight = paramValueWidth * 0.3;
+                paramValueWidth = paramValueWidth * 0.7;
+            } else {
+                this.paramMarginRight = paramValueWidth * 0.1;
+                paramValueWidth = paramValueWidth * 0.9;
+            }
+
+            this.paramValueWidths = [];
+            for (let i = 0; i < paramCount; i++) {
+                this.paramValueWidths[i] = paramValueWidth;
+            }
+        },
+        close() {
+            clipboard.selectNode(this.node, false);
         },
         paramOptions(options) {
             if (Array.isArray(options)) {
@@ -144,30 +205,20 @@ export default {
 
             return _options;
         },
-        onFormValidate(prop, pass) {
-            if (!pass) {
-                this.paramValidations[prop] = pass;
-            } else {
-                delete this.paramValidations[prop];
+        paramLabelStyle(paramName) {
+            let style = {};
+            if (this.node.errorParams?.has(paramName)) {
+                style.color = "#EF3B35FF";
             }
-            this.checkParamsError();
+            return style
+        },
+        paramValueStyle(paramName, index) {
+            return {width: this.paramValueWidths[index] + 'px'};
+        },
+        checkParams() {
+            this.$utils.checkNodeParams(this.node);
             this.checkParamValueTips();
             this.$utils.saveTree(this.node.tree);
-        },
-        checkParamsError() {
-            let error = Object.keys(this.paramValidations).length > 0;
-            let params = this.node.template.params;
-            if (params && !this.node.creating) {
-                for (let param of params) {
-                    let paramValue = this.node.params[param.name];
-                    if (param.required && (paramValue === undefined || Array.isArray(paramValue) && paramValue.length === 0)) {
-                        error = true;
-                        this.paramValidations['params.' + param.name] = false;
-                    }
-                }
-            }
-
-            console.log("checkParamsError:" + error)
         },
         async checkParamValueTips() {
             //等待渲染出来后再检测
@@ -210,12 +261,27 @@ export default {
 }
 
 
->>> .tree-node-header {
+.tree-node-header {
     margin: 10px;
+    white-space: nowrap;
+}
+
+.tree-node-header > span {
+    position: relative;
+    z-index: 1;
+    background-color: white;
+}
+
+#close-icon {
+    position: absolute;
+    right: 10px;
+    margin-top: 3px;
+    z-index: 0;
+    cursor: pointer;
 }
 
 .el-form {
-    margin: 10px;
+    margin: 10px 50px 10px 10px;
     padding-top: 3px;
 }
 
@@ -225,16 +291,11 @@ export default {
 
 .paramLabel {
     display: inline-block;
-    max-width: 72px;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 
 }
-
-.el-input, .el-input-number, .el-select {
-    width: 150px;
-}
-
 
 >>> input:disabled,
 >>> .el-input.is-disabled .el-input__icon,

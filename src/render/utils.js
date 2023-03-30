@@ -86,6 +86,18 @@ export default {
 
         return overflow;
     },
+    calcTextWidth(text, fontSize) {
+        const span = document.createElement('span')
+        document.body.append(span);
+        span.innerText = text
+        if (fontSize) {
+            span.style.fontSize = fontSize + 'px';
+        }
+        span.style.position = 'absolute'
+        let width = span.offsetWidth
+        document.body.removeChild(span)
+        return width
+    },
     /**
      * 节点x轴间隔空间
      */
@@ -108,12 +120,13 @@ export default {
         Vue.set(tree, "showNodeId", false);
         Vue.set(tree, "debugging", false);
 
+        this.events.$emit("init-tree", tree.root);
+
         this.visitSubtree(tree.root, (node, parent) => {
             tree.folded |= node.folded ? 1 : 2;
             this.initNode(node, parent, tree);
         });
 
-        this.events.$emit("init-tree", tree.root);
     },
     initNode(node, parent, tree) {
         node.parent = parent;
@@ -129,11 +142,55 @@ export default {
         Vue.set(node, "z", 1);
 
         Vue.set(node, "params", node.params || []);
+        Vue.set(node, "errorParams", new Set());
         Vue.set(node, "children", node.children || []);
         Vue.set(node, "childrenFolded", node.childrenFolded || false);
         Vue.set(node, "selected", false);
         Vue.set(node, "running", false);
         Vue.set(node, "breakPointState", 0);
+
+        this.checkNodeParams(node);
+    },
+    checkNodeParams(node) {
+        let params = node.template.params;
+        if (!params || node.creating) {
+            return;
+        }
+
+        node.errorParams = new Set();
+
+        let checkParamValue = (type, value, required, pattern) => {
+            if (value === undefined || value === null) {
+                return !required;
+            }
+
+            if (type === "int" || type === "float") {
+                if (typeof value !== "number" || type === "int" && value !== Math.floor(value)) {
+                    return false;
+                }
+                type = "number";
+            }
+
+            if (typeof value !== type) {
+                return false;
+            }
+
+            return !(pattern && !new RegExp(pattern).test(value));
+        }
+
+        for (let param of params) {
+            let paramValue = node.params[param.name];
+            if (Array.isArray(paramValue)) {
+                for (let paramOptionValue of paramValue) {
+                    if (!checkParamValue(param.type, paramOptionValue, true, param.pattern)) {
+                        node.errorParams.add(param.name);
+                        break;
+                    }
+                }
+            } else if (!checkParamValue(param.type, node.params[param.name], param.required, param.pattern)) {
+                node.errorParams.add(param.name);
+            }
+        }
     },
     /**
      * 访问子树的所有节点

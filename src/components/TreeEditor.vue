@@ -87,7 +87,7 @@ import TreeNodeDetail from "@/components/TreeNodeDetail.vue";
 
 const board_edge_space = 100;//画板边缘空间
 const left_width = 220;//左侧行为树列表宽度
-const right_width = 250;//右侧节点模板宽度
+const right_width = 270;//右侧节点模板宽度
 
 export default {
     name: "TreeEditor",
