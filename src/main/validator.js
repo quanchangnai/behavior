@@ -18,9 +18,6 @@ let node = {
         comment: {
             type: "string"
         },
-        folded: {
-            type: "boolean"
-        },
         params: {
             type: "object",
             additionalProperties: {
@@ -82,9 +79,6 @@ let templateTypes = {
             childrenNum: {
                 type: "integer",
                 minimum: -1
-            },
-            comment: {
-                type: "boolean"
             }
         },
         required: ["id", "name", "childrenTypes", "childrenNum"],
@@ -464,9 +458,6 @@ let templates = {
             childrenNum: {
                 type: "integer",
                 minimum: -1
-            },
-            comment: {
-                type: "boolean"
             }
         },
         required: ["id", "name"],

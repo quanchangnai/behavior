@@ -30,8 +30,8 @@ behavior是一款可自由定制的可视化行为树编辑器
 //节点模板类型示例
 templateTypes = [
     {id: 1, name: "根节点", childrenTypes: [2], childrenNum: -1},
-    {id: 2, name: "状态节点", childrenTypes: [3, 4, 5], childrenNum: -1, comment: true},
-    {id: 3, name: "组合节点", childrenTypes: [3, 4, 5], childrenNum: -1, comment: true},
+    {id: 2, name: "状态节点", childrenTypes: [3, 4, 5], childrenNum: -1},
+    {id: 3, name: "组合节点", childrenTypes: [3, 4, 5], childrenNum: -1},
     {id: 4, name: "装饰节点", childrenTypes: [3, 4, 5], childrenNum: 1},
     {id: 5, name: "叶子节点", childrenTypes: [], childrenNum: 0},
 ];
@@ -39,7 +39,6 @@ templateTypes = [
 
 childrenTypes:限制子节点的模板类型,类型不合法的节点不允许作为子节点挂载 \
 childrenNum:限制子节点的数量，-1:不限制,0:不允许挂子节点，大于0:最多能挂的子节点数量 \
-comment:可选字段，节点是否支持添加备注
 
 ### templateGroups
 
@@ -72,7 +71,7 @@ let templates = [
     {id: 9, name: "动作节点3", type: 5, group: 3, desc: "动作节点3描述"},
     {id: 10, name: "条件节点1", type: 5, group: 2, desc: "条件节点1描述"},
     {id: 11, name: "条件节点2", type: 5, group: 3, desc: "条件节点2描述"},
-    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenTypes: [3, 4, 5], childrenNum: 3, comment: false},
+    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenTypes: [3, 4, 5], childrenNum: 3},
     {id: 13, name: "切换状态节点", type: 5, group: 1, desc: "切换状态节点描述", childrenIds: []},
 ];
 ```
@@ -85,7 +84,6 @@ group:可选字段，节点模板所属的模板组 \
 childrenTypes:可选字段，限制子节点的模板类型，覆盖模板类型的childrenTypes字段 \
 childrenIds:可选字段，限制子节点的模板ID，补充childrenTypes字段，按类型限制有时会比较宽泛 \
 childrenNum:可选字段，限制子节点的数量，覆盖模板类型的childrenNum字段 \
-comment:可选字段，节点是否支持添加备注，覆盖模板类型的comment字段 \
 params:可选字段，节点模板参数，详情看下面示例
 
 ```js
@@ -149,11 +147,11 @@ options为对象类型时，refType: "node"表示选项列表引用行为树节�
     {
         name: "新建行为树",
         tree: {//行为树根节点
-            id: 1,
-            name: "",
+            id: 1,//节点ID
+            comment: "",//节点备注
             tid: 1,//节点模板ID
             children: [
-                {id: 2, name: "", tid: 2}
+                {id: 2, comment: "", tid: 2}
             ],
             childrenFolded: false//子节点是否收起
         }
@@ -201,7 +199,7 @@ options为对象类型时，refType: "node"表示选项列表引用行为树节�
 ```js
 [
     [
-        {"nodeId": 1, "context": {"hp":100}},//这是一步
+        {"nodeId": 1, "context": {"hp":100,"mp":90}},//这是一步
         {"nodeId": 2, "context": {"hp":80}},
         {"nodeId": 3, "context": {"hp":50}}
     ],//这是一帧

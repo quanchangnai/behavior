@@ -1,9 +1,9 @@
 //行为树编辑器默认配置
 //节点模板类型，用于控制节点连接性和子节点数量
 let templateTypes = [
-    {id: 1, name: "根节点", childrenTypes: [2], childrenNum: -1, comment: true},
-    {id: 2, name: "状态节点", childrenTypes: [3, 4, 5], childrenNum: -1, comment: true},
-    {id: 3, name: "组合节点", childrenTypes: [3, 4, 5], childrenNum: -1, comment: true},
+    {id: 1, name: "根节点", childrenTypes: [2], childrenNum: -1},
+    {id: 2, name: "状态节点", childrenTypes: [3, 4, 5], childrenNum: -1},
+    {id: 3, name: "组合节点", childrenTypes: [3, 4, 5], childrenNum: -1},
     {id: 4, name: "装饰节点", childrenTypes: [3, 4, 5], childrenNum: 1},
     {id: 5, name: "叶子节点", childrenTypes: [], childrenNum: 0},
 ];
@@ -16,7 +16,7 @@ let templateGroups = [
 ];
 
 //节点模板
-//可以选择覆盖模板类型的childrenNum、comment 
+//可以选择覆盖模板类型的childrenNum
 let templates = [
     {id: 1, name: "根节点", type: 1},
     {id: 2, name: "状态节点", type: 2, group: 1, desc: "状态节点描述"},
@@ -29,7 +29,7 @@ let templates = [
     {id: 9, name: "动作节点3", type: 5, group: 3, desc: "动作节点3描述"},
     {id: 10, name: "条件节点1", type: 5, group: 2, desc: "条件节点1描述"},
     {id: 11, name: "条件节点2", type: 5, group: 3, desc: "条件节点2描述"},
-    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenTypes: [3, 4, 5], childrenNum: 3, comment: false},
+    {id: 12, name: "条件执行节点", type: 3, group: 3, desc: "条件执行节点描述", childrenTypes: [3, 4, 5], childrenNum: 3},
     {id: 13, name: "切换状态节点", type: 5, group: 1, desc: "切换状态节点描述", childrenIds: []},
 ];
 
@@ -59,12 +59,11 @@ let archetypes = [
     {
         name: "新建行为树",
         tree: {//行为树根节点
-            id: 1,
-            comment: "",
-            tid: 1,
-            folded: true,
+            id: 1,//节点ID
+            comment: "",//节点备注
+            tid: 1,//节点模板ID
             children: [
-                {id: 2, comment: "", tid: 2, folded: true}
+                {id: 2, comment: "", tid: 2}
             ],
             childrenFolded: false
         }

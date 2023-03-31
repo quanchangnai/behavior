@@ -141,6 +141,7 @@ export default {
         Vue.set(node, "y", 0);
         Vue.set(node, "z", 1);
 
+        Vue.set(node, "comment", node.comment || "");
         Vue.set(node, "params", node.params || []);
         Vue.set(node, "errorParams", new Set());
         Vue.set(node, "children", node.children || []);
@@ -408,9 +409,7 @@ export default {
     },
     buildNode(node) {
         let result = {id: node.id, tid: node.tid};
-        if (node.template.comment) {
-            result.comment = node.comment;
-        }
+        result.comment = node.comment;
 
         if (node.template.params) {
             result.params = {};

@@ -192,14 +192,6 @@ export default {
                     template.childrenNum = template.type.childrenNum;
                 }
 
-                if (template.comment === undefined) {
-                    if (template.type.comment === undefined) {
-                        template.comment = true;
-                    } else {
-                        template.comment = template.type.comment;
-                    }
-                }
-
                 if (template.params){
                     for (let param of template.params) {
                         if (param.type === 'boolean' && !param.options) {

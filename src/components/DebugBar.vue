@@ -81,14 +81,14 @@ export default {
             this.nodes = new Map();
             this.tree.debugging = true;
             this.tree.breakPointCount = 0;
-            this.tree.usableBreakPointCount = 0;
+            this.tree.enabledBreakPointCount = 0;
 
             this.$utils.visitSubtree(this.tree.root, node => {
                 this.nodes.set(node.id, node);
                 if (node.breakPointState !== 0) {
                     node.tree.breakPointCount++;
                     if (node.breakPointState > 0) {
-                        node.tree.usableBreakPointCount++;
+                        node.tree.enabledBreakPointCount++;
                     }
                 }
             });
@@ -163,8 +163,10 @@ export default {
             }
 
             try {
-                let nodeId = this.records[0][this.step].nodeId;
-                this.nodes.get(nodeId).running = running;
+                let record = this.records[0][this.step];
+                let node = this.nodes.get(record.nodeId);
+                node.running = running;
+                node.context = running ? record.context : null;
             } catch (e) {
                 this.$logger.error(e)
                 this.$msg("调试出错，运行记录和行为树不匹配", "error");
@@ -236,11 +238,11 @@ export default {
         },
         removeAllBreakpoint() {
             this.tree.breakPointCount = 0;
-            this.tree.usableBreakPointCount = 0;
+            this.tree.enabledBreakPointCount = 0;
             this.$utils.visitSubtree(this.tree.root, node => node.breakPointState = 0);
         },
         disableAllBreakpoint() {
-            this.tree.usableBreakPointCount = 0;
+            this.tree.enabledBreakPointCount = 0;
             this.$utils.visitSubtree(this.tree.root, node => {
                 if (node.breakPointState > 0) {
                     node.breakPointState = -1;
@@ -248,7 +250,7 @@ export default {
             });
         },
         enableAllBreakpoint() {
-            this.tree.usableBreakPointCount = this.tree.breakPointCount;
+            this.tree.enabledBreakPointCount = this.tree.breakPointCount;
             this.$utils.visitSubtree(this.tree.root, node => {
                 if (node.breakPointState < 0) {
                     node.breakPointState = 1;

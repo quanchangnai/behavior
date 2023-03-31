@@ -36,7 +36,8 @@
                            @drag-start="onNodeDragStart(node)"
                            @dragging="onNodeDragging($event,node)"
                            @drag-end="onNodeDragEnd(node)"
-                           @selected="onSelectedNode"
+                           @selected="setCurrentNode"
+                           @run="setCurrentNode"
                            @menu="showNodeMenu"
                            @cut-subtrees="deleteSubtrees(true)"
                            @cut-nodes="deleteNodes(true)"
@@ -53,7 +54,7 @@
                            @param-dropdown-show="onNodeParamDropdownShow"/>
             </draggable>
             <debug-bar ref="debugBar"/>
-            <tree-node-detail v-if="selectedNode" :node="selectedNode"/>
+            <tree-node-detail v-if="currentNode" :node="currentNode"/>
         </div>
         <div class="right" :style="{width:rightWidth+'px'}">
             <template-list v-if="config"
@@ -99,7 +100,7 @@ export default {
             creatingNode: null,//正在新建的节点
             draggingNode: null,
             mouseoverNode: null,
-            selectedNode: null,
+            currentNode: null,//最后选中或者正在运行的节点
             boardX: 0,
             boardY: 0,
             boardWidth: 0,
@@ -298,11 +299,11 @@ export default {
             this.draggingNode = null;
             this.drawTree();
         },
-        onSelectedNode(node) {
-            if (node.selected) {
-                this.selectedNode = node;
-            } else if (this.selectedNode === node) {
-                this.selectedNode = null;
+        setCurrentNode(node) {
+            if (node.selected || node.running) {
+                this.currentNode = node;
+            } else if (this.currentNode === node) {
+                this.currentNode = null;
             }
         },
         onCtrlKeyDown() {
@@ -558,10 +559,10 @@ export default {
                 if (this.tree.breakPointCount > 0) {
                     items.push({label: '删除所有断点', handler: this.$refs.debugBar.removeAllBreakpoint});
                 }
-                if (this.tree.usableBreakPointCount > 0) {
+                if (this.tree.enabledBreakPointCount > 0) {
                     items.push({label: '禁用所有断点', handler: this.$refs.debugBar.disableAllBreakpoint});
                 }
-                if (this.tree.breakPointCount - this.tree.usableBreakPointCount > 0) {
+                if (this.tree.breakPointCount - this.tree.enabledBreakPointCount > 0) {
                     items.push({label: '启用所有断点', handler: this.$refs.debugBar.enableAllBreakpoint});
                 }
             }
