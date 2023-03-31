@@ -9,7 +9,7 @@
                  :model="node"
                  size="mini"
                  :inline="true"
-                 label-position="right"
+                 :label-position="paramLabelPosition"
                  :hide-required-asterisk="true"
                  :disabled="node.tree.debugging">
             <el-form-item v-if="node.template.comment"
@@ -113,10 +113,11 @@ export default {
     },
     data() {
         return {
-            paramValueWidths: [],
+            paramLabelPosition: "right",
             paramLabelWidth: 60,
+            paramValueWidths: [],
             paramMarginRight: 20,
-            paramValueTips: {},//参数值示状态
+            paramValueTips: {},//参数值提示状态
             commentTips: false
         };
     },
@@ -153,9 +154,8 @@ export default {
                 return;
             }
 
-
             // noinspection JSUnresolvedVariable
-            let formWidth = this.$refs.form.$el.offsetWidth;
+            let formWidth = this.$refs.form.$el.offsetWidth - 1;
 
             let perLinesNumber;
             if (paramCount <= 2) {
@@ -166,24 +166,39 @@ export default {
                 perLinesNumber = 3;
             }
 
+            let paramValueWidthMin = 140;
             let paramValueWidth = formWidth / perLinesNumber - this.paramLabelWidth;
-            if (paramValueWidth < 160) {
+            if (paramValueWidth < paramValueWidthMin + 20) {
                 perLinesNumber = 2;
-                paramValueWidth = formWidth / perLinesNumber - this.paramLabelWidth;
-                paramValueWidth = Math.max(120, paramValueWidth)
+                paramValueWidth = Math.max(paramValueWidthMin, formWidth / perLinesNumber - this.paramLabelWidth)
             }
 
-            if (perLinesNumber === 2 || paramValueWidth > 300) {
-                this.paramMarginRight = paramValueWidth * 0.3;
-                paramValueWidth = paramValueWidth * 0.7;
+            let marginRightPercent = Math.max(0.1, Math.min(0.4, paramValueWidth / 1000))
+            this.paramMarginRight = paramValueWidth * marginRightPercent;
+            paramValueWidth = paramValueWidth * (1 - marginRightPercent);
+
+            let paramWidth = this.paramLabelWidth + paramValueWidth + this.paramMarginRight;
+            let lineCount = Math.ceil(paramCount / perLinesNumber);
+
+            if (paramWidth * perLinesNumber > formWidth + 5) {
+                paramValueWidth += Math.max(formWidth - paramWidth * (perLinesNumber - 1), 0);
+                paramWidth = this.paramLabelWidth + paramValueWidth + this.paramMarginRight;
+            }
+
+            if (paramWidth > formWidth) {
+                paramValueWidth = Math.max(paramValueWidthMin, formWidth * 0.9);
+                this.paramLabelPosition = "left"
             } else {
-                this.paramMarginRight = paramValueWidth * 0.1;
-                paramValueWidth = paramValueWidth * 0.9;
+                this.paramLabelPosition = "right"
             }
 
             this.paramValueWidths = [];
             for (let i = 0; i < paramCount; i++) {
                 this.paramValueWidths[i] = paramValueWidth;
+            }
+
+            if (lineCount > 1 && paramWidth * perLinesNumber < formWidth + 5 && perLinesNumber * lineCount === paramCount + 1) {
+                this.paramValueWidths[paramCount - 1] = paramValueWidth + paramWidth;
             }
         },
         close() {
@@ -286,7 +301,7 @@ export default {
 }
 
 .el-form-item {
-    margin: 6px 20px 6px 0;
+    margin: 6px 0;
 }
 
 .paramLabel {
