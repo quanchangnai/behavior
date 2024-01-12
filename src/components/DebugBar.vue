@@ -133,7 +133,7 @@ export default {
                 this.target2 = target2;
                 this.startDebug();
             } else {
-                this.$msg(`工作区中不存在目标行为树[${target2.tree}]`, "warning");
+                this.$msg(`工作区中不存在目标行为树[${target2.tree.name}]`, "error");
             }
         },
         async fetchRecords() {

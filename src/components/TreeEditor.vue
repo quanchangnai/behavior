@@ -110,6 +110,12 @@ export default {
             rightWidth: right_width,
         }
     },
+    provide() {
+        return {
+            "treeList":this.$refs.treeList,
+            "templateList":this.$refs.templateList,
+        }
+    },
     async created() {
         try {
             this.config = await ipcRenderer.invoke("load-config");

@@ -19,7 +19,7 @@
                               :cell-style="{'padding-left':'5px'}"
                               tooltip-effect="light"
                               highlight-current-row
-                              @current-change="onTable1RowSelect">
+                              @current-change="onSelectTarget1">
                         <template v-if="list1[0]">
                             <el-table-column prop="id"
                                              min-width="50"
@@ -45,7 +45,7 @@
                               :cell-style="{'padding-left':'5px'}"
                               tooltip-effect="light"
                               highlight-current-row
-                              @current-change="onTable2RowSelect">
+                              @current-change="onSelectTarget2">
                         <template v-if="list2[0]">
                             <el-table-column prop="id"
                                              min-width="50"
@@ -55,9 +55,9 @@
                                              min-width="80"
                                              :label="list2[0].name.toString()"
                                              :show-overflow-tooltip="true"/>
-                            <el-table-column prop="tree"
+                            <el-table-column prop="tree.name"
                                              min-width="70"
-                                             :label="list2[0].tree.toString()"
+                                             :label="list2[0].tree.name.toString()"
                                              :show-overflow-tooltip="true"/>
 
                         </template>
@@ -90,6 +90,7 @@ export default {
             keyword2: ""
         }
     },
+    inject:["treeList"],
     created() {
         this.baseUrl = localStorage.getItem("debugBaseUrl") || "";
     },
@@ -107,7 +108,7 @@ export default {
                 if (index === 0) {
                     return false
                 }
-                return row === this.target2 || row.id?.toString()?.includes(value) || row.name?.toString()?.includes(value) || row.tree?.toString()?.includes(value);
+                return row === this.target2 || row.id?.toString()?.includes(value) || row.name?.toString()?.includes(value) || row.tree?.name?.toString()?.includes(value);
             });
         },
         visible(value) {
@@ -118,14 +119,14 @@ export default {
     },
     methods: {
         async queryList1() {
-            localStorage.setItem("debugBaseUrl", this.baseUrl);
-
             let url = "list1"
 
             try {
                 this.list1 = await this.$request.create(this.baseUrl).get(url)
+
                 this.target1 = null;
                 this.target2 = null;
+                localStorage.setItem("debugBaseUrl", this.baseUrl);
 
                 this.keyword1 = "";
                 this.visibleRows1 = this.list1.slice(1);
@@ -136,11 +137,10 @@ export default {
                 this.$logger.error(e);
                 this.$msg(`请求[${this.baseUrl}/${url}]出错`, "error");
             }
-
-
         },
         async queryList2() {
             let url = `list2?id1=${this.target1.id}`;
+
             try {
                 this.list2 = await this.$request.create(this.baseUrl).get(url)
                 this.keyword2 = "";
@@ -153,34 +153,27 @@ export default {
                 this.$msg(`请求[${this.baseUrl}/${url}]出错`, "error");
             }
         },
-        onTable1RowSelect(row) {
-            if (row !== this.target1) {
-                this.target1 = row;
+        onSelectTarget1(target1) {
+            if (target1 !== this.target1) {
+                this.target1 = target1;
                 this.target2 = null;
                 this.queryList2();
             }
         },
-        onTable2RowSelect(row) {
-            this.target2 = row;
+        onSelectTarget2(target2) {
+            this.target2 = target2;
         },
         confirmSelect() {
-            if (!(this.target1?.id && this.target2?.id && this.target2?.tree)) {
+            if (!(this.target1?.id && this.target2?.id && this.target2?.tree?.name)) {
                 this.$msg("调试目标不合法", "error");
                 this.$logger.error(`调试目标不合法,target1:${JSON.stringify(this.target1)},target2:${JSON.stringify(this.target2)}`);
                 return;
             }
 
-            this.$events.$emit("check-tree", this.target2.tree, exist => {
-                if (!this.visible) {
-                    return;
-                }
-                if (exist) {
-                    this.visible = false;
-                    this.$emit("select", this.baseUrl, this.target1, this.target2);
-                } else {
-                    this.$msg(`工作区中不存在行为树[${this.target2.tree}]`, "error");
-                }
-            });
+            if (this.treeList.setDebugTree(this.target2.tree)) {
+                this.visible = false;
+                this.$emit("select", this.baseUrl, this.target1, this.target2);
+            }
         },
     }
 }
