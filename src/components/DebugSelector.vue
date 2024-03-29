@@ -90,7 +90,7 @@ export default {
             keyword2: ""
         }
     },
-    inject:["treeList"],
+    inject:["editor"],
     created() {
         this.baseUrl = localStorage.getItem("debugBaseUrl") || "";
     },
@@ -170,7 +170,7 @@ export default {
                 return;
             }
 
-            if (this.treeList.setDebugTree(this.target2.tree)) {
+            if (this.editor.$refs.treeList.setDebugTree(this.target2.tree)) {
                 this.visible = false;
                 this.$emit("select", this.baseUrl, this.target1, this.target2);
             }

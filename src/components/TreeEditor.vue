@@ -54,7 +54,7 @@
                            @param-dropdown-show="onNodeParamDropdownShow"/>
             </draggable>
             <debug-bar ref="debugBar"/>
-            <tree-node-detail v-if="currentNode" :node="currentNode"/>
+            <tree-node-detail v-if="currentNode && !$refs.debugBar.playing" :node="currentNode"/>
         </div>
         <div class="right" :style="{width:rightWidth+'px'}">
             <template-list v-if="config"
@@ -112,8 +112,7 @@ export default {
     },
     provide() {
         return {
-            "treeList":this.$refs.treeList,
-            "templateList":this.$refs.templateList,
+            "editor":this
         }
     },
     async created() {
