@@ -18,6 +18,11 @@ async function afterPack(cxt) {
 // noinspection JSUnusedGlobalSymbols
 module.exports = {
     filenameHashing: true,
+    configureWebpack: {
+        output: {
+            hashFunction: 'md4'
+        }
+    },
     pluginOptions: {
         electronBuilder: {
             outputDir: 'dist',
@@ -30,7 +35,10 @@ module.exports = {
                 win: {target: "zip"},
                 mac: {target: "zip"},
                 linux: {target: "tar.gz"},
-                afterPack
+                afterPack,
+                electronDownload: {
+                    mirror: "https://npmmirror.com/mirrors/electron/"
+                }
             }
         }
     }
