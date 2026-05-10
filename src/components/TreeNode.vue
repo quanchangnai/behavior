@@ -76,6 +76,7 @@ export default {
         },
         'node.running'(running) {
             this.contentClasses.running = running;
+            this.$emit("run", this.node)
         },
         'node.errorParams'() {
             this.contentClasses.error = this.node.errorParams.size > 0;
@@ -133,7 +134,7 @@ export default {
                             if (this.node.breakPointState === 0) {
                                 this.node.breakPointState = 1;
                                 this.node.tree.breakPointCount++;
-                                this.node.tree.usableBreakPointCount++;
+                                this.node.tree.enabledBreakPointCount++;
                             }
                         }
                     });
@@ -155,7 +156,7 @@ export default {
                         handler: () => {
                             if (this.node.breakPointState > 0) {
                                 this.node.breakPointState = -1;
-                                this.node.tree.usableBreakPointCount--;
+                                this.node.tree.enabledBreakPointCount--;
                             }
                         }
                     });
@@ -166,7 +167,7 @@ export default {
                         handler: () => {
                             if (this.node.breakPointState < 0) {
                                 this.node.breakPointState = 1;
-                                this.node.tree.usableBreakPointCount++;
+                                this.node.tree.enabledBreakPointCount++;
                             }
                         }
                     });
@@ -277,12 +278,12 @@ export default {
 }
 
 .content.running {
-    background-color: #fd5e5eff;
-    border-color: #f3143e;
+    background-color: #fa8686;
+    border-color: #fd5e5eff;
 }
 
 .content.error {
-    box-shadow: 0 0 0 1px #fd7f5a;
+    box-shadow: 0 0 0 1px #EF3B35FF;
 }
 
 .fold-children-icon {

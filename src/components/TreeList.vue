@@ -74,7 +74,6 @@ export default {
         ipcRenderer.on("create-tree", this.createTree);
         this.$events.$on("delete-tree", this.deleteTree);
         this.$events.$on("select-tree", this.selectTree);
-        this.$events.$on("check-tree", this.checkTree);
     },
     mounted() {
         this.resizeObserver = new ResizeObserver(this.doLayout);
@@ -84,7 +83,6 @@ export default {
         ipcRenderer.off("create-tree", this.createTree);
         this.$events.$off("delete-tree", this.deleteTree);
         this.$events.$off("select-tree", this.selectTree);
-        this.$events.$off("check-tree", this.checkTree);
         this.resizeObserver.disconnect();
     },
     watch: {
@@ -108,14 +106,6 @@ export default {
                 this.$refs.table.setCurrentRow(this.visibleTrees[0]);
             }
         },
-        checkTree(treeName, callback) {
-            let tree = this.mappedTrees.get(treeName);
-            if (tree) {
-                this.$refs.table.setCurrentRow(tree);
-            }
-
-            callback(tree != null);
-        },
         selectTree(tree) {
             this.selectedTree = tree;
             if (tree && tree.maxNodeId === undefined) {
@@ -123,8 +113,23 @@ export default {
                 this.$utils.initTree(tree)
             }
 
-            this.$emit("selected-tree", tree);
+            this.$emit("selected-tree", tree, false);
             ipcRenderer.send("selected-tree", tree?.name);
+        },
+        setDebugTree(debugTree) {
+            if (debugTree.root) {
+                debugTree.id = 0;
+            } else {
+                let tree = this.mappedTrees.get(debugTree.name.toLowerCase());
+                if (tree) {
+                    this.$refs.table.setCurrentRow(tree);
+                } else {
+                    this.$msg(`工作区中不存在行为树[${debugTree.name}]`, "error");
+                    return false;
+                }
+            }
+
+            return true;
         },
         onContextMenu(event, tree) {
             tree = tree || this.selectedTree;
@@ -172,13 +177,16 @@ export default {
             this.$utils.saveTree(tree);
 
             this.$nextTick(() => {
-                let treeIdTag = this.$refs['treeIdTag-' + tree.id];
-                let scrollbarWrap = this.$refs.scrollbar?.$refs.wrap;
-                if (scrollbarWrap) {
-                    scrollbarWrap.scrollTop = this.$utils.getOffsetY(treeIdTag) - 50;
-                }
+                this.scrollTable(tree.id);
                 this.startRenameTree();
             });
+        },
+        scrollTable(treeId) {
+            let treeIdTag = this.$refs['treeIdTag-' + treeId];
+            let scrollbarWrap = this.$refs.scrollbar?.$refs.wrap;
+            if (scrollbarWrap) {
+                scrollbarWrap.scrollTop = this.$utils.getOffsetY(treeIdTag) - 50;
+            }
         },
         async deleteTree(tree) {
             try {
@@ -203,6 +211,10 @@ export default {
             return {width: "calc(100% - " + (treeIdTagWidth + 2) + "px)"}
         },
         async startRenameTree(tree) {
+            if (tree.id < 1) {
+                return;
+            }
+
             if (this.renameTree) {
                 await this.finishRenameTree();
             }
@@ -220,19 +232,17 @@ export default {
             }
             this.renameTree = null;
 
-            let invalidName = false;
             let oldTreeName = renameTree.oldName;
             let newTreeName = renameTree.name;
 
-            invalidName ||= oldTreeName === newTreeName;
-            invalidName ||= newTreeName.includes("behavior");
+            let invalid = oldTreeName === newTreeName || newTreeName.includes("behavior");
 
-            let sameNameTree = this.mappedTrees.get(newTreeName.toLowerCase());
-            if (sameNameTree && sameNameTree.id !== this.selectedTree.id) {
-                invalidName = true;
+            let sameNamesTree = this.mappedTrees.get(newTreeName.toLowerCase());
+            if (sameNamesTree && sameNamesTree.id !== this.selectedTree.id) {
+                invalid = true;
             }
 
-            if (!invalidName) {
+            if (!invalid) {
                 try {
                     await ipcRenderer.invoke("rename-tree", oldTreeName, newTreeName);
                     this.mappedTrees.delete(oldTreeName.toLowerCase());
